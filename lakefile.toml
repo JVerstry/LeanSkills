@@ -1,0 +1,9 @@
+name = "LeanDoc"
+defaultTargets = ["leandoc"]
+
+[[lean_exe]]
+name = "leandoc"
+root = "Main"
+# Needed because the extractor calls into Lean's own frontend/elaborator
+# (Lean.Elab.runFrontend), which requires the interpreter to be linked in.
+supportInterpreter = true

@@ -1,0 +1,46 @@
+/-!
+# My Lean Module
+
+This file is LeanDoc's own demo project (`demo/`) — a small, self-contained
+Lean project used to develop and test the extractor against real
+declarations and docstrings, rather than against LeanDoc's own source
+(which, being the tool itself, is a poor stand-in for "someone else's
+Lean project"). It doubles as a worked example: once LeanDoc can render
+documentation, this file's docstrings are what that rendered output will
+be built from — so they're written as genuine, readable documentation,
+not throwaway placeholder text.
+-/
+
+namespace MyLeanModule
+
+/-- Doubles a natural number.
+
+For example, `MyLeanFunction 3 = 6`. This is a deliberately simple
+example: LeanDoc should be able to extract its name, its type
+(`Nat → Nat`), and this docstring without any special-casing. -/
+def MyLeanFunction (n : Nat) : Nat :=
+  2 * n
+
+/-- `MyLeanFunction` doubles its input.
+
+A minimal example theorem, proved by `rfl` since doubling is definitional
+here. LeanDoc should extract this alongside `MyLeanFunction` even though
+one is a `def` and the other a `theorem` — both are declarations with a
+name, a type, and (optionally) a docstring. -/
+theorem MyLeanTheorem (n : Nat) : MyLeanFunction n = n + n := by
+  simp [MyLeanFunction, Nat.two_mul]
+
+/-- A pair of natural numbers, used to demonstrate that LeanDoc also sees
+structures and their fields, not just `def`/`theorem`. -/
+structure MyLeanStructure where
+  /-- The first component. -/
+  fst : Nat
+  /-- The second component. -/
+  snd : Nat
+
+-- Deliberately undocumented, to prove the extractor correctly reports
+-- "no docstring" rather than skipping the declaration entirely.
+def myLeanUndocumentedFunction (n : Nat) : Nat :=
+  n + 1
+
+end MyLeanModule

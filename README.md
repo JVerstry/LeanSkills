@@ -15,10 +15,11 @@ initial generation.
 
 - **What LeanDoc does:** generates documentation for Lean 4 projects by
   fully elaborating them through Lean's own frontend
-  (`Lean.Elab.Frontend`) — not regexes, not hand-rolled syntax parsing.
+  (`Lean.Elab.runFrontend`) — not regexes, not hand-rolled syntax parsing.
   See [`docs/index.md`](docs/index.md) for the full pipeline write-up.
-- **Toolchain:** managed by `elan` (`lean`, `lake` on `PATH`). Prefer
-  `lake build` / `lake exe <target>` once a `lakefile` exists.
+- **Toolchain:** managed by `elan` (`lean`, `lake` on `PATH`), pinned via
+  `lean-toolchain`. `lake build` / `lake exe leandoc` builds and runs the
+  (currently placeholder) extractor executable.
 - **Where things live:** intermediate metadata JSON in `.leandoc/`
   (gitignored, regenerated every run); final rendered docs in `docs/`
   (committed to git); configuration in `leandoc.toml`.
