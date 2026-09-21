@@ -3,10 +3,14 @@ documentation generator for Lean 4 projects) to their existing Lean/Lake
 project. The user has pasted you this file as their installation prompt.
 Follow these steps, adapting paths/names to what you find in their repo.
 
-STATUS NOTE (remove once LeanDoc has a first release): LeanDoc itself is
-still pre-implementation. Some steps below reference an executable name,
-CLI flags, and a Lake dependency line that don't exist yet — treat those
-as placeholders to fill in once LeanDoc ships, not as verified commands.
+STATUS NOTE (remove once LeanDoc has a first tagged release): the
+extractor and a first Markdown renderer both work and are exercised
+against LeanDoc's own source, but there's no tagged release yet — the
+`require` line pins a branch/commit rather than a version (step 3), the
+CLI surface is minimal (one path argument, no flags), and the schema
+below, while real and tested, isn't frozen. Treat this file as
+generally accurate rather than speculative, but expect it to need
+updates as the interface stabilizes.
 
 1. Confirm this is a Lean/Lake project
    - Look for `lakefile.lean` or `lakefile.toml` and `lean-toolchain` at
@@ -50,10 +54,12 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
      f. **Included/excluded modules.** Which modules LeanDoc documents,
         as dotted module names (e.g. `"Foo.Bar"`), one per entry.
         *Current limitation:* whole-package scanning doesn't exist yet
-        (T9) — you must ask the user to name every top-level module
-        they want documented; there's no "everything" default today.
-        Ask separately if there are internal modules to exclude once
-        whole-package scanning lands.
+        (task T21 — a real backlog item as of 2026-09-21; earlier
+        drafts of this file mislabeled it "T9", which was actually the
+        renderer) — you must ask the user to name every top-level
+        module they want documented; there's no "everything" default
+        today. Ask separately if there are internal modules to exclude
+        once whole-package scanning lands.
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -96,13 +102,14 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
      # exclude = [...]   # only if the user named exclusions in step 2f
 
      [renderer]
-     name = "markdown"   # reserved for T9 — no renderer exists yet,
-                         # so this field is parsed but currently unused
+     name = "markdown"   # parsed but not yet acted on — Markdown is
+                         # the only renderer that exists (task T9), so
+                         # there's no real choice to make here yet
 
    `include`/`exclude` entries are dotted Lean module names (e.g.
    `"Foo.Bar"`), one per module — **not** yet "the whole package" by
    default. Whole-package scanning (so `include` can be omitted
-   entirely) is T9 work; today, an empty or missing `include` list
+   entirely) is task T21; today, an empty or missing `include` list
    means the extractor has nothing to do. Ask the user which modules
    they want documented if this comes up during install.
 
@@ -118,11 +125,19 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
    - Only add `docs_dir` to `.gitignore` if the user chose "gitignored"
      in step 2d. Otherwise leave it tracked.
 
-7. Run the initial generation: `lake exe leandoc <path-to-project>`
-   (real as of task T13 — the project path is a CLI argument, default
-   `.`). Run it from LeanDoc's own repo root, pointing at the target
-   project's directory (which must contain the `leandoc.toml` written
-   in step 5).
+7. Run the initial generation: `lake exe leandoc` — run from the
+   **target project's own root** (not from a separate LeanDoc checkout).
+   Once step 3's `require` + `lake update` pulled LeanDoc in as a
+   dependency, `lake exe` resolves executables from dependencies the
+   same way it resolves the current package's own ones — the same
+   pattern Mathlib uses for `lake exe cache get` in a project that
+   depends on Mathlib, run from that project's own root, not Mathlib's.
+   No path argument is needed: the executable's project-path argument
+   (task T13) defaults to `.`, which is exactly the target project,
+   since that's the directory `lake exe` runs it from. (The explicit
+   `lake exe leandoc <path>` form exists for LeanDoc's own development
+   — e.g. pointing at its `demo/` test fixture from within its own
+   repo — not for a normal install.)
 
 8. Report back to the user
    - Show what was added/changed (dependency line, `leandoc.toml`,
