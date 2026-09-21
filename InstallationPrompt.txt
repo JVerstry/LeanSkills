@@ -47,10 +47,13 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
         files/folders and applies its own theme to Markdown. Default to
         adding a `docs_dir/.nojekyll` marker unless the user says they
         do want Jekyll, in which case skip it.
-     f. **Included/excluded modules.** Which modules/namespaces LeanDoc
-        documents. *Recommended default:* everything the package
-        builds, with no exclusions — ask if there are internal
-        modules the user wants left out.
+     f. **Included/excluded modules.** Which modules LeanDoc documents,
+        as dotted module names (e.g. `"Foo.Bar"`), one per entry.
+        *Current limitation:* whole-package scanning doesn't exist yet
+        (T9) — you must ask the user to name every top-level module
+        they want documented; there's no "everything" default today.
+        Ask separately if there are internal modules to exclude once
+        whole-package scanning lands.
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -79,19 +82,29 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
      directory immediately.
 
 5. Create a `leandoc.toml` config file at the repo root, sibling to
-   `lakefile.toml`, using the values confirmed in step 2:
+   `lakefile.toml`, using the values confirmed in step 2. This schema
+   is now real (task T8) — parsed with Lake's own TOML
+   parser/decoder (`Lake.Toml`) and exercised end-to-end against
+   LeanDoc's own `demo/` project, not a guess:
 
      [output]
      json_dir = "<step 2b value, default .leandoc/>"
      docs_dir = "<step 2c value, default docs/>"
 
      [modules]
-     include = ["<step 2f value, default: the whole package>"]
+     include = ["<step 2f value>"]
      # exclude = [...]   # only if the user named exclusions in step 2f
 
-   (TODO: finalize the real schema once the extractor/renderer land —
-   this is a best-guess shape based on the current architecture, not a
-   frozen spec.)
+     [renderer]
+     name = "markdown"   # reserved for T9 — no renderer exists yet,
+                         # so this field is parsed but currently unused
+
+   `include`/`exclude` entries are dotted Lean module names (e.g.
+   `"Foo.Bar"`), one per module — **not** yet "the whole package" by
+   default. Whole-package scanning (so `include` can be omitted
+   entirely) is T9 work; today, an empty or missing `include` list
+   means the extractor has nothing to do. Ask the user which modules
+   they want documented if this comes up during install.
 
 6. Update `.gitignore`
    - If the repo has no `.gitignore` yet, create one.

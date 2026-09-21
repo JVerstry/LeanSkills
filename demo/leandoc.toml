@@ -1,0 +1,22 @@
+
+# LeanDoc configuration for this project. See LeanDoc's own
+# InstallationPrompt.txt / wip/todo.md (task T8) for the schema
+# rationale. All fields shown here are also the defaults, except
+# `modules.include`, which has no default (an empty list means "the
+# whole package" once T9's project-wide scanning exists — for now,
+# this prototype only processes exactly the modules listed here).
+
+[output]
+# Intermediate metadata JSON — build-artifact territory, gitignored.
+json_dir = ".leandoc/"
+# Final rendered docs — defaults to `docs/` so GitHub Pages can serve
+# it straight from `main` with zero extra config.
+docs_dir = "docs/"
+
+[modules]
+include = ["Demo.MyLeanFile"]
+# exclude = [...]
+
+[renderer]
+# Reserved for T9 (no renderer exists yet, so this is unused for now).
+name = "markdown"

@@ -1,37 +1,89 @@
 import Lean
+import Lake.Toml
 
 /-!
-# LeanDoc extractor prototype (tasks T6/T7)
+# LeanDoc extractor prototype (tasks T6/T7/T8)
 
 Proof-of-concept for the extractor half of LeanDoc's pipeline (see
 `AGENTS.md` / `docs/conventions.md` for the full architecture writeup):
-run Lean's own frontend over a file, walk the resulting `Environment` for
-the declarations it added, and dump their metadata to JSON.
+read a project's `leandoc.toml`, run Lean's own frontend over each
+included module, walk the resulting `Environment` for the declarations
+it added, and dump their metadata to JSON.
 
-This prototype is intentionally narrow: it targets one hardcoded file
-(`demo/Demo/MyLeanFile.lean`, LeanDoc's own demo/test-fixture project).
-Turning this into the real extractor is the rest of the backlog: walking
-a whole project rather than one hardcoded file, and reading configuration
-from `leandoc.toml` (T8).
+Still narrow: it targets one hardcoded project (`demo/`, LeanDoc's own
+demo/test-fixture project) rather than accepting a project path on the
+command line, and module → file path mapping assumes the plain Lean
+convention (`Foo.Bar` ↔ `Foo/Bar.lean`, no custom `srcDir`). Turning
+this into the real extractor is the rest of the backlog (T9+).
 -/
 
 open Lean
 
-/-- The demo project's example file this prototype extracts from. -/
-def demoFile : System.FilePath :=
-  System.FilePath.mk "demo" / "Demo" / "MyLeanFile.lean"
+/-- The project this prototype extracts from. Not yet a CLI argument —
+see the module docstring. -/
+def projectRoot : System.FilePath :=
+  "demo"
 
-/-- The demo file's module name, used to name private/auxiliary
-declarations during elaboration. Not derived from `demoFile`'s path yet
-(see T7) — hardcoded since this prototype only ever points at one file. -/
-def demoModuleName : Name :=
-  `Demo.MyLeanFile
+/-- `leandoc.toml`'s parsed shape (task T8). All fields have defaults so
+a project can omit the file entirely, or any section/field within it —
+`include` is the only field with no *useful* default (an empty list
+just means "document nothing" until T9 adds whole-package scanning). -/
+structure LeanDocConfig where
+  jsonDir      : System.FilePath := ".leandoc"
+  docsDir      : System.FilePath := "docs"
+  includeModules : Array String := #[]
+  exclude      : Array String := #[]
+  /-- Reserved for T9 — no renderer exists yet, so this is parsed but
+  unused. -/
+  rendererName : String := "markdown"
+deriving Inhabited
 
-/-- Where the extracted metadata is written. Matches the `.leandoc/`
-convention settled in `wip/todo.md`, scoped under `demo/` since that's
-whose declarations this prototype extracts. -/
-def outFile : System.FilePath :=
-  System.FilePath.mk "demo" / ".leandoc" / "metadata.json"
+open Lake.Toml in
+/-- Loads `<projectRoot>/leandoc.toml`, falling back to
+`LeanDocConfig`'s defaults if the file is missing or fails to parse.
+Reuses Lake's own TOML parser/decoder (`Lake.Toml`) — the same one
+`lakefile.toml` itself is parsed with — rather than hand-rolling one. -/
+def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
+  unless (← path.pathExists) do
+    return {}
+  let input ← IO.FS.readFile path
+  let ictx := Parser.mkInputContext input (toString path)
+  match (← loadToml ictx |>.toBaseIO) with
+  | .error log =>
+    IO.eprintln s!"LeanDoc: warning: couldn't parse {path}, using defaults:"
+    log.forM fun msg => do IO.eprintln (← msg.toString)
+    return {}
+  | .ok table =>
+    let .ok cfg _errs := EStateM.run (s := #[]) do
+      let output ← table.tryDecodeD `output Table.empty
+      let modules ← table.tryDecodeD `modules Table.empty
+      let renderer ← table.tryDecodeD `renderer Table.empty
+      -- Decoded as `String`, not `System.FilePath`, so a trailing `/`
+      -- (as written in the schema, e.g. `.leandoc/`) can be trimmed
+      -- before use — otherwise joining it with a filename below
+      -- produces a doubled separator.
+      let jsonDirStr ← output.tryDecodeD `json_dir ".leandoc"
+      let docsDirStr ← output.tryDecodeD `docs_dir "docs"
+      let jsonDir : System.FilePath := (jsonDirStr.dropEndWhile (· == '/')).toString
+      let docsDir : System.FilePath := (docsDirStr.dropEndWhile (· == '/')).toString
+      let includeModules ← modules.tryDecodeD `include (#[] : Array String)
+      let exclude ← modules.tryDecodeD `exclude (#[] : Array String)
+      let rendererName ← renderer.tryDecodeD `name "markdown"
+      pure { jsonDir, docsDir, includeModules, exclude, rendererName : LeanDocConfig }
+    pure cfg
+
+/-- Maps a module name to its source file, assuming the plain Lean
+convention (`Foo.Bar` ↔ `<root>/Foo/Bar.lean`) — no `srcDir` override
+support yet. -/
+def moduleToFile (root : System.FilePath) (m : Name) : System.FilePath :=
+  let path := (m.toString.splitOn ".").foldl (init := root) (· / ·)
+  path.addExtension "lean"
+
+/-- Builds a hierarchical `Name` (`Foo.Bar`) from its dotted-string form
+(`"Foo.Bar"`), as `leandoc.toml`'s `[modules] include` entries are
+written. -/
+def stringToModuleName (s : String) : Name :=
+  (s.splitOn ".").foldl Name.mkStr .anonymous
 
 /-- A declaration's source location. Line is 1-indexed and column is
 0-indexed, matching Lean's own `Position` (and LSP, for `charUtf16`-free
@@ -97,6 +149,27 @@ total. -/
 def isNoise (c : AsyncConstantInfo) : CoreM Bool :=
   if c.kind == ConstantKind.recursor then pure true else isAutoDeclOrPrivate_Internal c.name
 
+/-- Extracts every non-noise declaration added by elaborating `file` as
+module `moduleName`. -/
+def extractFile (file : System.FilePath) (moduleName : Name) : IO (Array DeclMeta) := do
+  let input ← IO.FS.readFile file
+  let env? ← Lean.Elab.runFrontend input {} (toString file) moduleName
+  let some env := env?
+    | IO.eprintln s!"LeanDoc: elaboration of {file} failed (see errors above)."
+      IO.Process.exit 1
+  -- Only the declarations *added by this file*, not everything imported
+  -- (e.g. all of `Init`) — see `Environment.getLocalConstantInfos`.
+  let consts ← env.getLocalConstantInfos
+  let coreCtx : Core.Context := { fileName := toString file, fileMap := FileMap.ofString input }
+  let coreState : Core.State := { env }
+  (do
+      let mut acc : Array DeclMeta := #[]
+      for c in consts do
+        unless (← isNoise c) do
+          acc := acc.push (← declMetaOf env c)
+      pure acc
+    : CoreM (Array DeclMeta)).toIO' coreCtx coreState
+
 def main : IO Unit := do
   -- Needed so `Init`'s (and any other core module's) `.olean`s resolve;
   -- see `Lean.Shell`'s `lean` driver, which does the same before calling
@@ -106,25 +179,19 @@ def main : IO Unit := do
   -- `runFrontend` does); see `Lake.importModulesUsingCache`, which does
   -- the same before its own `importModules (loadExts := true)`.
   unsafe enableInitializersExecution
-  let input ← IO.FS.readFile demoFile
-  let env? ← Lean.Elab.runFrontend input {} (toString demoFile) demoModuleName
-  let some env := env?
-    | IO.eprintln "LeanDoc: elaboration of the demo file failed (see errors above)."
-      IO.Process.exit 1
-  -- Only the declarations *added by this file*, not everything imported
-  -- (e.g. all of `Init`) — see `Environment.getLocalConstantInfos`.
-  let consts ← env.getLocalConstantInfos
-  let coreCtx : Core.Context := { fileName := toString demoFile, fileMap := FileMap.ofString input }
-  let coreState : Core.State := { env }
-  let metas ← (do
-      let mut acc : Array DeclMeta := #[]
-      for c in consts do
-        unless (← isNoise c) do
-          acc := acc.push (← declMetaOf env c)
-      pure acc
-    : CoreM (Array DeclMeta)).toIO' coreCtx coreState
+  let config ← loadConfig (projectRoot / "leandoc.toml")
+  if config.includeModules.isEmpty then
+    IO.eprintln "LeanDoc: leandoc.toml has no [modules] include list (or the file is missing) — nothing to do. See wip/todo.md task T9 for whole-package scanning."
+    IO.Process.exit 1
+  let mut allMetas : Array DeclMeta := #[]
+  let mut moduleCount := 0
+  for moduleStr in config.includeModules do
+    let moduleName := stringToModuleName moduleStr
+    let file := moduleToFile projectRoot moduleName
+    allMetas := allMetas ++ (← extractFile file moduleName)
+    moduleCount := moduleCount + 1
+  let outFile := projectRoot / config.jsonDir / "metadata.json"
   if let some dir := outFile.parent then
     IO.FS.createDirAll dir
-  IO.FS.writeFile outFile (toJson metas).pretty
-  let filtered := consts.size - metas.size
-  IO.println s!"LeanDoc: wrote {metas.size} declarations to {outFile} ({filtered} filtered as auto-generated)"
+  IO.FS.writeFile outFile (toJson allMetas).pretty
+  IO.println s!"LeanDoc: wrote {allMetas.size} declarations from {moduleCount} module(s) to {outFile}"
