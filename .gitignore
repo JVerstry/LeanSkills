@@ -4,3 +4,7 @@
 # LeanDoc's intermediate metadata JSON (regenerated on every run;
 # rendered output in docs/ is committed, this build artifact is not)
 .leandoc/
+
+# Working-notes task tracker — local scratch, never meant to be
+# versioned; purged from history 2026-09-21.
+wip/
