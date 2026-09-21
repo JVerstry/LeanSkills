@@ -14,60 +14,105 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
      a Lake project yet (LeanDoc extracts docs from an elaborated Lake
      build, so it needs one).
 
-2. Add LeanDoc as a Lake dependency
-   - In `lakefile.lean` / `lakefile.toml`, add a `require` entry pointing
-     at the LeanDoc repo (TODO: fill in the actual `require leandoc from
-     git "https://github.com/<owner>/LeanDoc" @ "<tag>"` line once
-     LeanDoc has a tagged release).
+2. Review installation parameters with the user before writing anything
+   - Do not silently apply defaults. Present each parameter below,
+     explain in a sentence what it controls, state the recommended
+     default, and ask the user to confirm it or give an override. Use
+     their answers in every later step instead of the defaults.
+
+     a. **Dependency version.** Which LeanDoc revision to pin in the
+        `require` line — a tag once releases exist, otherwise a branch
+        or commit. *Recommended default:* the latest tagged release; if
+        none exists yet, `main` (and flag that this is less stable than
+        pinning a tag, since `main` can change under them).
+     b. **Intermediate JSON directory (`json_dir`).** Where per-module
+        `metadata.json` build artifacts are written — regenerated every
+        run, gitignored, never meant to be read directly.
+        *Recommended default:* `.leandoc/`.
+     c. **Rendered docs directory (`docs_dir`).** Where the final
+        generated documentation is written. *Recommended default:*
+        `docs/`, since GitHub Pages can serve that directly from `main`
+        with zero extra config.
+     d. **Commit rendered docs to git?** Whether `docs_dir` is tracked
+        or gitignored. *Recommended default:* commit it (matches the
+        zero-config GitHub Pages story above). The alternative is
+        treating it as a pure CI/CD build artifact, published by a
+        separate workflow instead — only pick that if the user already
+        has (or wants) such a pipeline.
+     e. **Jekyll.** Whether the user plans to let GitHub Pages run
+        Jekyll over `docs_dir` (e.g. because they want Jekyll includes,
+        layouts, or a Jekyll theme). *Recommended default:* no — most
+        projects don't want Jekyll post-processing their generated
+        docs, since Jekyll ignores/rewrites underscore-prefixed
+        files/folders and applies its own theme to Markdown. Default to
+        adding a `docs_dir/.nojekyll` marker unless the user says they
+        do want Jekyll, in which case skip it.
+     f. **Included/excluded modules.** Which modules/namespaces LeanDoc
+        documents. *Recommended default:* everything the package
+        builds, with no exclusions — ask if there are internal
+        modules the user wants left out.
+
+3. Add LeanDoc as a Lake dependency
+   - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
+     `LeanDoc` package, pinned to the version confirmed in step 2a:
+
+       [[require]]
+       name = "LeanDoc"
+       git = "https://github.com/JVerstry/LeanDoc"
+       rev = "<step 2a value>"
+
+     (TODO: confirm this once LeanDoc has a tagged release — the
+     package name and repo URL are fixed now that `lakefile.toml`
+     exists, but no release has been cut yet, so `rev` still has to be
+     a branch/commit rather than a tag today.)
    - Run `lake update` to fetch it.
 
-3. Ensure a `docs/` output directory exists at the repo root
-   - Check whether `docs/` already exists. If it doesn't, create it.
-   - Add an empty `docs/.nojekyll` marker file if one isn't already
-     there, so GitHub Pages serves the eventual rendered output as-is
-     instead of running it through Jekyll (which would otherwise ignore
-     or rewrite underscore-prefixed files/folders and apply its own
-     theme to Markdown).
-   - Don't worry about populating `docs/` with real content yet — that
-     happens in step 5 (initial generation). This step just guarantees
-     the directory (and its GitHub Pages marker) exists so the repo's
-     Pages settings can be pointed at `main` / `/docs` immediately.
+4. Ensure the `docs_dir` from step 2c exists at the repo root
+   - Check whether it already exists. If it doesn't, create it.
+   - If step 2e's answer was "no Jekyll" (the default), add an empty
+     `docs_dir/.nojekyll` marker file if one isn't already there. Skip
+     this if the user said they do want Jekyll.
+   - Don't worry about populating it with real content yet — that
+     happens in step 6 (initial generation). This step just guarantees
+     the directory (and its GitHub Pages marker, if applicable) exists
+     so the repo's Pages settings can be pointed at `main` / that
+     directory immediately.
 
-4. Create a `leandoc.toml` config file at the repo root, sibling to
-   `lakefile.toml`. Start from sensible defaults and let the user adjust:
+5. Create a `leandoc.toml` config file at the repo root, sibling to
+   `lakefile.toml`, using the values confirmed in step 2:
 
      [output]
-     # Intermediate metadata JSON — build-artifact territory, gitignored.
-     json_dir = ".leandoc/"
-     # Final rendered docs — defaults to `docs/` so GitHub Pages can
-     # serve it straight from `main` with zero extra config.
-     docs_dir = "docs/"
+     json_dir = "<step 2b value, default .leandoc/>"
+     docs_dir = "<step 2c value, default docs/>"
 
      [modules]
-     # Which modules/namespaces to include. Default: everything the
-     # package builds. Add `exclude = [...]` for anything internal.
-     include = ["<PackageName>"]
+     include = ["<step 2f value, default: the whole package>"]
+     # exclude = [...]   # only if the user named exclusions in step 2f
 
    (TODO: finalize the real schema once the extractor/renderer land —
    this is a best-guess shape based on the current architecture, not a
    frozen spec.)
 
-5. Update `.gitignore`
-   - Add the `json_dir` from step 4 (default `.leandoc/`) so intermediate
-     metadata never gets committed — it's regenerated on every run, same
-     treatment as `.lake/`.
-   - Do NOT gitignore `docs_dir` (default `docs/`): rendered docs are
-     committed by default, matching the "GitHub Pages serves /docs on
-     main" story. Only gitignore it if the user explicitly asks for a
-     CI-driven publish workflow instead.
+6. Update `.gitignore`
+   - If the repo has no `.gitignore` yet, create one.
+   - Before appending anything, check whether `json_dir` (and, if
+     relevant, `docs_dir`) is already covered by an existing pattern
+     (an exact match, or a broader one like `.lean*` or a catch-all) —
+     don't add a duplicate or redundant entry.
+   - Add the `json_dir` from step 2b so intermediate metadata never
+     gets committed — it's regenerated on every run, same treatment as
+     `.lake/`.
+   - Only add `docs_dir` to `.gitignore` if the user chose "gitignored"
+     in step 2d. Otherwise leave it tracked.
 
-6. Run the initial generation (TODO: confirm actual invocation once it
+7. Run the initial generation (TODO: confirm actual invocation once it
    exists — expected shape is something like `lake exe leandoc` or a
    standalone `leandoc` binary reading `leandoc.toml` from the cwd).
 
-7. Report back to the user
+8. Report back to the user
    - Show what was added/changed (dependency line, `leandoc.toml`,
-     `.gitignore` diff).
+     `.gitignore` diff), and restate the parameter choices from step 2
+     so they have a record of what was decided.
    - Point them at where the generated docs landed (`docs_dir`).
    - Do not commit anything on their behalf without asking first.
 
