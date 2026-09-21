@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Lake build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake
+            demo/.lake
+          key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'demo/lean-toolchain', 'demo/lakefile.toml', 'demo/lake-manifest.json') }}
+
+      - name: lake build
+        run: lake build
+
+      - name: Run extractor + renderer on demo/
+        run: lake exe leandoc demo
+
+      - name: Run extractor + renderer on LeanDoc itself
+        run: lake exe leandoc
+
+      - name: Check generated docs are committed and up to date
+        run: |
+          if [ -n "$(git status --porcelain -- docs/api demo/docs/api)" ]; then
+            echo "::error::Generated docs are out of date or uncommitted." >&2
+            echo "Run 'lake exe leandoc' and 'lake exe leandoc demo' locally, then commit the result." >&2
+            git status --porcelain -- docs/api demo/docs/api
+            git --no-pager diff -- docs/api demo/docs/api
+            exit 1
+          fi
