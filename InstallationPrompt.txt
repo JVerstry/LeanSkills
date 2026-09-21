@@ -118,9 +118,11 @@ as placeholders to fill in once LeanDoc ships, not as verified commands.
    - Only add `docs_dir` to `.gitignore` if the user chose "gitignored"
      in step 2d. Otherwise leave it tracked.
 
-7. Run the initial generation (TODO: confirm actual invocation once it
-   exists — expected shape is something like `lake exe leandoc` or a
-   standalone `leandoc` binary reading `leandoc.toml` from the cwd).
+7. Run the initial generation: `lake exe leandoc <path-to-project>`
+   (real as of task T13 — the project path is a CLI argument, default
+   `.`). Run it from LeanDoc's own repo root, pointing at the target
+   project's directory (which must contain the `leandoc.toml` written
+   in step 5).
 
 8. Report back to the user
    - Show what was added/changed (dependency line, `leandoc.toml`,

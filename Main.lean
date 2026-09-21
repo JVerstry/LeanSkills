@@ -13,23 +13,21 @@ that JSON back off disk (a real read, not a reuse of the in-memory
 array — this exercises the file-based contract between the two stages,
 not just declares it) and writes Markdown pages.
 
-Still narrow: it targets one hardcoded project (`demo/`, LeanDoc's own
-demo/test-fixture project) rather than accepting a project path on the
-command line, module → file path mapping assumes the plain Lean
+Still narrow: module → file path mapping assumes the plain Lean
 convention (`Foo.Bar` ↔ `Foo/Bar.lean`, no custom `srcDir`), and the
 renderer only produces Markdown (no HTML, no theming). Both stages live
 in one executable for now — a deliberate simplification, since the
 architecture's "swappable renderer" promise is about the JSON contract
 staying stable, not about the two stages being separate *processes*
 from day one.
+
+Task T13: the project path is now a CLI argument (`lake exe leandoc
+[path]`), defaulting to `.` — LeanDoc's own repo — since dogfooding
+LeanDoc's own source is the primary case now that the pipeline works;
+`demo/` (the test fixture) needs `lake exe leandoc demo` explicitly.
 -/
 
 open Lean
-
-/-- The project this prototype extracts from. Not yet a CLI argument —
-see the module docstring. -/
-def projectRoot : System.FilePath :=
-  "demo"
 
 /-- `leandoc.toml`'s parsed shape (task T8). All fields have defaults so
 a project can omit the file entirely, or any section/field within it —
@@ -269,7 +267,7 @@ def render (jsonPath docsDir : System.FilePath) : IO Unit := do
   IO.FS.writeFile (apiDir / "index.md") (renderIndexPage moduleNames)
   IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {apiDir}"
 
-def main : IO Unit := do
+def main (args : List String) : IO Unit := do
   -- Needed so `Init`'s (and any other core module's) `.olean`s resolve;
   -- see `Lean.Shell`'s `lean` driver, which does the same before calling
   -- `runFrontend`.
@@ -278,6 +276,7 @@ def main : IO Unit := do
   -- `runFrontend` does); see `Lake.importModulesUsingCache`, which does
   -- the same before its own `importModules (loadExts := true)`.
   unsafe enableInitializersExecution
+  let projectRoot : System.FilePath := args.headD "."
   let config ← loadConfig (projectRoot / "leandoc.toml")
   if config.includeModules.isEmpty then
     IO.eprintln "LeanDoc: leandoc.toml has no [modules] include list (or the file is missing) — nothing to do. See wip/todo.md task T9 for whole-package scanning."

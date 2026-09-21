@@ -1,0 +1,14 @@
+
+# LeanDoc documenting itself (task T13 — dogfooding). See
+# demo/leandoc.toml for the schema reference, and InstallationPrompt.txt
+# / wip/todo.md task T8 for the rationale.
+
+[output]
+json_dir = ".leandoc/"
+docs_dir = "docs/"
+
+[modules]
+include = ["Main"]
+
+[renderer]
+name = "markdown"
