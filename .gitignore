@@ -1,2 +1,6 @@
 # cache and other artifacts produced by Lean's Lake build tool
 .lake/
+
+# LeanDoc's intermediate metadata JSON (regenerated on every run;
+# rendered output in docs/ is committed, this build artifact is not)
+.leandoc/
