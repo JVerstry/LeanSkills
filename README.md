@@ -45,11 +45,30 @@ which one a given piece of documentation or setup step is for:
   here, and `InstallationPrompt.txt` deliberately never sets any of it
   up.
 - **Developers** work on LeanDoc's own source (this repository). That
-  includes `test/` (the test suite, run via `lake exe test`) and
+  includes `test/` (the test suite, run via `lake exe test`),
   `.githooks/pre-commit`, which runs that suite before every commit —
   opt in once with `git config core.hooksPath .githooks` (not
   automatic; `.git/hooks/` itself is never committed, so shipping a
   hook via a tracked file and asking developers to point Git at it is
-  the standard way to distribute one at all). This costs real time per
-  commit (a full `lake exe test` run) in exchange for catching a
-  regression locally instead of only in CI after a push.
+  the standard way to distribute one at all) — and `demo/`, a
+  standalone Lake project (its own `lean-toolchain`/`lakefile.toml`/
+  `leandoc.toml`) used purely as `test/`'s fixture: real source
+  `lake exe leandoc` is run against to verify the extractor/renderer,
+  not anything an installing user's own project needs or touches.
+  This costs real time per commit (a full `lake exe test` run) in
+  exchange for catching a regression locally instead of only in CI
+  after a push.
+  - `demo/`, `test/`, and `.githooks/` do still end up physically on
+    disk in an installing user's `.lake/packages/LeanDoc/` — confirmed
+    empirically (task T35, 2026-09-22, testing a real `git`-based
+    `require` against a local clone): Lake fetches the *whole* LeanDoc
+    repo via `git clone`, and there's no Lake mechanism to exclude a
+    subdirectory from that. But none of it is ever *built* or *run* as
+    part of your project: `lake build`/`lake exe leandoc` only build
+    LeanDoc's own top-level targets (`LeanDoc.Core`, `Main`), never
+    `demo/`'s separate nested Lake package, and `lake exe leandoc`
+    operates on your project's own root (confirmed: it generated docs
+    for the calling project's own declarations, not `demo/`'s) — the
+    same "inert files present, never executed" situation as any other
+    Lean/Lake git dependency that happens to ship its own examples or
+    tests in its repo.
