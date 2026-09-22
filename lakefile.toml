@@ -16,9 +16,17 @@ root = "Main"
 supportInterpreter = true
 
 # Task T24: functionality + non-regression tests, kept in test/ rather
-# than mixed into the package's own module namespace.
+# than mixed into the package's own module namespace. Named
+# `leandoc-test`, not the generic `test` (task T36, 2026-09-22): a
+# plain `test` executable target is exposed to any project that
+# requires LeanDoc as a dependency — `lake exe` resolves executables
+# from dependencies the same way as the current package's own — so an
+# installing user typing `lake exe test` for their *own* unrelated test
+# runner would silently invoke LeanDoc's instead, crashing with a
+# confusing raw exception (it assumes LeanDoc's own repo layout,
+# `demo/`, is present). Confirmed empirically before this rename.
 [[lean_exe]]
-name = "test"
+name = "leandoc-test"
 root = "Test"
 srcDir = "test"
 supportInterpreter = true

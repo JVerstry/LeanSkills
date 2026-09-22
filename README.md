@@ -45,7 +45,12 @@ which one a given piece of documentation or setup step is for:
   here, and `InstallationPrompt.txt` deliberately never sets any of it
   up.
 - **Developers** work on LeanDoc's own source (this repository). That
-  includes `test/` (the test suite, run via `lake exe test`),
+  includes `test/` (the test suite, run via `lake exe leandoc-test` —
+  named that rather than the generic `test`, task T36, since a plain
+  `test` executable target would be exposed to any project that
+  requires LeanDoc as a dependency, and an installing user typing
+  `lake exe test` for their own unrelated test runner would silently
+  invoke LeanDoc's instead, crashing confusingly),
   `.githooks/pre-commit`, which runs that suite before every commit —
   opt in once with `git config core.hooksPath .githooks` (not
   automatic; `.git/hooks/` itself is never committed, so shipping a
@@ -55,8 +60,8 @@ which one a given piece of documentation or setup step is for:
   `leandoc.toml`) used purely as `test/`'s fixture: real source
   `lake exe leandoc` is run against to verify the extractor/renderer,
   not anything an installing user's own project needs or touches.
-  This costs real time per commit (a full `lake exe test` run) in
-  exchange for catching a regression locally instead of only in CI
+  This costs real time per commit (a full `lake exe leandoc-test` run)
+  in exchange for catching a regression locally instead of only in CI
   after a push.
   - `demo/`, `test/`, and `.githooks/` do still end up physically on
     disk in an installing user's `.lake/packages/LeanDoc/` — confirmed

@@ -16,5 +16,5 @@
 # tracked file instead).
 
 set -e
-echo "LeanDoc pre-commit: running test suite (lake exe test)..."
-lake exe test
+echo "LeanDoc pre-commit: running test suite (lake exe leandoc-test)..."
+lake exe leandoc-test
