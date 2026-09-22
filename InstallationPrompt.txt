@@ -51,15 +51,17 @@ updates as the interface stabilizes.
         files/folders and applies its own theme to Markdown. Default to
         adding a `docs_dir/.nojekyll` marker unless the user says they
         do want Jekyll, in which case skip it.
-     f. **Included/excluded modules.** Which modules LeanDoc documents,
-        as dotted module names (e.g. `"Foo.Bar"`), one per entry.
-        *Current limitation:* whole-package scanning doesn't exist yet
-        (task T21 — a real backlog item as of 2026-09-21; earlier
-        drafts of this file mislabeled it "T9", which was actually the
-        renderer) — you must ask the user to name every top-level
-        module they want documented; there's no "everything" default
-        today. Ask separately if there are internal modules to exclude
-        once whole-package scanning lands.
+     f. **Included/excluded modules.** *Recommended default:* leave
+        `include` empty — LeanDoc scans the project's own
+        `lakefile.toml` (its `lean_lib`/`lean_exe` targets) and
+        documents everything it finds (task T21, done 2026-09-21).
+        Only ask the user to name modules explicitly in `include` if
+        they want a subset rather than the whole package. Only
+        understands `lakefile.toml`, not the `lakefile.lean` DSL — a
+        project using the latter still needs an explicit `include`
+        list. Ask about `exclude` (dotted module names, e.g.
+        `"Foo.Bar"`) if there are internal modules to leave out either
+        way.
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -98,7 +100,9 @@ updates as the interface stabilizes.
      docs_dir = "<step 2c value, default docs/>"
 
      [modules]
-     include = ["<step 2f value>"]
+     # include = [...]   # leave empty for whole-package scanning
+                         # (recommended default); only set if the user
+                         # wants a subset (step 2f)
      # exclude = [...]   # only if the user named exclusions in step 2f
 
      [renderer]
@@ -107,11 +111,10 @@ updates as the interface stabilizes.
                          # there's no real choice to make here yet
 
    `include`/`exclude` entries are dotted Lean module names (e.g.
-   `"Foo.Bar"`), one per module — **not** yet "the whole package" by
-   default. Whole-package scanning (so `include` can be omitted
-   entirely) is task T21; today, an empty or missing `include` list
-   means the extractor has nothing to do. Ask the user which modules
-   they want documented if this comes up during install.
+   `"Foo.Bar"`). Leaving `include` empty is now the recommended default
+   (task T21, done) — LeanDoc scans the project's `lakefile.toml` for
+   its `lean_lib`/`lean_exe` targets and documents everything it finds.
+   Only fill in `include` if the user wants a subset.
 
 6. Update `.gitignore`
    - If the repo has no `.gitignore` yet, create one.

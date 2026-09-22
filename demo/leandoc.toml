@@ -1,10 +1,13 @@
 
 # LeanDoc configuration for this project. See LeanDoc's own
 # InstallationPrompt.txt / wip/todo.md (task T8) for the schema
-# rationale. All fields shown here are also the defaults, except
-# `modules.include`, which has no default (an empty list means "the
-# whole package" once T9's project-wide scanning exists — for now,
-# this prototype only processes exactly the modules listed here).
+# rationale. All fields shown here are also the defaults.
+#
+# `[modules] include` is deliberately left empty here (task T21): with
+# no explicit list, LeanDoc scans this project's own lakefile.toml
+# (the `[[lean_lib]] name = "Demo", globs = ["Demo.+"]` entry) to
+# discover `Demo.MyLeanFile` on its own, rather than being told about
+# it by hand — this is the whole-package-scanning test case.
 
 [output]
 # Intermediate metadata JSON — build-artifact territory, gitignored.
@@ -14,9 +17,10 @@ json_dir = ".leandoc/"
 docs_dir = "docs/"
 
 [modules]
-include = ["Demo.MyLeanFile"]
+# include = [...]   # left empty on purpose — see note above
 # exclude = [...]
 
 [renderer]
-# Reserved for T9 (no renderer exists yet, so this is unused for now).
+# Reserved for T9's future renderer choice — Markdown is the only one
+# that exists, so this isn't acted on yet.
 name = "markdown"

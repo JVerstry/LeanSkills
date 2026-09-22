@@ -119,6 +119,47 @@ Maps a module name to its source file, assuming the plain Lean
 convention (`Foo.Bar` ↔ `<root>/Foo/Bar.lean`) — no `srcDir` override
 support yet. 
 
+### `fileToModuleName`
+
+*def*
+
+```lean
+fileToModuleName : System.FilePath → System.FilePath → Lean.Name
+```
+
+Maps a source file back to its dotted module name, the inverse of
+`moduleToFile` — used by whole-package scanning (task T21) to name files
+it discovers rather than was told about. Built from `FilePath.parent`
+(for the namespace prefix) and `FilePath.fileStem` (for the last
+component) rather than manual string surgery on the path, so it doesn't
+care whether the path uses `/` or `\` — the same class of bug T9 hit
+building *links* out of raw `FilePath` strings, avoided here by not
+doing that in the first place. 
+
+### `discoverModules`
+
+*def*
+
+```lean
+discoverModules : System.FilePath → IO (Array String)
+```
+
+Whole-package scanning (task T21): when `leandoc.toml` doesn't list
+modules explicitly, read the target project's own `lakefile.toml` to
+find what it actually builds, instead of requiring every module to be
+named by hand. Only understands `lakefile.toml`, not the `lakefile.lean`
+DSL — a project using the latter needs an explicit `include` list.
+
+Mirrors Lake's own defaulting rules (see its README): a `lean_exe`'s
+`root` defaults to its `name`; a `lean_lib`'s `roots` default to
+`[name]`, and its `globs` default to one `Glob.one` (bare module, no
+expansion) per root unless the config says otherwise. A glob ending in
+`.+` means "submodules only" (the root itself isn't a real module);
+`.*` means "the root module and its submodules". Submodule expansion
+walks the filesystem (`System.FilePath.walkDir`) rather than trying to
+statically enumerate without touching disk, since that's what "which
+files actually exist" requires. 
+
 ### `stringToModuleName`
 
 *def*

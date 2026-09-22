@@ -84,6 +84,75 @@ def moduleToFile (root : System.FilePath) (m : Name) : System.FilePath :=
   let path := (m.toString.splitOn ".").foldl (init := root) (· / ·)
   path.addExtension "lean"
 
+/-- Maps a source file back to its dotted module name, the inverse of
+`moduleToFile` — used by whole-package scanning (task T21) to name files
+it discovers rather than was told about. Built from `FilePath.parent`
+(for the namespace prefix) and `FilePath.fileStem` (for the last
+component) rather than manual string surgery on the path, so it doesn't
+care whether the path uses `/` or `\` — the same class of bug T9 hit
+building *links* out of raw `FilePath` strings, avoided here by not
+doing that in the first place. -/
+def fileToModuleName (root file : System.FilePath) : Name :=
+  let dirComponents := (file.parent.getD root).components.drop root.components.length
+  let stem := file.fileStem.getD file.toString
+  (dirComponents ++ [stem]).foldl Name.mkStr .anonymous
+
+open Lake.Toml in
+/-- Whole-package scanning (task T21): when `leandoc.toml` doesn't list
+modules explicitly, read the target project's own `lakefile.toml` to
+find what it actually builds, instead of requiring every module to be
+named by hand. Only understands `lakefile.toml`, not the `lakefile.lean`
+DSL — a project using the latter needs an explicit `include` list.
+
+Mirrors Lake's own defaulting rules (see its README): a `lean_exe`'s
+`root` defaults to its `name`; a `lean_lib`'s `roots` default to
+`[name]`, and its `globs` default to one `Glob.one` (bare module, no
+expansion) per root unless the config says otherwise. A glob ending in
+`.+` means "submodules only" (the root itself isn't a real module);
+`.*` means "the root module and its submodules". Submodule expansion
+walks the filesystem (`System.FilePath.walkDir`) rather than trying to
+statically enumerate without touching disk, since that's what "which
+files actually exist" requires. -/
+def discoverModules (projectRoot : System.FilePath) : IO (Array String) := do
+  let lakefilePath := projectRoot / "lakefile.toml"
+  unless (← lakefilePath.pathExists) do
+    IO.eprintln s!"LeanDoc: whole-package scanning needs {lakefilePath} — lakefile.lean projects aren't supported yet, so `leandoc.toml` needs an explicit [modules] include list."
+    return #[]
+  let input ← IO.FS.readFile lakefilePath
+  let ictx := Parser.mkInputContext input (toString lakefilePath)
+  match (← loadToml ictx |>.toBaseIO) with
+  | .error _ =>
+    IO.eprintln s!"LeanDoc: couldn't parse {lakefilePath} for whole-package scanning."
+    return #[]
+  | .ok table =>
+    let .ok (exeRoots, libGlobs) _errs := EStateM.run (s := #[]) do
+      let exeTables ← table.tryDecodeD `lean_exe (#[] : Array Table)
+      let exeRoots ← exeTables.mapM fun t => do
+        let name ← t.tryDecodeD `name "Main"
+        t.tryDecodeD `root name
+      let libTables ← table.tryDecodeD `lean_lib (#[] : Array Table)
+      let libGlobs ← libTables.mapM fun t => do
+        let name ← t.tryDecodeD `name "Main"
+        let roots ← t.tryDecodeD `roots (#[name] : Array String)
+        t.tryDecodeD `globs roots
+      pure (exeRoots, libGlobs)
+    let mut modules := exeRoots
+    for globs in libGlobs do
+      for glob in globs do
+        if glob.endsWith ".+" || glob.endsWith ".*" then
+          let includeRootModule := glob.endsWith ".*"
+          let base := (glob.take (glob.length - 2)).toString
+          if includeRootModule then
+            modules := modules.push base
+          let baseDir := (base.splitOn ".").foldl (init := projectRoot) (· / ·)
+          if (← baseDir.pathExists) then
+            for p in (← System.FilePath.walkDir baseDir) do
+              if p.extension == some "lean" then
+                modules := modules.push (fileToModuleName projectRoot p).toString
+        else
+          modules := modules.push glob
+    return modules
+
 /-- Builds a hierarchical `Name` (`Foo.Bar`) from its dotted-string form
 (`"Foo.Bar"`), as `leandoc.toml`'s `[modules] include` entries are
 written. -/
@@ -278,12 +347,24 @@ def main (args : List String) : IO Unit := do
   unsafe enableInitializersExecution
   let projectRoot : System.FilePath := args.headD "."
   let config ← loadConfig (projectRoot / "leandoc.toml")
-  if config.includeModules.isEmpty then
-    IO.eprintln "LeanDoc: leandoc.toml has no [modules] include list (or the file is missing) — nothing to do. See wip/todo.md task T9 for whole-package scanning."
+  -- Task T21: an explicit [modules] include list is used as-is; an
+  -- empty/missing one falls back to whole-package scanning instead of
+  -- immediately giving up.
+  let discovered ← if config.includeModules.isEmpty then
+      discoverModules projectRoot
+    else
+      pure config.includeModules
+  -- `exclude` applies either way — even to an explicit include list,
+  -- since naming something in both isn't a use case worth rejecting.
+  let isExcluded (m : String) : Bool :=
+    config.exclude.any fun ex => m == ex || m.startsWith (ex ++ ".")
+  let effectiveModules := discovered.filter (!isExcluded ·)
+  if effectiveModules.isEmpty then
+    IO.eprintln "LeanDoc: nothing to document — leandoc.toml has no [modules] include list and whole-package scanning found nothing (or every discovered module was excluded)."
     IO.Process.exit 1
   let mut allMetas : Array DeclMeta := #[]
   let mut moduleCount := 0
-  for moduleStr in config.includeModules do
+  for moduleStr in effectiveModules do
     let moduleName := stringToModuleName moduleStr
     let file := moduleToFile projectRoot moduleName
     allMetas := allMetas ++ (← extractFile file moduleName)

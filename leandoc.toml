@@ -8,7 +8,7 @@ json_dir = ".leandoc/"
 docs_dir = "docs/"
 
 [modules]
-include = ["Main"]
+# include = [...]   # left empty to test T21's lean_exe discovery path
 
 [renderer]
 name = "markdown"
