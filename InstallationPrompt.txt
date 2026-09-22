@@ -185,6 +185,60 @@ updates as the interface stabilizes.
      so they have a record of what was decided.
    - Point them at where the generated docs landed (`docs_dir`).
    - Do not commit anything on their behalf without asking first.
+   - **Mention, but do not set up, a CI drift-check** (task T20): CI
+     that regenerates docs on every push/PR and fails if the result
+     doesn't match what's committed — catching "docs committed but not
+     regenerated after a source change" the same way LeanDoc's own CI
+     does for its own repo. This is deliberately **not** an automatic
+     part of this install flow, for one concrete reason: the `require`
+     line from step 3 still pins a branch, not a tagged release (no
+     release exists yet — see the STATUS NOTE at the top of this file),
+     so a generated CI workflow would silently pick up LeanDoc's own
+     breaking changes on every run. Only write the workflow below if
+     the user explicitly asks for it (and flag that caveat when they
+     do, so it's an informed choice, not a surprise later):
+
+     ```yaml
+     name: Docs freshness
+     on:
+       push:
+         branches: [main]
+       pull_request:
+         branches: [main]
+     jobs:
+       check:
+         runs-on: ubuntu-latest
+         steps:
+           - uses: actions/checkout@v4
+           - name: Install elan
+             run: |
+               curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+               echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+           - name: Cache Lake build artifacts
+             uses: actions/cache@v4
+             with:
+               path: .lake
+               key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json') }}
+           - run: lake build
+           - run: lake exe leandoc
+           - name: Check generated docs are committed and up to date
+             run: |
+               if [ -n "$(git status --porcelain -- <docs_dir>/api)" ]; then
+                 echo "::error::Generated docs are out of date or uncommitted." >&2
+                 echo "Run 'lake exe leandoc' locally, then commit the result." >&2
+                 git status --porcelain -- <docs_dir>/api
+                 exit 1
+               fi
+     ```
+
+     Substitute the real `docs_dir` (step 2c's value) for `<docs_dir>`.
+     This deliberately only gates `<docs_dir>/api` (the *generated*
+     output), not all of `docs_dir` — a project may have hand-written
+     pages alongside it that CI shouldn't fail on. Fails the build
+     rather than auto-committing the regenerated docs: consistent with
+     "do not commit on the user's behalf without asking," above — an
+     auto-committing CI job is a bigger trust step this file doesn't
+     take unless asked to.
 
 If any step fails because LeanDoc's actual interface differs from what's
 described here (this file may be stale relative to a newer LeanDoc
