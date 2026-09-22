@@ -18,7 +18,7 @@ project's size warrants). Three tiers:
   against throughout this backlog, now pinned as an automated check
   instead of something re-verified by hand after every change.
 - **Project hygiene**: required top-level files (`README.md`,
-  `InstallationPrompt.txt`, `AGENTS.md`) still exist, and `wip/` stays
+  `InstallationPrompt.txt`) still exist, and `wip/`/`CLAUDE.md` stay
   untracked by git — not code checks, but
   regressions with no other automated guard.
 
@@ -152,14 +152,19 @@ def main : IO Unit := do
       d.name == "MyLeanModule.myLeanUndocumentedFunction" && d.docString.isNone)
 
   -- ## Project hygiene: required top-level files exist, and the
-  -- working-notes tracker stays out of git.
+  -- working-notes tracker / personal Claude Code config stay out of
+  -- git.
   --
   -- These don't test *code*, but a missing/accidentally-deleted
-  -- top-level doc, or `wip/` silently getting tracked again, are real
-  -- regressions with no other automated guard — CI's output-freshness
-  -- diff (T11) wouldn't catch either.
+  -- top-level doc, or `wip/`/`CLAUDE.md` silently getting tracked
+  -- again, are real regressions with no other automated guard — CI's
+  -- output-freshness diff (T11) wouldn't catch either. `AGENTS.md` was
+  -- removed from this list (task T32/T33, 2026-09-22): judged not
+  -- worth maintaining as a committed, AI-agent-facing doc separate
+  -- from `README.md` — its useful content moved to a personal,
+  -- gitignored `CLAUDE.md` instead, same treatment as `wip/`.
 
-  for file in #["README.md", "InstallationPrompt.txt", "AGENTS.md"] do
+  for file in #["README.md", "InstallationPrompt.txt"] do
     s ← s.check s!"{file} exists" (← System.FilePath.pathExists file)
   -- `QualityAuditPrompt.txt` intentionally left out until T17 actually
   -- ships (2026-09-22): a draft existed briefly but T17 was explicitly
@@ -170,6 +175,10 @@ def main : IO Unit := do
   let wipTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "wip"] }
   s ← s.check "wip/ has no files tracked by git"
     (wipTracked.exitCode == 0 && wipTracked.stdout.trimAscii.isEmpty)
+
+  let claudeTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "CLAUDE.md"] }
+  s ← s.check "CLAUDE.md has no files tracked by git"
+    (claudeTracked.exitCode == 0 && claudeTracked.stdout.trimAscii.isEmpty)
 
   IO.println s!"LeanDoc tests: {s.passed} passed, {s.failed} failed"
   if s.failed > 0 then

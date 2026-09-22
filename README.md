@@ -33,10 +33,6 @@ will suggest ways to address it.
   (gitignored, regenerated every run); final rendered docs in `docs/`
   (committed to git); configuration in `leandoc.toml`.
 
-For anything beyond this summary — architecture rationale, why certain
-approaches were dropped, specific notes — go to
-[`AGENTS.md`](AGENTS.md).
-
 ## Users vs. developers of LeanDoc
 
 These are different audiences with different tooling, and it matters

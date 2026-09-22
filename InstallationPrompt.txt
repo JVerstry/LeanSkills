@@ -183,5 +183,5 @@ updates as the interface stabilizes.
 
 If any step fails because LeanDoc's actual interface differs from what's
 described here (this file may be stale relative to a newer LeanDoc
-release), say so plainly and fall back to LeanDoc's own README.md/AGENTS.md
-in its repo for the current interface.
+release), say so plainly and fall back to LeanDoc's own README.md in
+its repo for the current interface.

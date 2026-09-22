@@ -8,3 +8,8 @@
 # Working-notes task tracker — local scratch, never meant to be
 # versioned; purged from history 2026-09-21.
 wip/
+
+# Personal Claude Code config — local scratch, never meant to be
+# versioned (task T32/T33, 2026-09-22); purged from history same day,
+# same treatment as wip/ above.
+CLAUDE.md

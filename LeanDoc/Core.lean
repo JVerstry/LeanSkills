@@ -7,7 +7,7 @@ import Lake.Toml
 The reusable logic behind `lake exe leandoc` (see `Main.lean`), pulled
 into its own library module (task T24) so `test/` can import and
 exercise it directly instead of only being testable by running the
-whole executable end-to-end. See `AGENTS.md` / `README.md`
+whole executable end-to-end. See `README.md`
 for the architecture writeup this implements: the **extractor** reads a
 project's `leandoc.toml`, runs Lean's own frontend over each included
 module, walks the resulting `Environment` for the declarations it

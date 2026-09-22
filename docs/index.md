@@ -52,5 +52,4 @@ See [`README.md`](https://github.com/JVerstry/LeanDoc/blob/main/README.md)'s
 "Users vs. developers of LeanDoc" section for a quick orientation
 (task T30, 2026-09-22: folded in from this site's former
 `conventions.md`, which was judged an unnecessary extra page for
-content that fit fine in the README), or `AGENTS.md` in the repository
-root for the full set of project conventions.
+content that fit fine in the README).
