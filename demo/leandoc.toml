@@ -24,3 +24,7 @@ docs_dir = "docs/"
 # Reserved for T9's future renderer choice — Markdown is the only one
 # that exists, so this isn't acted on yet.
 name = "markdown"
+# Whether generated pages target Jekyll: front matter, {% link %}
+# internal links, a written _config.yml (task T22/T28) — vs. plain
+# portable Markdown with ordinary relative links (task T31).
+jekyll = true

@@ -62,6 +62,21 @@ updates as the interface stabilizes.
         list. Ask about `exclude` (dotted module names, e.g.
         `"Foo.Bar"`) if there are internal modules to leave out either
         way.
+     f. **Jekyll-targeted output (`[renderer] jekyll`).** Whether
+        generated pages carry Jekyll front matter, use Jekyll's
+        `{% link %}` tag for internal links, and get a written
+        `_config.yml` (task T22/T28/T31) — vs. plain, portable Markdown
+        with ordinary relative links and no Jekyll-specific content.
+        *Recommended default:* `true` (the LeanDoc default) whenever
+        `docs_dir` will be published via GitHub Pages from step 2c/2d's
+        defaults, since GitHub Pages runs Jekyll on `docs_dir` unless
+        told not to — `false` output left in that setup would be served
+        unprocessed (raw Markdown source, not a readable page). Set to
+        `false` only if the user has explicitly said they don't want
+        GitHub Pages/Jekyll for these docs (browsing in an IDE, serving
+        from elsewhere, or an existing Jekyll setup they don't want
+        LeanDoc's `_config.yml`/`{% link %}` output mixed into — see
+        step 4's note on existing `docs_dir` content either way).
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -83,13 +98,25 @@ updates as the interface stabilizes.
    - Don't worry about populating it with real content yet — that
      happens in step 6 (initial generation). This step just guarantees
      the directory exists so the repo's Pages settings can be pointed at
-     `main` / that directory immediately. No `.nojekyll` marker is
-     needed: LeanDoc's renderer emits Jekyll-ready output by default
-     (front matter on every page, a `_config.yml` picking a
-     GitHub-Pages-supported theme, internal links via Jekyll's
-     `{% link %}` tag — task T22/T28), so GitHub Pages' default Jekyll
-     processing is what actually turns the generated Markdown into a
-     styled site rather than something to opt out of.
+     `main` / that directory immediately. If step 2f's answer was
+     `jekyll = true` (the default), no `.nojekyll` marker is needed:
+     LeanDoc's renderer emits Jekyll-ready output itself (front matter
+     on every page, a `_config.yml` picking a GitHub-Pages-supported
+     theme, internal links via Jekyll's `{% link %}` tag — task
+     T22/T28), so GitHub Pages' default Jekyll processing is what
+     actually turns the generated Markdown into a styled site.
+   - **If `docs_dir` already has hand-written Markdown pages in it**
+     (e.g. an existing landing page) and step 2f's answer is
+     `jekyll = true`: LeanDoc's renderer only adds front matter to the
+     pages *it* generates (under `docs_dir/api/`), never to existing
+     hand-written ones — task T31. Check any pre-existing `.md` files
+     directly under `docs_dir` and, if Jekyll processing is wanted site-
+     wide, add an empty front-matter block (`---\n---\n`) to each one
+     that's missing it; otherwise those pages stay unprocessed "static
+     files" sitting next to processed generated ones — an inconsistent,
+     partly-broken site. Tell the user what was changed rather than
+     doing this silently. If `jekyll = false` was chosen instead, skip
+     this — nothing in `docs_dir` should have Jekyll-specific content.
 
 5. Create a `leandoc.toml` config file at the repo root, sibling to
    `lakefile.toml`, using the values confirmed in step 2. This schema
@@ -111,6 +138,9 @@ updates as the interface stabilizes.
      name = "markdown"   # parsed but not yet acted on — Markdown is
                          # the only renderer that exists (task T9), so
                          # there's no real choice to make here yet
+     jekyll = <step 2f value, default true>   # front matter, {% link %}
+                         # links, and a written _config.yml (task
+                         # T22/T28/T31) vs. plain portable Markdown
 
    `include`/`exclude` entries are dotted Lean module names (e.g.
    `"Foo.Bar"`). Leaving `include` empty is now the recommended default

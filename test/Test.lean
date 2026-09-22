@@ -67,11 +67,25 @@ def main : IO Unit := do
   -- ## Regression: T9's Windows path-separator link bug.
   -- `renderIndexPage` must emit forward-slash links unconditionally,
   -- not via `System.FilePath`'s native-separator stringification.
-  let indexPage := renderIndexPage #["Demo.MyLeanFile"]
+  let indexPage := renderIndexPage #["Demo.MyLeanFile"] true
   s ← s.check "renderIndexPage never emits a backslash"
     (!(indexPage.any (· == '\\')))
   s ← s.check "renderIndexPage links with forward slashes"
     ((indexPage.splitOn "Demo/MyLeanFile.md").length > 1)
+
+  -- ## Unit-level: T22/T28/T31's Jekyll-targeted output, and the
+  -- `jekyll := false` opt-out (task T31).
+  s ← s.check "renderIndexPage (jekyll) emits front matter"
+    (indexPage.startsWith "---\n---\n")
+  s ← s.check "renderIndexPage (jekyll) links via {% link %}, api/-prefixed"
+    ((indexPage.splitOn "{% link api/Demo/MyLeanFile.md %}").length > 1)
+  let plainIndexPage := renderIndexPage #["Demo.MyLeanFile"] false
+  s ← s.check "renderIndexPage (no jekyll) has no front matter"
+    (!plainIndexPage.startsWith "---\n---\n")
+  s ← s.check "renderIndexPage (no jekyll) uses a plain relative link"
+    ((plainIndexPage.splitOn "(Demo/MyLeanFile.md)").length > 1)
+  s ← s.check "renderIndexPage (no jekyll) emits no Liquid syntax"
+    (!plainIndexPage.any (· == '%'))
 
   -- ## Unit-level: rendering content
 

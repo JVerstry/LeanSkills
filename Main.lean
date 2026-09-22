@@ -54,4 +54,4 @@ def main (args : List String) : IO Unit := do
     IO.FS.createDirAll dir
   IO.FS.writeFile outFile (toJson allMetas).pretty
   IO.println s!"LeanDoc: wrote {allMetas.size} declarations from {moduleCount} module(s) to {outFile}"
-  render outFile (projectRoot / config.docsDir)
+  render outFile (projectRoot / config.docsDir) config.rendererJekyll

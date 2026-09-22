@@ -21,7 +21,7 @@ empty list falls back to whole-package scanning, task T21).
 *constructor*
 
 ```lean
-LeanDocConfig.mk : System.FilePath → System.FilePath → Array String → Array String → String → LeanDocConfig
+LeanDocConfig.mk : System.FilePath → System.FilePath → Array String → Array String → String → Bool → LeanDocConfig
 ```
 
 *(not documented)*
@@ -76,6 +76,22 @@ LeanDocConfig.rendererName : LeanDocConfig → String
 
 Reserved for a future renderer choice — Markdown is the only one
 that exists, so this isn't acted on yet. 
+
+### `LeanDocConfig.rendererJekyll`
+
+*def*
+
+```lean
+LeanDocConfig.rendererJekyll : LeanDocConfig → Bool
+```
+
+Whether generated pages target Jekyll (task T31): front matter,
+`{% link %}` internal links, and a written `_config.yml` (task
+T22/T28) vs. plain portable Markdown with plain relative links and no
+`_config.yml`. Defaults to `true` since `docs_dir` is committed to git
+for GitHub Pages by default (T15/T22), and GitHub Pages runs Jekyll by
+default — set to `false` for output meant to be read as plain
+Markdown (an IDE, a non-Jekyll/non-Pages host) instead. 
 
 ### `instInhabitedLeanDocConfig.default`
 
@@ -511,19 +527,21 @@ wouldn't be "a page" as far as Jekyll is concerned.
 *def*
 
 ```lean
-renderModulePage : String → Array DeclMeta → String
+renderModulePage : String → Array DeclMeta → Bool → String
 ```
 
 Renders one module's page: a heading plus every declaration's
 section, in the order the extractor emitted them (elaboration order —
-see `Environment.getLocalConstantInfos`). 
+see `Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
+whether front matter is prepended — `false` produces plain portable
+Markdown with no Jekyll-specific content at all. 
 
 ### `renderIndexPage`
 
 *def*
 
 ```lean
-renderIndexPage : Array String → String
+renderIndexPage : Array String → Bool → String
 ```
 
 Renders the API section's index: one line per module, linking to
@@ -550,7 +568,12 @@ Link targets are still built as plain `/`-joined strings, not via
 `moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
 regardless of host OS, but `FilePath`'s string rendering uses the native
 separator (`\` on Windows), which would silently break these links only
-on Windows. 
+on Windows.
+
+`jekyll` (task T31) controls both the front matter and which link form
+is used: `false` falls back to a plain relative `.md` link (portable,
+readable outside Jekyll, but 404s once Jekyll *does* process the page —
+never mix the two within one `docs_dir`). 
 
 ### `groupDeclsByModule`
 
@@ -598,10 +621,12 @@ file.
 *def*
 
 ```lean
-render : System.FilePath → System.FilePath → IO Unit
+render : System.FilePath → System.FilePath → Bool → IO Unit
 ```
 
 Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
 writes one Markdown page per module plus an index, under
-`docsDir/api/`. 
+`docsDir/api/`. `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`)
+controls whether the output targets Jekyll (front matter, `{% link %}`
+links, a written `_config.yml`) or is plain portable Markdown. 

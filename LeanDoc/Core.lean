@@ -39,6 +39,14 @@ structure LeanDocConfig where
   /-- Reserved for a future renderer choice — Markdown is the only one
   that exists, so this isn't acted on yet. -/
   rendererName : String := "markdown"
+  /-- Whether generated pages target Jekyll (task T31): front matter,
+  `{% link %}` internal links, and a written `_config.yml` (task
+  T22/T28) vs. plain portable Markdown with plain relative links and no
+  `_config.yml`. Defaults to `true` since `docs_dir` is committed to git
+  for GitHub Pages by default (T15/T22), and GitHub Pages runs Jekyll by
+  default — set to `false` for output meant to be read as plain
+  Markdown (an IDE, a non-Jekyll/non-Pages host) instead. -/
+  rendererJekyll : Bool := true
 deriving Inhabited
 
 open Lake.Toml in
@@ -72,7 +80,9 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let includeModules ← modules.tryDecodeD `include (#[] : Array String)
       let exclude ← modules.tryDecodeD `exclude (#[] : Array String)
       let rendererName ← renderer.tryDecodeD `name "markdown"
-      pure { jsonDir, docsDir, includeModules, exclude, rendererName : LeanDocConfig }
+      let rendererJekyll ← renderer.tryDecodeD `jekyll true
+      pure { jsonDir, docsDir, includeModules, exclude, rendererName, rendererJekyll
+             : LeanDocConfig }
     pure cfg
 
 /-- Maps a module name to its source file, assuming the plain Lean
@@ -295,10 +305,13 @@ def frontMatter : String := "---\n---\n\n"
 
 /-- Renders one module's page: a heading plus every declaration's
 section, in the order the extractor emitted them (elaboration order —
-see `Environment.getLocalConstantInfos`). -/
-def renderModulePage (moduleName : String) (decls : Array DeclMeta) : String :=
+see `Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
+whether front matter is prepended — `false` produces plain portable
+Markdown with no Jekyll-specific content at all. -/
+def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bool) : String :=
   let body := String.join ((decls.map renderDecl).toList.intersperse "\n")
-  s!"{frontMatter}# {moduleName}\n\n{body}"
+  let fm := if jekyll then frontMatter else ""
+  s!"{fm}# {moduleName}\n\n{body}"
 
 /-- Renders the API section's index: one line per module, linking to
 its page. Deliberately minimal — task T18 covers a real table of
@@ -324,17 +337,26 @@ Link targets are still built as plain `/`-joined strings, not via
 `moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
 regardless of host OS, but `FilePath`'s string rendering uses the native
 separator (`\` on Windows), which would silently break these links only
-on Windows. -/
-def renderIndexPage (moduleNames : Array String) : String :=
+on Windows.
+
+`jekyll` (task T31) controls both the front matter and which link form
+is used: `false` falls back to a plain relative `.md` link (portable,
+readable outside Jekyll, but 404s once Jekyll *does* process the page —
+never mix the two within one `docs_dir`). -/
+def renderIndexPage (moduleNames : Array String) (jekyll : Bool) : String :=
   let linkPath (m : String) : String := (m.splitOn ".").foldl (init := "") fun acc part =>
     if acc.isEmpty then part else s!"{acc}/{part}"
   let items := moduleNames.map fun m =>
-    -- Built with `++`, not `s!"..."`, because the literal Liquid
-    -- `{% ... %}` braces would otherwise be parsed as string
-    -- interpolation syntax.
-    "- [" ++ m ++ "](" ++ "{% link api/" ++ linkPath m ++ ".md %}" ++ ")"
+    if jekyll then
+      -- Built with `++`, not `s!"..."`, because the literal Liquid
+      -- `{% ... %}` braces would otherwise be parsed as string
+      -- interpolation syntax.
+      "- [" ++ m ++ "](" ++ "{% link api/" ++ linkPath m ++ ".md %}" ++ ")"
+    else
+      s!"- [{m}]({linkPath m}.md)"
   let body := String.join (items.toList.intersperse "\n")
-  s!"{frontMatter}# API Reference\n\n{body}\n"
+  let fm := if jekyll then frontMatter else ""
+  s!"{fm}# API Reference\n\n{body}\n"
 
 /-- Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). -/
@@ -371,8 +393,10 @@ def ensureJekyllConfig (docsDir : System.FilePath) : IO Unit := do
 /-- Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
 writes one Markdown page per module plus an index, under
-`docsDir/api/`. -/
-def render (jsonPath docsDir : System.FilePath) : IO Unit := do
+`docsDir/api/`. `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`)
+controls whether the output targets Jekyll (front matter, `{% link %}`
+links, a written `_config.yml`) or is plain portable Markdown. -/
+def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
     | IO.eprintln s!"LeanDoc: {jsonPath} is not valid JSON, can't render."
@@ -382,13 +406,14 @@ def render (jsonPath docsDir : System.FilePath) : IO Unit := do
       IO.Process.exit 1
   let apiDir := docsDir / "api"
   IO.FS.createDirAll apiDir
-  ensureJekyllConfig docsDir
+  if jekyll then
+    ensureJekyllConfig docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName
     let path := apiDir / moduleToDocPath moduleName
     if let some dir := path.parent then
       IO.FS.createDirAll dir
-    IO.FS.writeFile path (renderModulePage moduleName decls)
-  IO.FS.writeFile (apiDir / "index.md") (renderIndexPage moduleNames)
+    IO.FS.writeFile path (renderModulePage moduleName decls jekyll)
+  IO.FS.writeFile (apiDir / "index.md") (renderIndexPage moduleNames jekyll)
   IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {apiDir}"
