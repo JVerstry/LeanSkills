@@ -113,7 +113,7 @@ updates as the interface stabilizes.
    - **If `docs_dir` already has hand-written Markdown pages in it**
      (e.g. an existing landing page) and step 2f's answer is
      `jekyll = true`: LeanDoc's renderer only adds front matter to the
-     pages *it* generates (under `docs_dir/api/`), never to existing
+     pages *it* generates (under `docs_dir/reference/`), never to existing
      hand-written ones — task T31. Check any pre-existing `.md` files
      directly under `docs_dir` and, if Jekyll processing is wanted site-
      wide, add an empty front-matter block (`---\n---\n`) to each one
@@ -223,16 +223,16 @@ updates as the interface stabilizes.
            - run: lake exe leandoc
            - name: Check generated docs are committed and up to date
              run: |
-               if [ -n "$(git status --porcelain -- <docs_dir>/api)" ]; then
+               if [ -n "$(git status --porcelain -- <docs_dir>/reference)" ]; then
                  echo "::error::Generated docs are out of date or uncommitted." >&2
                  echo "Run 'lake exe leandoc' locally, then commit the result." >&2
-                 git status --porcelain -- <docs_dir>/api
+                 git status --porcelain -- <docs_dir>/reference
                  exit 1
                fi
      ```
 
      Substitute the real `docs_dir` (step 2c's value) for `<docs_dir>`.
-     This deliberately only gates `<docs_dir>/api` (the *generated*
+     This deliberately only gates `<docs_dir>/reference` (the *generated*
      output), not all of `docs_dir` — a project may have hand-written
      pages alongside it that CI shouldn't fail on. Fails the build
      rather than auto-committing the regenerated docs: consistent with
@@ -259,9 +259,9 @@ updates as the interface stabilizes.
      set -e
      echo "Checking generated docs are up to date..."
      lake exe leandoc
-     if [ -n "$(git status --porcelain -- <docs_dir>/api)" ]; then
+     if [ -n "$(git status --porcelain -- <docs_dir>/reference)" ]; then
        echo "Generated docs are out of date - committing the regenerated result too." >&2
-       git status --porcelain -- <docs_dir>/api
+       git status --porcelain -- <docs_dir>/reference
        exit 1
      fi
      ```

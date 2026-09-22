@@ -77,8 +77,8 @@ def main : IO Unit := do
   -- `jekyll := false` opt-out (task T31).
   s ← s.check "renderIndexPage (jekyll) emits front matter"
     (indexPage.startsWith "---\n---\n")
-  s ← s.check "renderIndexPage (jekyll) links via {% link %}, api/-prefixed"
-    ((indexPage.splitOn "{% link api/Demo/MyLeanFile.md %}").length > 1)
+  s ← s.check "renderIndexPage (jekyll) links via {% link %}, reference/-prefixed"
+    ((indexPage.splitOn "{% link reference/Demo/MyLeanFile.md %}").length > 1)
   let plainIndexPage := renderIndexPage #["Demo.MyLeanFile"] false
   s ← s.check "renderIndexPage (no jekyll) has no front matter"
     (!plainIndexPage.startsWith "---\n---\n")

@@ -313,8 +313,8 @@ def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bo
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# {moduleName}\n\n{body}"
 
-/-- Renders the API section's index: one line per module, linking to
-its page. Deliberately minimal — task T18 covers a real table of
+/-- Renders the reference section's index: one line per module, linking
+to its page. Deliberately minimal — task T18 covers a real table of
 contents/glossary; this is just enough for the module pages to be
 reachable at all.
 
@@ -329,8 +329,10 @@ plain links this replaces gave us.
 Crucially, the path inside the `link` tag is resolved from the
 Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
 current page's own directory the way a relative Markdown link would be
-— so it needs an `api/` prefix even though this index and the pages it
-links to live in the same directory. Getting this wrong would silently
+— so it needs a `reference/` prefix (task T25 — renamed from `api/`,
+since this is a flat dump of every included declaration, not a curated
+public API surface) even though this index and the pages it links to
+live in the same directory. Getting this wrong would silently
 reintroduce the plain-relative-link bug this replaces.
 
 Link targets are still built as plain `/`-joined strings, not via
@@ -351,12 +353,12 @@ def renderIndexPage (moduleNames : Array String) (jekyll : Bool) : String :=
       -- Built with `++`, not `s!"..."`, because the literal Liquid
       -- `{% ... %}` braces would otherwise be parsed as string
       -- interpolation syntax.
-      "- [" ++ m ++ "](" ++ "{% link api/" ++ linkPath m ++ ".md %}" ++ ")"
+      "- [" ++ m ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
     else
       s!"- [{m}]({linkPath m}.md)"
   let body := String.join (items.toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
-  s!"{fm}# API Reference\n\n{body}\n"
+  s!"{fm}# Reference\n\n{body}\n"
 
 /-- Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). -/
@@ -393,9 +395,12 @@ def ensureJekyllConfig (docsDir : System.FilePath) : IO Unit := do
 /-- Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
 writes one Markdown page per module plus an index, under
-`docsDir/api/`. `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`)
-controls whether the output targets Jekyll (front matter, `{% link %}`
-links, a written `_config.yml`) or is plain portable Markdown. -/
+`docsDir/reference/` (task T25 — named `reference/`, not `api/`: this
+is a flat dump of every included declaration, not a curated public API
+surface, and the name shouldn't claim curation the renderer doesn't do).
+`jekyll` (task T31, from `LeanDocConfig.rendererJekyll`) controls
+whether the output targets Jekyll (front matter, `{% link %}` links, a
+written `_config.yml`) or is plain portable Markdown. -/
 def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
@@ -404,16 +409,16 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   let some (metas : Array DeclMeta) := (fromJson? json).toOption
     | IO.eprintln s!"LeanDoc: {jsonPath} doesn't match the DeclMeta schema, can't render."
       IO.Process.exit 1
-  let apiDir := docsDir / "api"
-  IO.FS.createDirAll apiDir
+  let referenceDir := docsDir / "reference"
+  IO.FS.createDirAll referenceDir
   if jekyll then
     ensureJekyllConfig docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName
-    let path := apiDir / moduleToDocPath moduleName
+    let path := referenceDir / moduleToDocPath moduleName
     if let some dir := path.parent then
       IO.FS.createDirAll dir
     IO.FS.writeFile path (renderModulePage moduleName decls jekyll)
-  IO.FS.writeFile (apiDir / "index.md") (renderIndexPage moduleNames jekyll)
-  IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {apiDir}"
+  IO.FS.writeFile (referenceDir / "index.md") (renderIndexPage moduleNames jekyll)
+  IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {referenceDir}"

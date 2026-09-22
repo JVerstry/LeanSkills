@@ -544,8 +544,8 @@ Markdown with no Jekyll-specific content at all.
 renderIndexPage : Array String → Bool → String
 ```
 
-Renders the API section's index: one line per module, linking to
-its page. Deliberately minimal — task T18 covers a real table of
+Renders the reference section's index: one line per module, linking
+to its page. Deliberately minimal — task T18 covers a real table of
 contents/glossary; this is just enough for the module pages to be
 reachable at all.
 
@@ -560,8 +560,10 @@ plain links this replaces gave us.
 Crucially, the path inside the `link` tag is resolved from the
 Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
 current page's own directory the way a relative Markdown link would be
-— so it needs an `api/` prefix even though this index and the pages it
-links to live in the same directory. Getting this wrong would silently
+— so it needs a `reference/` prefix (task T25 — renamed from `api/`,
+since this is a flat dump of every included declaration, not a curated
+public API surface) even though this index and the pages it links to
+live in the same directory. Getting this wrong would silently
 reintroduce the plain-relative-link bug this replaces.
 
 Link targets are still built as plain `/`-joined strings, not via
@@ -627,6 +629,9 @@ render : System.FilePath → System.FilePath → Bool → IO Unit
 Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
 writes one Markdown page per module plus an index, under
-`docsDir/api/`. `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`)
-controls whether the output targets Jekyll (front matter, `{% link %}`
-links, a written `_config.yml`) or is plain portable Markdown. 
+`docsDir/reference/` (task T25 — named `reference/`, not `api/`: this
+is a flat dump of every included declaration, not a curated public API
+surface, and the name shouldn't claim curation the renderer doesn't do).
+`jekyll` (task T31, from `LeanDocConfig.rendererJekyll`) controls
+whether the output targets Jekyll (front matter, `{% link %}` links, a
+written `_config.yml`) or is plain portable Markdown. 
