@@ -11,6 +11,14 @@ assistant (Claude or otherwise) — it walks through adding LeanDoc as a
 Lake dependency, setting up `docs/` and `leandoc.toml`, and running the
 initial generation.
 
+**Note:** modifying comments (including docstrings) in a Lean file can
+trigger a surprising amount of rebuilding even when no code actually
+changed. On a large project that isn't organized to limit this, build
+times can suffer badly — including, potentially, from routine LeanDoc
+usage. If you run into this, consider auditing your project with
+[LeanPerformance](https://github.com/JVerstry/LeanPerformance), which
+will suggest ways to address it.
+
 ## The short version
 
 - **What LeanDoc does:** generates documentation for Lean 4 projects by
