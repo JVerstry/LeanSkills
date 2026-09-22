@@ -239,6 +239,40 @@ updates as the interface stabilizes.
      "do not commit on the user's behalf without asking," above — an
      auto-committing CI job is a bigger trust step this file doesn't
      take unless asked to.
+   - **Mention, but do not set up, a local pre-commit freshness check**
+     (task T34) — the same drift concern as the CI drift-check above,
+     just enforced locally before a commit lands instead of after a
+     push. Even more clearly opt-in than the CI version: `lake exe
+     leandoc` does a full elaboration, which can be genuinely slow on a
+     large project (see this file's `README.md` note on docstring-edit
+     rebuild cost, and consider recommending
+     [LeanPerformance](https://github.com/JVerstry/LeanPerformance) if
+     the user is worried about this) — running it before *every*
+     commit is a real, ongoing cost, not a one-time setup cost, unlike
+     LeanDoc's own `.githooks/pre-commit` (which only runs the fast
+     `lake exe leandoc-test`). Only set this up if the user explicitly
+     asks, and make sure they understand it's a per-commit elaboration
+     cost before they opt in:
+
+     ```sh
+     #!/bin/sh
+     set -e
+     echo "Checking generated docs are up to date..."
+     lake exe leandoc
+     if [ -n "$(git status --porcelain -- <docs_dir>/api)" ]; then
+       echo "Generated docs are out of date - committing the regenerated result too." >&2
+       git status --porcelain -- <docs_dir>/api
+       exit 1
+     fi
+     ```
+
+     Substitute `<docs_dir>` as above. Ship it as a tracked file (e.g.
+     `.githooks/pre-commit`, mirroring LeanDoc's own convention) with
+     opt-in activation via `git config core.hooksPath .githooks`, not
+     installed into `.git/hooks/` directly (never committed, so a
+     fresh clone wouldn't have it) and not made automatic — the user
+     has to run that `git config` line themselves, same as LeanDoc's
+     own developers do.
 
 If any step fails because LeanDoc's actual interface differs from what's
 described here (this file may be stale relative to a newer LeanDoc
