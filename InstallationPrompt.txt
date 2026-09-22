@@ -3,6 +3,14 @@ documentation generator for Lean 4 projects) to their existing Lean/Lake
 project. The user has pasted you this file as their installation prompt.
 Follow these steps, adapting paths/names to what you find in their repo.
 
+This installs LeanDoc as a *user* of it — do not set up anything from
+LeanDoc's own *development* tooling (its `test/` suite, its
+`.githooks/pre-commit` test-on-commit hook, `git config core.hooksPath
+.githooks`, or similar). None of that belongs in a project that merely
+depends on LeanDoc; it's specific to working on LeanDoc's own source.
+See "Users vs. developers of LeanDoc" in LeanDoc's own
+`docs/conventions.md` if this distinction matters for a step below.
+
 STATUS NOTE (remove once LeanDoc has a first tagged release): the
 extractor and a first Markdown renderer both work and are exercised
 against LeanDoc's own source, but there's no tagged release yet — the

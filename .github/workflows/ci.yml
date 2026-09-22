@@ -28,6 +28,9 @@ jobs:
       - name: lake build
         run: lake build
 
+      - name: Run test suite (task T24)
+        run: lake exe test
+
       - name: Run extractor + renderer on demo/
         run: lake exe leandoc demo
 
