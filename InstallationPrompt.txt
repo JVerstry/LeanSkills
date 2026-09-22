@@ -9,7 +9,12 @@ LeanDoc's own *development* tooling (its `test/` suite, its
 .githooks`, or similar). None of that belongs in a project that merely
 depends on LeanDoc; it's specific to working on LeanDoc's own source.
 See "Users vs. developers of LeanDoc" in LeanDoc's own `README.md` if
-this distinction matters for a step below.
+this distinction matters for a step below. None of LeanDoc's own
+`lean_exe` targets are named anything a project would plausibly also
+want for itself (`leandoc`, `leandoc-test` — task T36 renamed the
+latter from the generic `test` specifically to avoid this), so running
+your *own* `lake exe <name>` commands after installing LeanDoc as a
+dependency won't accidentally resolve to one of LeanDoc's instead.
 
 STATUS NOTE (remove once LeanDoc has a first tagged release): the
 extractor and a first Markdown renderer both work and are exercised
