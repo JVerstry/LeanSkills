@@ -12,9 +12,10 @@ parse and understand the code.
 > itself is still hand-maintained, not generated; see `wip/todo.md`
 > task T13 for how the two are meant to fit together long-term.
 
-See [`conventions.md`]({% link conventions.md %}) for LeanDoc's documentation
-elaboration strategy (how the extractor and renderer stages work), or
-[`api/`]({% link api/index.md %}) for LeanDoc's own generated API reference.
+See [`README.md`](https://github.com/JVerstry/LeanDoc/blob/main/README.md)
+for LeanDoc's documentation elaboration strategy (how the extractor and
+renderer stages work), or [`api/`]({% link api/index.md %}) for LeanDoc's
+own generated API reference.
 
 ## Where things live
 
@@ -47,6 +48,9 @@ build, not something LeanDoc runs itself.
 
 ## Contributing to LeanDoc
 
-See [`conventions.md`](conventions.md) for a quick orientation, or
-`AGENTS.md` in the repository root for the full set of project
-conventions.
+See [`README.md`](https://github.com/JVerstry/LeanDoc/blob/main/README.md)'s
+"Users vs. developers of LeanDoc" section for a quick orientation
+(task T30, 2026-09-22: folded in from this site's former
+`conventions.md`, which was judged an unnecessary extra page for
+content that fit fine in the README), or `AGENTS.md` in the repository
+root for the full set of project conventions.

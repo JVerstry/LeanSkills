@@ -5,7 +5,7 @@
 # caught locally instead of only surfacing in CI (T11) after a push.
 #
 # This is LeanDoc-*development* tooling only — see the "Users vs.
-# developers of LeanDoc" section in docs/conventions.md. It is never
+# developers of LeanDoc" section in README.md. It is never
 # installed for a project that installs LeanDoc as a dependency;
 # InstallationPrompt.txt does not reference this file or set it up.
 #

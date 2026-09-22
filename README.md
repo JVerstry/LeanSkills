@@ -36,3 +36,24 @@ will suggest ways to address it.
 For anything beyond this summary — architecture rationale, why certain
 approaches were dropped, specific notes — go to
 [`AGENTS.md`](AGENTS.md).
+
+## Users vs. developers of LeanDoc
+
+These are different audiences with different tooling, and it matters
+which one a given piece of documentation or setup step is for:
+
+- **Users** depend on LeanDoc to document *their own* project. This is
+  what [`InstallationPrompt.txt`](InstallationPrompt.txt) walks
+  through: add the `require` line, write `leandoc.toml`, run `lake exe
+  leandoc`. Nothing about LeanDoc's own development tooling is relevant
+  here, and `InstallationPrompt.txt` deliberately never sets any of it
+  up.
+- **Developers** work on LeanDoc's own source (this repository). That
+  includes `test/` (the test suite, run via `lake exe test`) and
+  `.githooks/pre-commit`, which runs that suite before every commit —
+  opt in once with `git config core.hooksPath .githooks` (not
+  automatic; `.git/hooks/` itself is never committed, so shipping a
+  hook via a tracked file and asking developers to point Git at it is
+  the standard way to distribute one at all). This costs real time per
+  commit (a full `lake exe test` run) in exchange for catching a
+  regression locally instead of only in CI after a push.
