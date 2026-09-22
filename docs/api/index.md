@@ -1,4 +1,7 @@
+---
+---
+
 # API Reference
 
-- [Main](Main.md)
-- [LeanDoc.Core](LeanDoc/Core.md)
+- [Main]({% link api/Main.md %})
+- [LeanDoc.Core]({% link api/LeanDoc/Core.md %})

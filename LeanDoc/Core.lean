@@ -282,19 +282,45 @@ def renderDecl (d : DeclMeta) : String :=
      ```lean\n{d.name} : {d.type}\n```\n\n\
      {doc}\n"
 
+/-- Jekyll (task T22/T28) only converts a Markdown file at all — running
+Liquid tags, honoring `_config.yml`, everything — if it has *front
+matter*: per Jekyll's own docs
+(`jekyllrb.com/docs/static-files/`), "a static file is a file that does
+not contain any front matter", and static files are copied through
+byte-for-byte. An empty `---\n---\n` block is the minimum that counts.
+Without this, GitHub Pages would silently serve our Markdown unprocessed
+even with Jekyll turned on (`.nojekyll` removed) — the file simply
+wouldn't be "a page" as far as Jekyll is concerned. -/
+def frontMatter : String := "---\n---\n\n"
+
 /-- Renders one module's page: a heading plus every declaration's
 section, in the order the extractor emitted them (elaboration order —
 see `Environment.getLocalConstantInfos`). -/
 def renderModulePage (moduleName : String) (decls : Array DeclMeta) : String :=
   let body := String.join ((decls.map renderDecl).toList.intersperse "\n")
-  s!"# {moduleName}\n\n{body}"
+  s!"{frontMatter}# {moduleName}\n\n{body}"
 
 /-- Renders the API section's index: one line per module, linking to
 its page. Deliberately minimal — task T18 covers a real table of
 contents/glossary; this is just enough for the module pages to be
 reachable at all.
 
-Link targets are built as plain `/`-joined strings, not via
+Links use Jekyll's `link` Liquid tag (task T28), not plain Markdown
+links: Jekyll renames a converted page's extension (`Foo/Bar.md` ↦
+`Foo/Bar.html`), so a plain `.md` link would 404 once Jekyll processing
+is on. The `link` tag resolves the *source* path to its converted
+output URL at build time, and fails the build if the target doesn't
+exist (`jekyllrb.com/docs/liquid/tags/`) — a stronger guarantee than the
+plain links this replaces gave us.
+
+Crucially, the path inside the `link` tag is resolved from the
+Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
+current page's own directory the way a relative Markdown link would be
+— so it needs an `api/` prefix even though this index and the pages it
+links to live in the same directory. Getting this wrong would silently
+reintroduce the plain-relative-link bug this replaces.
+
+Link targets are still built as plain `/`-joined strings, not via
 `moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
 regardless of host OS, but `FilePath`'s string rendering uses the native
 separator (`\` on Windows), which would silently break these links only
@@ -302,9 +328,13 @@ on Windows. -/
 def renderIndexPage (moduleNames : Array String) : String :=
   let linkPath (m : String) : String := (m.splitOn ".").foldl (init := "") fun acc part =>
     if acc.isEmpty then part else s!"{acc}/{part}"
-  let items := moduleNames.map fun m => s!"- [{m}]({linkPath m}.md)"
+  let items := moduleNames.map fun m =>
+    -- Built with `++`, not `s!"..."`, because the literal Liquid
+    -- `{% ... %}` braces would otherwise be parsed as string
+    -- interpolation syntax.
+    "- [" ++ m ++ "](" ++ "{% link api/" ++ linkPath m ++ ".md %}" ++ ")"
   let body := String.join (items.toList.intersperse "\n")
-  s!"# API Reference\n\n{body}\n"
+  s!"{frontMatter}# API Reference\n\n{body}\n"
 
 /-- Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). -/
@@ -317,6 +347,26 @@ def groupDeclsByModule (metas : Array DeclMeta) : Array (String × Array DeclMet
         order := order.push d.module
       byModule := byModule.insert d.module ((byModule.getD d.module #[]).push d)
     return order.map fun m => (m, byModule[m]!)
+
+/-- Minimal `_config.yml` written once (task T28) so Jekyll has a place
+to pick a theme/CSS from — without it, a Jekyll-processed page still
+renders with no styling at all, just as GitHub-flavored-Markdown-free
+plain HTML. `jekyll-theme-minimal` is one of GitHub Pages' natively
+supported themes (no gem install needed beyond what Pages already runs),
+chosen as a reasonable default; anyone can change or replace it later.
+Only ever written if the file doesn't already exist — like
+`InstallationPrompt.txt`'s other one-time setup steps, this must not
+clobber a customization on a later `lake exe leandoc` run. -/
+def defaultJekyllConfig : String :=
+  "theme: jekyll-theme-minimal\n"
+
+/-- Ensures `docsDir/_config.yml` exists, writing the default (see
+`defaultJekyllConfig`) if it's missing. Never overwrites an existing
+file. -/
+def ensureJekyllConfig (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "_config.yml"
+  unless (← path.pathExists) do
+    IO.FS.writeFile path defaultJekyllConfig
 
 /-- Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
@@ -332,6 +382,7 @@ def render (jsonPath docsDir : System.FilePath) : IO Unit := do
       IO.Process.exit 1
   let apiDir := docsDir / "api"
   IO.FS.createDirAll apiDir
+  ensureJekyllConfig docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName

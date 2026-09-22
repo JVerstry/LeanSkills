@@ -1,3 +1,6 @@
+---
+---
+
 # LeanDoc.Core
 
 ### `LeanDocConfig`
@@ -485,6 +488,24 @@ signature as a code block, and the docstring (or an explicit "not
 documented" note — silently omitting undocumented declarations would
 hide exactly the coverage gaps T17's audit is meant to catch). 
 
+### `frontMatter`
+
+*def*
+
+```lean
+frontMatter : String
+```
+
+Jekyll (task T22/T28) only converts a Markdown file at all — running
+Liquid tags, honoring `_config.yml`, everything — if it has *front
+matter*: per Jekyll's own docs
+(`jekyllrb.com/docs/static-files/`), "a static file is a file that does
+not contain any front matter", and static files are copied through
+byte-for-byte. An empty `---\n---\n` block is the minimum that counts.
+Without this, GitHub Pages would silently serve our Markdown unprocessed
+even with Jekyll turned on (`.nojekyll` removed) — the file simply
+wouldn't be "a page" as far as Jekyll is concerned. 
+
 ### `renderModulePage`
 
 *def*
@@ -510,7 +531,22 @@ its page. Deliberately minimal — task T18 covers a real table of
 contents/glossary; this is just enough for the module pages to be
 reachable at all.
 
-Link targets are built as plain `/`-joined strings, not via
+Links use Jekyll's `link` Liquid tag (task T28), not plain Markdown
+links: Jekyll renames a converted page's extension (`Foo/Bar.md` ↦
+`Foo/Bar.html`), so a plain `.md` link would 404 once Jekyll processing
+is on. The `link` tag resolves the *source* path to its converted
+output URL at build time, and fails the build if the target doesn't
+exist (`jekyllrb.com/docs/liquid/tags/`) — a stronger guarantee than the
+plain links this replaces gave us.
+
+Crucially, the path inside the `link` tag is resolved from the
+Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
+current page's own directory the way a relative Markdown link would be
+— so it needs an `api/` prefix even though this index and the pages it
+links to live in the same directory. Getting this wrong would silently
+reintroduce the plain-relative-link bug this replaces.
+
+Link targets are still built as plain `/`-joined strings, not via
 `moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
 regardless of host OS, but `FilePath`'s string rendering uses the native
 separator (`\` on Windows), which would silently break these links only
@@ -526,6 +562,36 @@ groupDeclsByModule : Array DeclMeta → Array (String × Array DeclMeta)
 
 Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). 
+
+### `defaultJekyllConfig`
+
+*def*
+
+```lean
+defaultJekyllConfig : String
+```
+
+Minimal `_config.yml` written once (task T28) so Jekyll has a place
+to pick a theme/CSS from — without it, a Jekyll-processed page still
+renders with no styling at all, just as GitHub-flavored-Markdown-free
+plain HTML. `jekyll-theme-minimal` is one of GitHub Pages' natively
+supported themes (no gem install needed beyond what Pages already runs),
+chosen as a reasonable default; anyone can change or replace it later.
+Only ever written if the file doesn't already exist — like
+`InstallationPrompt.txt`'s other one-time setup steps, this must not
+clobber a customization on a later `lake exe leandoc` run. 
+
+### `ensureJekyllConfig`
+
+*def*
+
+```lean
+ensureJekyllConfig : System.FilePath → IO Unit
+```
+
+Ensures `docsDir/_config.yml` exists, writing the default (see
+`defaultJekyllConfig`) if it's missing. Never overwrites an existing
+file. 
 
 ### `render`
 

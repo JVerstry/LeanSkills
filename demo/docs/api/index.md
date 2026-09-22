@@ -1,3 +1,6 @@
+---
+---
+
 # API Reference
 
-- [Demo.MyLeanFile](Demo/MyLeanFile.md)
+- [Demo.MyLeanFile]({% link api/Demo/MyLeanFile.md %})

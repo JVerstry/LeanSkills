@@ -51,15 +51,7 @@ updates as the interface stabilizes.
         treating it as a pure CI/CD build artifact, published by a
         separate workflow instead — only pick that if the user already
         has (or wants) such a pipeline.
-     e. **Jekyll.** Whether the user plans to let GitHub Pages run
-        Jekyll over `docs_dir` (e.g. because they want Jekyll includes,
-        layouts, or a Jekyll theme). *Recommended default:* no — most
-        projects don't want Jekyll post-processing their generated
-        docs, since Jekyll ignores/rewrites underscore-prefixed
-        files/folders and applies its own theme to Markdown. Default to
-        adding a `docs_dir/.nojekyll` marker unless the user says they
-        do want Jekyll, in which case skip it.
-     f. **Included/excluded modules.** *Recommended default:* leave
+     e. **Included/excluded modules.** *Recommended default:* leave
         `include` empty — LeanDoc scans the project's own
         `lakefile.toml` (its `lean_lib`/`lean_exe` targets) and
         documents everything it finds (task T21, done 2026-09-21).
@@ -88,14 +80,16 @@ updates as the interface stabilizes.
 
 4. Ensure the `docs_dir` from step 2c exists at the repo root
    - Check whether it already exists. If it doesn't, create it.
-   - If step 2e's answer was "no Jekyll" (the default), add an empty
-     `docs_dir/.nojekyll` marker file if one isn't already there. Skip
-     this if the user said they do want Jekyll.
    - Don't worry about populating it with real content yet — that
      happens in step 6 (initial generation). This step just guarantees
-     the directory (and its GitHub Pages marker, if applicable) exists
-     so the repo's Pages settings can be pointed at `main` / that
-     directory immediately.
+     the directory exists so the repo's Pages settings can be pointed at
+     `main` / that directory immediately. No `.nojekyll` marker is
+     needed: LeanDoc's renderer emits Jekyll-ready output by default
+     (front matter on every page, a `_config.yml` picking a
+     GitHub-Pages-supported theme, internal links via Jekyll's
+     `{% link %}` tag — task T22/T28), so GitHub Pages' default Jekyll
+     processing is what actually turns the generated Markdown into a
+     styled site rather than something to opt out of.
 
 5. Create a `leandoc.toml` config file at the repo root, sibling to
    `lakefile.toml`, using the values confirmed in step 2. This schema
@@ -110,8 +104,8 @@ updates as the interface stabilizes.
      [modules]
      # include = [...]   # leave empty for whole-package scanning
                          # (recommended default); only set if the user
-                         # wants a subset (step 2f)
-     # exclude = [...]   # only if the user named exclusions in step 2f
+                         # wants a subset (step 2e)
+     # exclude = [...]   # only if the user named exclusions in step 2e
 
      [renderer]
      name = "markdown"   # parsed but not yet acted on — Markdown is
