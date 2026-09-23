@@ -69,6 +69,7 @@ layout: default
 - [`ensureJekyllConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureStyleAsset`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureDefaultLayout`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ensureColorSchemeScript`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`render`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 
 ## Structures & Inductives

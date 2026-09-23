@@ -960,6 +960,20 @@ minimal layout (task T29 — see `assets/layouts/default.html`,
 `LeanDoc.Assets.defaultLayoutHtml`) if it's missing. Never overwrites
 an existing file, same write-once treatment as `ensureStyleAsset`. 
 
+### `ensureColorSchemeScript`
+
+*def*
+
+```lean
+ensureColorSchemeScript : System.FilePath → IO Unit
+```
+
+Ensures `docsDir/assets/color-scheme.js` exists, writing the
+light/dark/system theme switcher script (task T45 — see
+`assets/color-scheme.js`, `LeanDoc.Assets.colorSchemeJs`) if it's
+missing. Never overwrites an existing file, same write-once treatment
+as `ensureStyleAsset`. 
+
 ### `render`
 
 *def*

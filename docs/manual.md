@@ -223,17 +223,26 @@ diffing the live CSS from both sites — they turned out to be
 byte-identical to doc-gen4's own default, and doc-gen4 itself has no
 per-project color/theme customization mechanism at all), so LeanDoc's
 output matches what Lean-ecosystem readers already expect rather than
-inventing its own look. It ships with doc-gen4's own light/dark theme
-toggle built in.
+inventing its own look.
 
-Both `docs_dir/assets/style.css` and `docs_dir/_layouts/default.html`
-are written **once** and never touched again by LeanDoc on later
-`lake exe leandoc` runs — the same write-once guarantee as
-`_config.yml`. Edit either file directly to customize your site's
-look; nothing will overwrite your changes. There's no `leandoc.toml`
-option for "pick a different palette" — if you want something other
-than the vendored default, edit the CSS itself after the first
-generation.
+A light/dark/system theme switcher (task T45) is included too —
+`docs_dir/assets/color-scheme.js`, adapted from doc-gen4's own (not
+vendored unmodified like the CSS: doc-gen4's original coordinates with
+a separate nav document loaded in an iframe, which LeanDoc's simpler
+single-page layout doesn't have, so the logic was simplified to work
+directly on the page itself) plus a small switcher form in
+`docs_dir/_layouts/default.html`. Your preference is remembered across
+visits (`localStorage`), defaults to following your OS/browser
+setting.
+
+`docs_dir/assets/style.css`, `docs_dir/_layouts/default.html`, and
+`docs_dir/assets/color-scheme.js` are all written **once** and never
+touched again by LeanDoc on later `lake exe leandoc` runs — the same
+write-once guarantee as `_config.yml`. Edit any of them directly to
+customize your site's look or behavior; nothing will overwrite your
+changes. There's no `leandoc.toml` option for "pick a different
+palette" — if you want something other than the vendored default, edit
+the CSS itself after the first generation.
 
 ### Generated output
 

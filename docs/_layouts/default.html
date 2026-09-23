@@ -4,7 +4,12 @@
      `theme:`/`remote_theme:` in _config.yml is not, by itself,
      enough (confirmed against jekyllrb.com's own docs). LeanDoc's
      generated front matter now sets `layout: default`, so this file
-     is what actually gets used. -->
+     is what actually gets used.
+
+     The #settings block + color-scheme.js (task T45) is adapted from
+     doc-gen4's own light/dark/system theme switcher, simplified since
+     LeanDoc has no separate nav-in-an-iframe document to coordinate
+     with — see assets/color-scheme.js's own header comment. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,8 +17,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ page.title | default: site.title | default: "LeanDoc" }}</title>
   <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+  <script type="module" src="{{ '/assets/color-scheme.js' | relative_url }}"></script>
 </head>
 <body>
+  <div id="settings" hidden>
+    <form id="color-theme-switcher">
+      <label for="color-theme-dark"><input type="radio" name="color_theme" id="color-theme-dark" value="dark" autocomplete="off">dark</label>
+      <label for="color-theme-system" title="Match system theme settings"><input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off">system</label>
+      <label for="color-theme-light"><input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off">light</label>
+    </form>
+  </div>
   <main>
     {{ content }}
   </main>

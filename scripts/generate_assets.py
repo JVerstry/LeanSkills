@@ -20,6 +20,7 @@ OUTPUT = REPO_ROOT / "LeanDoc" / "Assets.lean"
 ASSETS = [
     ("styleCss", "assets/style.css"),
     ("defaultLayoutHtml", "assets/layouts/default.html"),
+    ("colorSchemeJs", "assets/color-scheme.js"),
 ]
 
 

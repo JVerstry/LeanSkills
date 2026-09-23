@@ -155,21 +155,34 @@ def main : IO Unit := do
 
   let scratchStyle := scratchDir / "assets" / "style.css"
   let scratchLayout := scratchDir / "_layouts" / "default.html"
+  let scratchColorScheme := scratchDir / "assets" / "color-scheme.js"
   if ← scratchStyle.pathExists then IO.FS.removeFile scratchStyle
   if ← scratchLayout.pathExists then IO.FS.removeFile scratchLayout
+  if ← scratchColorScheme.pathExists then IO.FS.removeFile scratchColorScheme
 
   ensureStyleAsset scratchDir
   ensureDefaultLayout scratchDir
+  ensureColorSchemeScript scratchDir
   let styleContent ← IO.FS.readFile scratchStyle
   let layoutContent ← IO.FS.readFile scratchLayout
+  let colorSchemeContent ← IO.FS.readFile scratchColorScheme
   s ← s.check "ensureStyleAsset writes the vendored doc-gen4 stylesheet"
     (styleContent == LeanDoc.Assets.styleCss)
   s ← s.check "ensureDefaultLayout writes LeanDoc's own layout"
     (layoutContent == LeanDoc.Assets.defaultLayoutHtml)
+  s ← s.check "ensureColorSchemeScript writes the theme-switcher script"
+    (colorSchemeContent == LeanDoc.Assets.colorSchemeJs)
   s ← s.check "the vendored stylesheet mentions its doc-gen4 origin"
     ((styleContent.splitOn "doc-gen4").length > 1)
   s ← s.check "the default layout links assets/style.css"
     ((layoutContent.splitOn "/assets/style.css").length > 1)
+  s ← s.check "the default layout links assets/color-scheme.js"
+    ((layoutContent.splitOn "/assets/color-scheme.js").length > 1)
+  s ← s.check "the default layout includes the color-theme-switcher form"
+    ((layoutContent.splitOn "color-theme-switcher").length > 1)
+  s ← s.check "color-scheme.js targets the #color-theme-switcher/#settings markup"
+    ((colorSchemeContent.splitOn "color-theme-switcher").length > 1 &&
+     (colorSchemeContent.splitOn "#settings").length > 1)
 
   -- Write-once: a customized file must survive a second `render` run.
   let customStyle := "/* my custom override */\n"
@@ -181,6 +194,7 @@ def main : IO Unit := do
 
   IO.FS.removeFile scratchStyle
   IO.FS.removeFile scratchLayout
+  IO.FS.removeFile scratchColorScheme
 
   -- ## Unit-level: rendering content
 

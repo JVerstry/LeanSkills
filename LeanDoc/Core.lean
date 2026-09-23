@@ -687,6 +687,18 @@ def ensureDefaultLayout (docsDir : System.FilePath) : IO Unit := do
       IO.FS.createDirAll dir
     IO.FS.writeFile path LeanDoc.Assets.defaultLayoutHtml
 
+/-- Ensures `docsDir/assets/color-scheme.js` exists, writing the
+light/dark/system theme switcher script (task T45 — see
+`assets/color-scheme.js`, `LeanDoc.Assets.colorSchemeJs`) if it's
+missing. Never overwrites an existing file, same write-once treatment
+as `ensureStyleAsset`. -/
+def ensureColorSchemeScript (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "assets" / "color-scheme.js"
+  unless (← path.pathExists) do
+    if let some dir := path.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile path LeanDoc.Assets.colorSchemeJs
+
 /-- Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
 writes one Markdown page per module plus an index, under
@@ -724,6 +736,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
     ensureJekyllConfig docsDir
     ensureStyleAsset docsDir
     ensureDefaultLayout docsDir
+    ensureColorSchemeScript docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName
