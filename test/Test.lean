@@ -265,6 +265,46 @@ def main : IO Unit := do
   checkComplianceHeader (cfg : LeanDocConfig) (demoRoot / "Demo" / "MyLeanFile.lean")
   s ← s.check "checkComplianceHeader runs without crashing, enabled or not" true
 
+  -- ## Unit-level: T27's version-tag normalization
+
+  s ← s.check "normalizeVersion strips a leading v" (normalizeVersion "v1.0.0" == "1.0.0")
+  s ← s.check "normalizeVersion strips a leading V" (normalizeVersion "V1.0.0" == "1.0.0")
+  s ← s.check "normalizeVersion leaves a bare version alone" (normalizeVersion "1.0.0" == "1.0.0")
+
+  -- ## Fixture-level: T27's checkVersionTag, against a genuinely
+  -- separate scratch git repo (not LeanDoc's own — this creates a real
+  -- git tag, which shouldn't happen in LeanDoc's actual repo as a test
+  -- side effect). Removed and recreated every run for idempotency —
+  -- `git tag` fails on an already-existing tag name.
+
+  let versionScratchDir := scratchDir / "version-test"
+  if ← versionScratchDir.pathExists then IO.FS.removeDirAll versionScratchDir
+  IO.FS.createDirAll versionScratchDir
+  let gitInit ← IO.Process.output { cmd := "git", args := #["init", "-q"], cwd := some versionScratchDir }
+  s ← s.check "git init succeeds in the version-test scratch repo" (gitInit.exitCode == 0)
+  discard <| IO.Process.output
+    { cmd := "git", args := #["config", "user.email", "test@test.com"], cwd := some versionScratchDir }
+  discard <| IO.Process.output
+    { cmd := "git", args := #["config", "user.name", "test"], cwd := some versionScratchDir }
+  IO.FS.writeFile (versionScratchDir / "dummy.txt") "dummy\n"
+  discard <| IO.Process.output { cmd := "git", args := #["add", "-A"], cwd := some versionScratchDir }
+  discard <| IO.Process.output
+    { cmd := "git", args := #["commit", "-q", "-m", "init"], cwd := some versionScratchDir }
+  let gitTag ← IO.Process.output { cmd := "git", args := #["tag", "v1.0.0"], cwd := some versionScratchDir }
+  s ← s.check "git tag succeeds in the version-test scratch repo" (gitTag.exitCode == 0)
+
+  -- Smoke tests: matching, mismatching, unconfigured, and no-tags-at-all
+  -- should all run without crashing — the actual warning goes to
+  -- stderr, not something this harness captures.
+  checkVersionTag { projectVersion := "1.0.0" : LeanDocConfig } versionScratchDir
+  checkVersionTag { projectVersion := "v1.0.0" : LeanDocConfig } versionScratchDir
+  checkVersionTag { projectVersion := "2.0.0" : LeanDocConfig } versionScratchDir
+  checkVersionTag { projectVersion := "" : LeanDocConfig } versionScratchDir
+  checkVersionTag { projectVersion := "1.0.0" : LeanDocConfig } demoRoot
+  s ← s.check "checkVersionTag runs without crashing in every case" true
+
+  IO.FS.removeDirAll versionScratchDir
+
   -- ## Fixture-level: whole-package scanning (T21) against demo/'s
   -- real lakefile.toml
 

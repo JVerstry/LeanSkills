@@ -16,6 +16,7 @@ layout: default
 - [`LeanDocConfig.complianceEnabled`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.complianceAuthor`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.complianceLicense`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`LeanDocConfig.projectVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig.default`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`loadConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -49,6 +50,8 @@ layout: default
 - [`extractFile`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`hasCopyrightHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`checkComplianceHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`normalizeVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`checkVersionTag`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleToDocPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`linkPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderDecl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

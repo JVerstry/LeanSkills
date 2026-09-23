@@ -75,6 +75,9 @@ jekyll = true             # see "Jekyll" below
 enabled = false           # see "Documentation-compliance checking" below
 # author = "..."
 # license = "..."
+
+[project]
+# version = "..."         # see "Version tracking" below
 ```
 
 ### Inclusion and exclusion
@@ -160,6 +163,33 @@ LeanDoc can be used either way: to generate documentation that
 conforms to Mathlib's conventions (`[compliance] enabled = true`,
 configured to match your project), or to generate documentation
 however you like with no conventions enforced at all (the default).
+
+### Version tracking
+
+`[project] version` (task T27) is optional and unset by default — your
+project's own release version (e.g. `"1.2.0"`), typed in by hand, never
+auto-detected. If you set it, LeanDoc warns (never fails the build) at
+generation time when it doesn't match your project's latest git tag —
+catching "forgot to bump the version after tagging a release," nothing
+more. A leading `v`/`V` on either side (`v1.2.0` vs. `1.2.0`) is
+normalized away before comparing, so it doesn't matter which
+convention your tags use.
+
+This is deliberately narrow, not a general "is this repo stale" check.
+Two things it's specifically *not*:
+- **Not a reader-facing stamp.** The version, a commit hash, or a
+  generation date are never rendered anywhere in the generated docs
+  themselves — this is purely a build-time signal for whoever runs
+  `lake exe leandoc`, not something a reader browsing the site sees.
+- **Not a dirty-working-tree check.** Generating docs with
+  uncommitted changes is completely normal — you'd typically regenerate
+  docs *before* committing both the source changes and the regenerated
+  output together. A warning about that would just be noise on routine
+  use, so LeanDoc doesn't do it.
+
+If nothing's configured, or the project isn't a git repo, or it has no
+tags yet, the check silently does nothing — there's nothing meaningful
+to compare against in any of those cases.
 
 ### Jekyll
 

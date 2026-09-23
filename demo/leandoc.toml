@@ -36,3 +36,10 @@ jekyll = true
 enabled = false
 # author = "..."
 # license = "..."
+
+[project]
+# Unset by default (task T27) — this project's own release version.
+# If set, warns (never fails) at generation time when it doesn't match
+# the latest git tag. Purely a build-time developer warning, never
+# rendered anywhere a reader of the generated docs would see it.
+# version = "1.0.0"

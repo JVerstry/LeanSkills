@@ -99,6 +99,16 @@ updates as the interface stabilizes.
         exact header grammar. Naming-conventions and docstring-quality
         checks are planned (`wip/todo.md` tasks T41/T42) but not built
         yet — don't tell the user they exist.
+     h. **Project version (`[project] version`, task T27).** Optional —
+        the project's own release version (e.g. `"1.2.0"`), manually
+        set, never auto-detected. *Recommended default:* leave unset
+        (empty). If the user does set it, LeanDoc will warn (never
+        fail the build) at generation time if it doesn't match the
+        project's latest git tag — catching "forgot to bump the
+        version after tagging a release," nothing more. Not a
+        general "is my repo out of date" check, and not something
+        rendered anywhere a reader of the generated docs would see —
+        purely a build-time developer warning.
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -188,6 +198,10 @@ updates as the interface stabilizes.
                          # copyright/license header
      # author = "<step 2g value>"    # only if enabled = true
      # license = "<step 2g value>"   # only if enabled = true
+
+     [project]
+     # version = "<step 2h value>"   # task T27: warn (never fail) if
+                         # this doesn't match the latest git tag
 
    `include`/`exclude` entries are dotted Lean module names (e.g.
    `"Foo.Bar"`). Leaving `include` empty is now the recommended default

@@ -27,6 +27,9 @@ def main (args : List String) : IO Unit := do
   unsafe enableInitializersExecution
   let projectRoot : System.FilePath := args.headD "."
   let config ← loadConfig (projectRoot / "leandoc.toml")
+  -- Task T27: once per run, not once per module — a project-level
+  -- check, not a per-file one.
+  checkVersionTag config projectRoot
   -- Task T21: an explicit [modules] include list is used as-is; an
   -- empty/missing one falls back to whole-package scanning instead of
   -- immediately giving up.

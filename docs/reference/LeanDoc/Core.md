@@ -22,7 +22,8 @@ empty list falls back to whole-package scanning, task T21).
 *constructor*
 
 ```lean
-LeanDocConfig.mk : System.FilePath → System.FilePath → Array String → Array String → String → Bool → Bool → String → String → LeanDocConfig
+LeanDocConfig.mk : System.FilePath →
+  System.FilePath → Array String → Array String → String → Bool → Bool → String → String → String → LeanDocConfig
 ```
 
 *(not documented)*
@@ -135,6 +136,21 @@ LeanDocConfig.complianceLicense : LeanDocConfig → String
 Task T41: the license string `checkComplianceHeader` expects to
 find in each file's copyright header. Same empty-skips treatment as
 `complianceAuthor`. 
+
+### `LeanDocConfig.projectVersion`
+
+*def*
+
+```lean
+LeanDocConfig.projectVersion : LeanDocConfig → String
+```
+
+Task T27: the project's own release version, e.g. `"1.2.0"` —
+manually set, not auto-detected. Empty (the default) means "not
+tracked," and `checkVersionTag` skips its check entirely rather than
+warning about a version nobody configured. Only ever compared against
+the project's latest git tag, never rendered anywhere a reader would
+see it — see `checkVersionTag`'s doc comment for why. 
 
 ### `instInhabitedLeanDocConfig.default`
 
@@ -597,6 +613,41 @@ at least one of `complianceAuthor`/`complianceLicense` is actually
 configured — otherwise there's nothing meaningful to check against,
 and a bare "missing Copyright" warning on every file would be noise
 for a project that never asked for this. 
+
+### `normalizeVersion`
+
+*def*
+
+```lean
+normalizeVersion : String → String
+```
+
+Strips a single leading `v`/`V` (e.g. `"v1.2.0"` → `"1.2.0"`), so a
+git tag written either way compares equal to a plain `[project]
+version` value (task T27). 
+
+### `checkVersionTag`
+
+*def*
+
+```lean
+checkVersionTag : LeanDocConfig → System.FilePath → IO Unit
+```
+
+Warns (never fails the build) on stderr if `[project] version`
+doesn't match the project's latest git tag (task T27) — a real,
+narrowly-scoped signal that someone forgot to bump the configured
+version after tagging a release, not a general "is this repo dirty"
+check (deliberately not built: a dirty working tree is completely
+normal mid-edit, e.g. generating docs before committing both the
+source changes and the regenerated docs together — warning about that
+would just be noise on routine use). A no-op if `projectVersion` is
+empty (nothing configured to check), `projectRoot` isn't a git repo,
+or it has no tags yet — there's nothing to compare against in any of
+those cases, not a reason to warn. Deliberately never rendered
+anywhere a reader would see it, only ever a build-time developer
+warning — see the task's own discussion in `wip/todo.md` for why a
+reader-facing stamp was dropped in favor of this instead. 
 
 ### `moduleToDocPath`
 

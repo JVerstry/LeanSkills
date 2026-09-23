@@ -66,6 +66,13 @@ structure LeanDocConfig where
   find in each file's copyright header. Same empty-skips treatment as
   `complianceAuthor`. -/
   complianceLicense : String := ""
+  /-- Task T27: the project's own release version, e.g. `"1.2.0"` —
+  manually set, not auto-detected. Empty (the default) means "not
+  tracked," and `checkVersionTag` skips its check entirely rather than
+  warning about a version nobody configured. Only ever compared against
+  the project's latest git tag, never rendered anywhere a reader would
+  see it — see `checkVersionTag`'s doc comment for why. -/
+  projectVersion : String := ""
 deriving Inhabited
 
 open Lake.Toml in
@@ -89,6 +96,7 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let modules ← table.tryDecodeD `modules Table.empty
       let renderer ← table.tryDecodeD `renderer Table.empty
       let compliance ← table.tryDecodeD `compliance Table.empty
+      let project ← table.tryDecodeD `project Table.empty
       -- Decoded as `String`, not `System.FilePath`, so a trailing `/`
       -- (as written in the schema, e.g. `.leandoc/`) can be trimmed
       -- before use — otherwise joining it with a filename below
@@ -104,8 +112,9 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let complianceEnabled ← compliance.tryDecodeD `enabled false
       let complianceAuthor ← compliance.tryDecodeD `author ""
       let complianceLicense ← compliance.tryDecodeD `license ""
+      let projectVersion ← project.tryDecodeD `version ""
       pure { jsonDir, docsDir, includeModules, exclude, rendererName, rendererJekyll,
-             complianceEnabled, complianceAuthor, complianceLicense
+             complianceEnabled, complianceAuthor, complianceLicense, projectVersion
              : LeanDocConfig }
     pure cfg
 
@@ -354,6 +363,36 @@ def checkComplianceHeader (config : LeanDocConfig) (file : System.FilePath) : IO
     let source ← IO.FS.readFile file
     unless hasCopyrightHeader source config.complianceAuthor config.complianceLicense do
       IO.eprintln s!"LeanDoc: warning: {file} is missing the expected copyright/license header (see [compliance] in leandoc.toml)."
+
+/-- Strips a single leading `v`/`V` (e.g. `"v1.2.0"` → `"1.2.0"`), so a
+git tag written either way compares equal to a plain `[project]
+version` value (task T27). -/
+def normalizeVersion (v : String) : String :=
+  if v.startsWith "v" || v.startsWith "V" then (v.drop 1).toString else v
+
+/-- Warns (never fails the build) on stderr if `[project] version`
+doesn't match the project's latest git tag (task T27) — a real,
+narrowly-scoped signal that someone forgot to bump the configured
+version after tagging a release, not a general "is this repo dirty"
+check (deliberately not built: a dirty working tree is completely
+normal mid-edit, e.g. generating docs before committing both the
+source changes and the regenerated docs together — warning about that
+would just be noise on routine use). A no-op if `projectVersion` is
+empty (nothing configured to check), `projectRoot` isn't a git repo,
+or it has no tags yet — there's nothing to compare against in any of
+those cases, not a reason to warn. Deliberately never rendered
+anywhere a reader would see it, only ever a build-time developer
+warning — see the task's own discussion in `wip/todo.md` for why a
+reader-facing stamp was dropped in favor of this instead. -/
+def checkVersionTag (config : LeanDocConfig) (projectRoot : System.FilePath) : IO Unit := do
+  unless config.projectVersion.isEmpty do
+    let result ← IO.Process.output
+      { cmd := "git", args := #["describe", "--tags", "--abbrev=0"], cwd := some projectRoot }
+    if result.exitCode == 0 then
+      let latestTag := result.stdout.trimAscii.toString
+      unless latestTag.isEmpty do
+        unless normalizeVersion config.projectVersion == normalizeVersion latestTag do
+          IO.eprintln s!"LeanDoc: warning: leandoc.toml's [project] version ({config.projectVersion}) doesn't match the latest git tag ({latestTag}) — did you forget to bump it?"
 
 /-! ## Renderer
 
