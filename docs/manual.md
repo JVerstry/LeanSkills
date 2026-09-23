@@ -347,6 +347,18 @@ other dependency) isn't shown — LeanDoc has no page for it to link to,
 so it's silently dropped rather than rendered as a dead link. A module
 nothing else imports gets no line at all.
 
+### LaTeX in docstrings
+
+Jekyll output loads [MathJax](https://www.mathjax.org/) (task T51),
+rendering `$...$` (inline) and `$$...$$` (display) LaTeX inside
+docstrings — matching doc-gen4's own choice of delimiters, so a
+docstring written with doc-gen4 in mind renders the same way here.
+MathJax itself is loaded from its own CDN, not vendored — unlike
+LeanDoc's other JS assets, it's a large, versioned third-party
+library, not something a project would ever want to hand-edit.
+Non-Jekyll output has no MathJax include; `$...$` in a docstring just
+renders as literal text there.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents

@@ -16,7 +16,12 @@
      LEANDOC_BASEURL is set here (not hardcoded in search.js) because
      only the layout goes through Liquid processing; search-index.json
      itself has no front matter, so it can't resolve
-     {{ site.baseurl }} on its own. -->
+     {{ site.baseurl }} on its own.
+
+     mathjax-config.js (task T51) must load *before* MathJax's own
+     script, which reads window.MathJax at startup -- plain <script>,
+     not type="module", to guarantee that ordering (module scripts are
+     deferred and don't reliably run before a later plain <script>). -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +32,8 @@
   <script>window.LEANDOC_BASEURL = "{{ site.baseurl | default: '' }}";</script>
   <script type="module" src="{{ '/assets/color-scheme.js' | relative_url }}"></script>
   <script type="module" src="{{ '/assets/search.js' | relative_url }}"></script>
+  <script src="{{ '/assets/mathjax-config.js' | relative_url }}"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <style>
     #search { margin: 1em 0; }
     #search-results { list-style: none; padding: 0; margin: 0.5em 0 0; }

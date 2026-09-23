@@ -873,7 +873,12 @@ def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (tas
      LEANDOC_BASEURL is set here (not hardcoded in search.js) because
      only the layout goes through Liquid processing; search-index.json
      itself has no front matter, so it can't resolve
-     {{ site.baseurl }} on its own. -->
+     {{ site.baseurl }} on its own.
+
+     mathjax-config.js (task T51) must load *before* MathJax's own
+     script, which reads window.MathJax at startup -- plain <script>,
+     not type=\"module\", to guarantee that ordering (module scripts are
+     deferred and don't reliably run before a later plain <script>). -->
 <!DOCTYPE html>
 <html lang=\"en\">
 <head>
@@ -884,6 +889,8 @@ def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (tas
   <script>window.LEANDOC_BASEURL = \"{{ site.baseurl | default: '' }}\";</script>
   <script type=\"module\" src=\"{{ '/assets/color-scheme.js' | relative_url }}\"></script>
   <script type=\"module\" src=\"{{ '/assets/search.js' | relative_url }}\"></script>
+  <script src=\"{{ '/assets/mathjax-config.js' | relative_url }}\"></script>
+  <script id=\"MathJax-script\" async src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\"></script>
   <style>
     #search { margin: 1em 0; }
     #search-results { list-style: none; padding: 0; margin: 0.5em 0 0; }
@@ -1023,6 +1030,26 @@ def searchJs : String := "/* Site-wide declaration index + client-side search (t
     renderResults(matches);
   });
 })();
+"
+
+/-- Embedded from `assets/mathjax-config.js`. -/
+def mathjaxConfigJs : String := "/* MathJax configuration for rendering LaTeX in docstrings (task T51).
+ *
+ * Original, not vendored from doc-gen4 -- but matches its choice of
+ * delimiters (`$...$` for inline math, `$$...$$` for display math),
+ * so a docstring written with doc-gen4 in mind renders the same way
+ * here. Loaded before MathJax's own script (see the layout), which
+ * reads `window.MathJax` at startup.
+ *
+ * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0),
+ * same license as LeanDoc itself.
+ */
+window.MathJax = {
+  tex: {
+    inlineMath: [[\"$\", \"$\"]],
+    displayMath: [[\"$$\", \"$$\"]],
+  },
+};
 "
 
 end LeanDoc.Assets

@@ -182,19 +182,23 @@ def main : IO Unit := do
   let scratchLayout := scratchDir / "_layouts" / "default.html"
   let scratchColorScheme := scratchDir / "assets" / "color-scheme.js"
   let scratchSearchJs := scratchDir / "assets" / "search.js"
+  let scratchMathjaxConfig := scratchDir / "assets" / "mathjax-config.js"
   if ← scratchStyle.pathExists then IO.FS.removeFile scratchStyle
   if ← scratchLayout.pathExists then IO.FS.removeFile scratchLayout
   if ← scratchColorScheme.pathExists then IO.FS.removeFile scratchColorScheme
   if ← scratchSearchJs.pathExists then IO.FS.removeFile scratchSearchJs
+  if ← scratchMathjaxConfig.pathExists then IO.FS.removeFile scratchMathjaxConfig
 
   ensureStyleAsset scratchDir
   ensureDefaultLayout scratchDir
   ensureColorSchemeScript scratchDir
   ensureSearchScript scratchDir
+  ensureMathjaxConfig scratchDir
   let styleContent ← IO.FS.readFile scratchStyle
   let layoutContent ← IO.FS.readFile scratchLayout
   let colorSchemeContent ← IO.FS.readFile scratchColorScheme
   let searchJsContent ← IO.FS.readFile scratchSearchJs
+  let mathjaxConfigContent ← IO.FS.readFile scratchMathjaxConfig
   s ← s.check "ensureStyleAsset writes the vendored doc-gen4 stylesheet"
     (styleContent == LeanDoc.Assets.styleCss)
   s ← s.check "ensureDefaultLayout writes LeanDoc's own layout"
@@ -203,6 +207,8 @@ def main : IO Unit := do
     (colorSchemeContent == LeanDoc.Assets.colorSchemeJs)
   s ← s.check "ensureSearchScript writes the search script"
     (searchJsContent == LeanDoc.Assets.searchJs)
+  s ← s.check "ensureMathjaxConfig writes the MathJax config"
+    (mathjaxConfigContent == LeanDoc.Assets.mathjaxConfigJs)
   s ← s.check "the vendored stylesheet mentions its doc-gen4 origin"
     ((styleContent.splitOn "doc-gen4").length > 1)
   s ← s.check "the default layout links assets/style.css"
@@ -211,6 +217,9 @@ def main : IO Unit := do
     ((layoutContent.splitOn "/assets/color-scheme.js").length > 1)
   s ← s.check "the default layout links assets/search.js"
     ((layoutContent.splitOn "/assets/search.js").length > 1)
+  s ← s.check "the default layout links assets/mathjax-config.js and MathJax's CDN script"
+    ((layoutContent.splitOn "/assets/mathjax-config.js").length > 1 &&
+     (layoutContent.splitOn "cdn.jsdelivr.net/npm/mathjax").length > 1)
   s ← s.check "the default layout includes the color-theme-switcher form"
     ((layoutContent.splitOn "color-theme-switcher").length > 1)
   s ← s.check "the default layout includes the search box markup"
@@ -222,6 +231,9 @@ def main : IO Unit := do
   s ← s.check "search.js targets the #search-input/#search-results markup"
     ((searchJsContent.splitOn "search-input").length > 1 &&
      (searchJsContent.splitOn "search-results").length > 1)
+  s ← s.check "mathjax-config.js configures $...$ and $$...$$ delimiters"
+    ((mathjaxConfigContent.splitOn "inlineMath").length > 1 &&
+     (mathjaxConfigContent.splitOn "displayMath").length > 1)
 
   -- Write-once: a customized file must survive a second `render` run.
   let customStyle := "/* my custom override */\n"
@@ -235,6 +247,7 @@ def main : IO Unit := do
   IO.FS.removeFile scratchLayout
   IO.FS.removeFile scratchColorScheme
   IO.FS.removeFile scratchSearchJs
+  IO.FS.removeFile scratchMathjaxConfig
 
   -- ## Unit-level: renderSearchIndex (task T47)
 

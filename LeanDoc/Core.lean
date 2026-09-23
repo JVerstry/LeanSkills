@@ -871,6 +871,21 @@ def ensureSearchScript (docsDir : System.FilePath) : IO Unit := do
       IO.FS.createDirAll dir
     IO.FS.writeFile path LeanDoc.Assets.searchJs
 
+/-- Ensures `docsDir/assets/mathjax-config.js` exists, writing the
+MathJax delimiter configuration (task T51 — see
+`assets/mathjax-config.js`, `LeanDoc.Assets.mathjaxConfigJs`) if it's
+missing. Never overwrites an existing file, same write-once treatment
+as `ensureStyleAsset`. MathJax's own renderer script is loaded
+directly from its CDN in the layout, not vendored — unlike the other
+assets here, it's a large, versioned third-party library, not
+something a project would ever want to hand-edit after the fact. -/
+def ensureMathjaxConfig (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "assets" / "mathjax-config.js"
+  unless (← path.pathExists) do
+    if let some dir := path.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile path LeanDoc.Assets.mathjaxConfigJs
+
 /-- The auto-managed navigation region inside `docs_dir/index.md`
 (task T18) — delimited by these markers so `ensureRootIndex` can keep
 it current as LeanDoc's own generated pages grow (a plain "write once,
@@ -1050,6 +1065,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureDefaultLayout docsDir
     ensureColorSchemeScript docsDir
     ensureSearchScript docsDir
+    ensureMathjaxConfig docsDir
   let instancesByClass := groupInstancesByClass metas
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do

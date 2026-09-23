@@ -22,6 +22,7 @@ ASSETS = [
     ("defaultLayoutHtml", "assets/layouts/default.html"),
     ("colorSchemeJs", "assets/color-scheme.js"),
     ("searchJs", "assets/search.js"),
+    ("mathjaxConfigJs", "assets/mathjax-config.js"),
 ]
 
 

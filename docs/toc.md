@@ -82,6 +82,7 @@ layout: default
 - [`instFromJsonSearchEntry`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderSearchIndex`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureSearchScript`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ensureMathjaxConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`navMarkerStart`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`navMarkerEnd`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderNavBlock`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
