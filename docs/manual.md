@@ -235,14 +235,42 @@ directly on the page itself) plus a small switcher form in
 visits (`localStorage`), defaults to following your OS/browser
 setting.
 
-`docs_dir/assets/style.css`, `docs_dir/_layouts/default.html`, and
-`docs_dir/assets/color-scheme.js` are all written **once** and never
-touched again by LeanDoc on later `lake exe leandoc` runs — the same
-write-once guarantee as `_config.yml`. Edit any of them directly to
-customize your site's look or behavior; nothing will overwrite your
+`docs_dir/assets/style.css`, `docs_dir/_layouts/default.html`,
+`docs_dir/assets/color-scheme.js`, and `docs_dir/assets/search.js` (see
+"Searching the generated site" below) are all written **once** and
+never touched again by LeanDoc on later `lake exe leandoc` runs — the
+same write-once guarantee as `_config.yml`. Edit any of them directly
+to customize your site's look or behavior; nothing will overwrite your
 changes. There's no `leandoc.toml` option for "pick a different
 palette" — if you want something other than the vendored default, edit
 the CSS itself after the first generation.
+
+### Searching the generated site
+
+Jekyll output (see "Jekyll" above) includes a search box at the top of
+every page (task T47), backed by `docs_dir/assets/search-index.json` —
+a flat, site-wide list of every documented declaration's name, kind,
+module, and link. Unlike the assets above, this file is **not**
+write-once: it's rewritten on every `lake exe leandoc` run so it always
+reflects your project's current declarations.
+
+Matching is a simple case-insensitive substring match against
+declaration names (capped at 20 results) — not the fuzzy, ranked search
+doc-gen4's own Mathlib-scale index does. LeanDoc's typical project is
+nowhere near Mathlib's ~70MB index size, so this keeps things simple
+rather than porting that complexity in ahead of an actual need. Plain
+Markdown output (`renderer.jekyll = false` in `leandoc.toml`) has no
+search box at all — there's no static-site layer to run the script.
+
+### Jumping to source
+
+Each declaration's page links to its exact definition on GitHub (task
+T46), when two things are both available: the project is a git repo
+with a GitHub `origin` remote (SSH or HTTPS; other hosts and non-git
+projects are skipped gracefully, no link rendered rather than a wrong
+one), and the declaration's source range was captured during
+extraction. The link points at the exact commit `lake exe leandoc` ran
+against, not a branch — regenerate to pick up a new commit.
 
 ### Generated output
 

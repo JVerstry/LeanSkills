@@ -62,6 +62,16 @@ layout: default
 - [`renderModulesPage`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`kindBucket`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderToc`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry.name`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry.kind`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry.module`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry.link`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`instToJsonSearchEntry.toJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`instToJsonSearchEntry`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`instFromJsonSearchEntry.fromJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`instFromJsonSearchEntry`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`renderSearchIndex`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ensureSearchScript`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`navMarkerStart`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`navMarkerEnd`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderNavBlock`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -82,4 +92,6 @@ layout: default
 - [`DeclRange.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`SearchEntry.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 

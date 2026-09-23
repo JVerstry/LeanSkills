@@ -660,6 +660,50 @@ def renderToc (metas : Array DeclMeta) (jekyll : Bool) : String :=
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# Table of Contents\n\n{body}\n"
 
+/-- One entry in the site-wide search index (task T47) — deliberately
+narrower than `DeclMeta`: just enough for `assets/search.js` to filter
+by name and render a result (`kind`/`module` as a label, `link` to jump
+to it). `link` is site-root-relative, no leading slash (`search.js`
+prefixes it with `LEANDOC_BASEURL` itself) — `"reference/" ++ linkPath
+module ++ ".html"`, matching Jekyll's default converted-file naming
+(`.md` sources become same-path `.html` outputs) the same way
+`renderModulesPage`'s `{% link %}` tags already rely on. -/
+structure SearchEntry where
+  name   : String
+  kind   : String
+  module : String
+  link   : String
+deriving ToJson, FromJson
+
+/-- Renders `docs_dir/assets/search-index.json` (task T47): one compact
+JSON array, one entry per documented declaration, powering
+`assets/search.js`'s client-side search. Only meaningful for Jekyll
+output (`search.js`/the layout's `#search` box are only wired up when
+`jekyll` is on, same as every other JS asset here) — `render` only
+calls this in that branch. Regenerated fresh on every run (unlike the
+write-once assets below), since it must reflect the project's current
+declarations, not a one-time template. `.compress`, not `.pretty`:
+this file is machine-read only, and T47's own backlog entry already
+flagged index size as a real scale concern (Mathlib's equivalent is
+67.6MB) — no reason to spend extra bytes on human-readable whitespace
+nobody reads. -/
+def renderSearchIndex (metas : Array DeclMeta) : String :=
+  let entries := metas.map fun d =>
+    ({ name := d.name, kind := d.kind, module := d.module
+       link := s!"reference/{linkPath d.module}.html" } : SearchEntry)
+  (toJson entries).compress
+
+/-- Ensures `docsDir/assets/search.js` exists, writing the client-side
+search script (task T47 — see `assets/search.js`,
+`LeanDoc.Assets.searchJs`) if it's missing. Never overwrites an
+existing file, same write-once treatment as `ensureStyleAsset`. -/
+def ensureSearchScript (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "assets" / "search.js"
+  unless (← path.pathExists) do
+    if let some dir := path.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile path LeanDoc.Assets.searchJs
+
 /-- The auto-managed navigation region inside `docs_dir/index.md`
 (task T18) — delimited by these markers so `ensureRootIndex` can keep
 it current as LeanDoc's own generated pages grow (a plain "write once,
@@ -793,7 +837,14 @@ stay write-once-only.
 `sourceBaseUrl` (task T46, from `githubSourceBaseUrl`) is threaded
 through to every `renderModulePage` call for jump-to-source links —
 computed once by the caller (`Main.lean`, which has `projectRoot`;
-`render` itself only ever sees `docsDir`), not per-module. -/
+`render` itself only ever sees `docsDir`), not per-module.
+
+For Jekyll output, also writes `docs_dir/assets/search-index.json`
+(task T47) powering the layout's client-side search box — after
+`ensureRootIndex`, not before: ordering doesn't actually matter here
+(different files, no dependency between them), but grouping the
+"only meaningful for Jekyll" writes together keeps them visually
+separate from the always-on Markdown writes above. -/
 def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     (sourceBaseUrl : Option String) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
@@ -812,6 +863,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureStyleAsset docsDir
     ensureDefaultLayout docsDir
     ensureColorSchemeScript docsDir
+    ensureSearchScript docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName
@@ -822,4 +874,9 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
   IO.FS.writeFile (referenceDir / "modules.md") (renderModulesPage moduleNames jekyll)
   IO.FS.writeFile (docsDir / "toc.md") (renderToc metas jekyll)
   ensureRootIndex docsDir jekyll
+  if jekyll then
+    let indexPath := docsDir / "assets" / "search-index.json"
+    if let some dir := indexPath.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile indexPath (renderSearchIndex metas)
   IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {referenceDir}"

@@ -866,7 +866,14 @@ def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (tas
      The #settings block + color-scheme.js (task T45) is adapted from
      doc-gen4's own light/dark/system theme switcher, simplified since
      LeanDoc has no separate nav-in-an-iframe document to coordinate
-     with — see assets/color-scheme.js's own header comment. -->
+     with — see assets/color-scheme.js's own header comment.
+
+     The #search block + search.js (task T47) is original, not adapted
+     from doc-gen4 -- see assets/search.js's own header comment for why.
+     LEANDOC_BASEURL is set here (not hardcoded in search.js) because
+     only the layout goes through Liquid processing; search-index.json
+     itself has no front matter, so it can't resolve
+     {{ site.baseurl }} on its own. -->
 <!DOCTYPE html>
 <html lang=\"en\">
 <head>
@@ -874,7 +881,15 @@ def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (tas
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
   <title>{{ page.title | default: site.title | default: \"LeanDoc\" }}</title>
   <link rel=\"stylesheet\" href=\"{{ '/assets/style.css' | relative_url }}\">
+  <script>window.LEANDOC_BASEURL = \"{{ site.baseurl | default: '' }}\";</script>
   <script type=\"module\" src=\"{{ '/assets/color-scheme.js' | relative_url }}\"></script>
+  <script type=\"module\" src=\"{{ '/assets/search.js' | relative_url }}\"></script>
+  <style>
+    #search { margin: 1em 0; }
+    #search-results { list-style: none; padding: 0; margin: 0.5em 0 0; }
+    #search-results li { padding: 0.15em 0; }
+    .search-result-meta { opacity: 0.7; font-size: 0.9em; }
+  </style>
 </head>
 <body>
   <div id=\"settings\" hidden>
@@ -883,6 +898,10 @@ def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (tas
       <label for=\"color-theme-system\" title=\"Match system theme settings\"><input type=\"radio\" name=\"color_theme\" id=\"color-theme-system\" value=\"system\" autocomplete=\"off\">system</label>
       <label for=\"color-theme-light\"><input type=\"radio\" name=\"color_theme\" id=\"color-theme-light\" value=\"light\" autocomplete=\"off\">light</label>
     </form>
+  </div>
+  <div id=\"search\">
+    <input type=\"search\" id=\"search-input\" placeholder=\"Search declarations…\" autocomplete=\"off\">
+    <ul id=\"search-results\"></ul>
   </div>
   <main>
     {{ content }}
@@ -940,6 +959,70 @@ document.addEventListener(\"DOMContentLoaded\", function () {
 // Un-hide the color-scheme picker once the script has actually run --
 // keeps it invisible rather than broken for anyone without JavaScript.
 document.querySelector(\"#settings\").removeAttribute(\"hidden\");
+"
+
+/-- Embedded from `assets/search.js`. -/
+def searchJs : String := "/* Site-wide declaration index + client-side search (task T47).
+ *
+ * Fetches assets/search-index.json -- unlike the write-once assets
+ * above (style.css, default.html, color-scheme.js), this file is
+ * regenerated fresh by `render` on every `lake exe leandoc` run, since
+ * it must reflect the project's current declarations, not a
+ * one-time-written template.
+ *
+ * Simple case-insensitive substring matching against declaration
+ * names, capped at 20 results -- no fuzzy/ranked matching. doc-gen4's
+ * own client-side search is considerably more elaborate; LeanDoc's
+ * typical (non-Mathlib) project scale doesn't need that yet, and a
+ * naive substring match is easy to reason about and keep correct.
+ *
+ * Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0),
+ * same license as LeanDoc itself. Original work, not adapted from
+ * doc-gen4 (its declaration-data.js is tied to a much larger index
+ * schema this doesn't attempt to match).
+ */
+(function () {
+  const baseurl = window.LEANDOC_BASEURL || \"\";
+  const input = document.querySelector(\"#search-input\");
+  const results = document.querySelector(\"#search-results\");
+  if (!input || !results) return;
+
+  let index = null;
+  fetch(baseurl + \"/assets/search-index.json\")
+    .then((r) => r.json())
+    .then((data) => {
+      index = data;
+    })
+    .catch(() => {
+      // No search-index.json (e.g. non-Jekyll output, or the file
+      // genuinely failed to write) -- leave the box inert rather than
+      // throwing in the console on every page load.
+    });
+
+  function renderResults(matches) {
+    results.textContent = \"\";
+    for (const d of matches) {
+      const li = document.createElement(\"li\");
+      const a = document.createElement(\"a\");
+      a.href = baseurl + \"/\" + d.link;
+      a.textContent = d.name;
+      li.appendChild(a);
+      const meta = document.createElement(\"span\");
+      meta.className = \"search-result-meta\";
+      meta.textContent = \" (\" + d.kind + \", \" + d.module + \")\";
+      li.appendChild(meta);
+      results.appendChild(li);
+    }
+  }
+
+  input.addEventListener(\"input\", () => {
+    const q = input.value.trim().toLowerCase();
+    results.textContent = \"\";
+    if (!index || q === \"\") return;
+    const matches = index.filter((d) => d.name.toLowerCase().includes(q)).slice(0, 20);
+    renderResults(matches);
+  });
+})();
 "
 
 end LeanDoc.Assets

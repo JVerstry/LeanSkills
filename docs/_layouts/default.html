@@ -9,7 +9,14 @@
      The #settings block + color-scheme.js (task T45) is adapted from
      doc-gen4's own light/dark/system theme switcher, simplified since
      LeanDoc has no separate nav-in-an-iframe document to coordinate
-     with — see assets/color-scheme.js's own header comment. -->
+     with — see assets/color-scheme.js's own header comment.
+
+     The #search block + search.js (task T47) is original, not adapted
+     from doc-gen4 -- see assets/search.js's own header comment for why.
+     LEANDOC_BASEURL is set here (not hardcoded in search.js) because
+     only the layout goes through Liquid processing; search-index.json
+     itself has no front matter, so it can't resolve
+     {{ site.baseurl }} on its own. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +24,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ page.title | default: site.title | default: "LeanDoc" }}</title>
   <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+  <script>window.LEANDOC_BASEURL = "{{ site.baseurl | default: '' }}";</script>
   <script type="module" src="{{ '/assets/color-scheme.js' | relative_url }}"></script>
+  <script type="module" src="{{ '/assets/search.js' | relative_url }}"></script>
+  <style>
+    #search { margin: 1em 0; }
+    #search-results { list-style: none; padding: 0; margin: 0.5em 0 0; }
+    #search-results li { padding: 0.15em 0; }
+    .search-result-meta { opacity: 0.7; font-size: 0.9em; }
+  </style>
 </head>
 <body>
   <div id="settings" hidden>
@@ -26,6 +41,10 @@
       <label for="color-theme-system" title="Match system theme settings"><input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off">system</label>
       <label for="color-theme-light"><input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off">light</label>
     </form>
+  </div>
+  <div id="search">
+    <input type="search" id="search-input" placeholder="Search declarations…" autocomplete="off">
+    <ul id="search-results"></ul>
   </div>
   <main>
     {{ content }}
