@@ -15,10 +15,12 @@ parse and understand the code.
 
 See [`README.md`](https://github.com/JVerstry/LeanDoc/blob/main/README.md)
 for LeanDoc's documentation elaboration strategy (how the extractor and
-renderer stages work), or [`reference/`]({% link reference/index.md %})
-for LeanDoc's own generated declaration reference (task T25: named
-`reference/`, not `api/` — a flat dump of every included declaration,
-not a curated public API surface).
+renderer stages work), [`manual.md`]({% link manual.md %}) for how to
+actually configure and use it (task T23), or
+[`reference/`]({% link reference/index.md %}) for LeanDoc's own
+generated declaration reference (task T25: named `reference/`, not
+`api/` — a flat dump of every included declaration, not a curated
+public API surface).
 
 ## Where things live
 

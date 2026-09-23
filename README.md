@@ -9,7 +9,9 @@ LeanDoc doesn't have a packaged installer. Hand
 [`InstallationPrompt.txt`](InstallationPrompt.txt) to your own AI coding
 assistant (Claude or otherwise) — it walks through adding LeanDoc as a
 Lake dependency, setting up `docs/` and `leandoc.toml`, and running the
-initial generation.
+initial generation. See [`docs/manual.md`](docs/manual.md) for the full
+usage manual (configuration, inclusion/exclusion, Jekyll, optional CI/
+pre-commit checks) once it's installed.
 
 **Note:** modifying comments (including docstrings) in a Lean file can
 trigger a surprising amount of rebuilding even when no code actually

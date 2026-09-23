@@ -164,7 +164,7 @@ def main : IO Unit := do
   -- from `README.md` — its useful content moved to a personal,
   -- gitignored `CLAUDE.md` instead, same treatment as `wip/`.
 
-  for file in #["README.md", "InstallationPrompt.txt"] do
+  for file in #["README.md", "InstallationPrompt.txt", "docs/manual.md"] do
     s ← s.check s!"{file} exists" (← System.FilePath.pathExists file)
   -- `QualityAuditPrompt.txt` intentionally left out until T17 actually
   -- ships (2026-09-22): a draft existed briefly but T17 was explicitly
