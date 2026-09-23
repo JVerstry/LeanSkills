@@ -69,4 +69,18 @@ structure MyLeanProp : Prop where
   /-- Always true. -/
   trivial : True
 
+/-- A tiny typeclass, used to demonstrate task T48's instance listing:
+LeanDoc should render the anonymous `Nat` instance below under this
+class's own page as a registered instance, not just as an unrelated
+`def` elsewhere in the module. -/
+class MyLeanDefault (α : Type) where
+  /-- The default value for `α`. -/
+  myLeanDefaultValue : α
+
+/-- `Nat`'s default is `0`. Proves LeanDoc's extractor actually links
+this instance back to `MyLeanDefault` (its `instanceOf`), not just that
+`MyLeanDefault` itself gets documented. -/
+instance : MyLeanDefault Nat where
+  myLeanDefaultValue := 0
+
 end MyLeanModule

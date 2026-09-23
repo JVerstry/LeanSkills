@@ -38,11 +38,13 @@ layout: default
 - [`DeclMeta.type`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.docString`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.range`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`DeclMeta.instanceOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instToJsonDeclMeta.toJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instToJsonDeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instFromJsonDeclMeta.fromJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instFromJsonDeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`kindString`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`instanceClassOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`declMetaOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`isNoise`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`leandocIgnoreAttr`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -76,6 +78,7 @@ layout: default
 - [`navMarkerEnd`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderNavBlock`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureRootIndex`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`groupInstancesByClass`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`groupDeclsByModule`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`defaultJekyllConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureJekyllConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

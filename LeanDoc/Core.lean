@@ -224,12 +224,18 @@ Known gaps, left for a later pass rather than guessed at now:
 - No import list yet (T7 also asks for per-module imports).
 -/
 structure DeclMeta where
-  module    : String
-  name      : String
-  kind      : String
-  type      : String
-  docString : Option String
-  range     : Option DeclRange
+  module     : String
+  name       : String
+  kind       : String
+  type       : String
+  docString  : Option String
+  range      : Option DeclRange
+  /-- The class this declaration is a registered instance *of* (task
+  T48), e.g. `some "Inhabited"` for an `instance : Inhabited Foo`.
+  `none` for anything that isn't a registered instance, or whose
+  conclusion's head isn't itself a class (shouldn't happen for a
+  well-formed instance, but not asserted). See `instanceClassOf`. -/
+  instanceOf : Option String := none
 deriving ToJson, FromJson
 
 /-- Human-readable declaration kind. `structure` vs `inductive` isn't
@@ -246,6 +252,31 @@ def kindString (env : Environment) (name : Name) : ConstantKind → String
   | .ctor => "constructor"
   | .recursor => "recursor"
 
+/-- The class `declName` is a registered instance *of*, if any (task
+T48). `none` for anything `Lean.Meta.isInstance` doesn't recognize as
+an instance at all, and also (deliberately not asserted otherwise) for
+an instance whose conclusion's head constant isn't itself a class —
+telescoping the type down to its conclusion and checking the head via
+`Lean.isClass` mirrors how instance resolution itself finds the class
+of a `instance : Foo Bar` declaration.
+
+Scoped to this one direction only — "what class is this an instance
+of" — not doc-gen4's other direction ("what instances mention this
+*type*", e.g. every `Inhabited Foo`-shaped instance on `Foo`'s own
+page regardless of which class each belongs to). That second direction
+needs walking every argument of the conclusion, not just its head, and
+was left for a later pass rather than guessed at now. -/
+def instanceClassOf (env : Environment) (declName : Name) (type : Expr) :
+    CoreM (Option String) := do
+  if ← Meta.isInstance declName then
+    let head ← (show MetaM Expr from
+      Meta.forallTelescopeReducing type fun _ concl => pure concl.getAppFn).run'
+    match head with
+    | .const n _ => pure (if isClass env n then some n.toString else none)
+    | _ => pure none
+  else
+    pure none
+
 /-- Extracts one declaration's metadata. Runs in `CoreM` because
 `Lean.isAutoDeclOrPrivate_Internal` (the noise filter, see `isNoise`
 below) and type pretty-printing both need it. -/
@@ -256,8 +287,9 @@ def declMetaOf (env : Environment) (moduleName : Name) (c : AsyncConstantInfo) :
   let range := (← findDeclarationRanges? c.name).map fun r =>
     { startLine := r.range.pos.line, startColumn := r.range.pos.column
       endLine := r.range.endPos.line, endColumn := r.range.endPos.column }
+  let instanceOf ← instanceClassOf env c.name c.toConstantVal.type
   pure { module := moduleName.toString, name := c.name.toString
-         kind := kindString env c.name c.kind, type, docString, range }
+         kind := kindString env c.name c.kind, type, docString, range, instanceOf }
 
 /-- Whether `c` is Lean-generated scaffolding (recursors, `noConfusion`,
 `injEq`, `_sizeOf_*`, equation lemmas, ...) rather than something a human
@@ -528,17 +560,30 @@ not just a nice-to-have (every declaration there links to its exact
 GitHub line range). `sourceBaseUrl` is `none` whenever
 `githubSourceBaseUrl` couldn't build one (no git repo, no `origin`,
 non-GitHub remote) — silently omit the link then, not an error. -/
-def renderDecl (d : DeclMeta) (sourceBaseUrl : Option String) : String :=
+def renderDecl (d : DeclMeta) (sourceBaseUrl : Option String)
+    (instancesByClass : Std.HashMap String (Array DeclMeta)) : String :=
   let doc := d.docString.getD "*(not documented)*"
   let sourceLink := match sourceBaseUrl, d.range with
     | some base, some r =>
       let path := linkPath d.module ++ ".lean"
       s!"\n\n[source]({base}/{path}#L{r.startLine}-L{r.endLine})"
     | _, _ => ""
+  -- Task T48: `d` is a class with registered instances iff some other
+  -- declaration's `instanceOf` names it — render those as a flat list
+  -- of `name — module`, not links to a specific in-page anchor (same
+  -- reasoning `renderToc` already gives for not guessing at Jekyll's
+  -- heading-id slugification without a real local Jekyll to verify
+  -- against).
+  let instances := instancesByClass.getD d.name #[]
+  let instancesSection :=
+    if instances.isEmpty then "" else
+      let items := String.join ((instances.map fun i =>
+        s!"- `{i.name}` — *{i.module}*").toList.intersperse "\n")
+      s!"\n\n**Instances:**\n\n{items}\n"
   s!"### `{d.name}`\n\n\
      *{d.kind}*\n\n\
      ```lean\n{d.name} : {d.type}\n```\n\n\
-     {doc}{sourceLink}\n"
+     {doc}{sourceLink}{instancesSection}\n"
 
 /-- Jekyll (task T22/T28) only converts a Markdown file at all — running
 Liquid tags, honoring `_config.yml`, everything — if it has *front
@@ -563,8 +608,10 @@ whether front matter is prepended — `false` produces plain portable
 Markdown with no Jekyll-specific content at all. `sourceBaseUrl` (task
 T46) is threaded through to `renderDecl` for jump-to-source links. -/
 def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bool)
-    (sourceBaseUrl : Option String) : String :=
-  let body := String.join ((decls.map (renderDecl · sourceBaseUrl)).toList.intersperse "\n")
+    (sourceBaseUrl : Option String) (instancesByClass : Std.HashMap String (Array DeclMeta)) :
+    String :=
+  let body := String.join
+    ((decls.map (renderDecl · sourceBaseUrl instancesByClass)).toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# {moduleName}\n\n{body}"
 
@@ -746,6 +793,18 @@ def ensureRootIndex (docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
     let fm := if jekyll then frontMatter else ""
     IO.FS.writeFile path s!"{fm}# Documentation\n\n{navBlock}\n"
 
+/-- Groups instance declarations by the class they're an instance of
+(task T48 — see `instanceClassOf`), for `renderDecl`'s "Instances"
+section. Project-wide, not per-module: an instance can (and often
+does) live in a different module than the class it's an instance of. -/
+def groupInstancesByClass (metas : Array DeclMeta) : Std.HashMap String (Array DeclMeta) :=
+  Id.run do
+    let mut m : Std.HashMap String (Array DeclMeta) := {}
+    for d in metas do
+      if let some cls := d.instanceOf then
+        m := m.insert cls ((m.getD cls #[]).push d)
+    return m
+
 /-- Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). -/
 def groupDeclsByModule (metas : Array DeclMeta) : Array (String × Array DeclMeta) :=
@@ -864,13 +923,14 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureDefaultLayout docsDir
     ensureColorSchemeScript docsDir
     ensureSearchScript docsDir
+  let instancesByClass := groupInstancesByClass metas
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName
     let path := referenceDir / moduleToDocPath moduleName
     if let some dir := path.parent then
       IO.FS.createDirAll dir
-    IO.FS.writeFile path (renderModulePage moduleName decls jekyll sourceBaseUrl)
+    IO.FS.writeFile path (renderModulePage moduleName decls jekyll sourceBaseUrl instancesByClass)
   IO.FS.writeFile (referenceDir / "modules.md") (renderModulesPage moduleNames jekyll)
   IO.FS.writeFile (docsDir / "toc.md") (renderToc metas jekyll)
   ensureRootIndex docsDir jekyll

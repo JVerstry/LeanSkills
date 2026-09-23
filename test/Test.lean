@@ -237,11 +237,12 @@ def main : IO Unit := do
   let undocumented : DeclMeta :=
     { module := "M", name := "foo", kind := "def", type := "Nat"
       docString := none, range := none }
+  let noInstances : Std.HashMap String (Array DeclMeta) := {}
   s ← s.check "renderDecl shows a not-documented fallback, not silence"
-    ((renderDecl undocumented none |>.splitOn "not documented").length > 1)
+    ((renderDecl undocumented none noInstances |>.splitOn "not documented").length > 1)
   let documented := { undocumented with docString := some "does a thing" }
   s ← s.check "renderDecl shows the real docstring"
-    ((renderDecl documented none |>.splitOn "does a thing").length > 1)
+    ((renderDecl documented none noInstances |>.splitOn "does a thing").length > 1)
 
   -- ## Unit-level: T46's jump-to-source links
 
@@ -251,12 +252,28 @@ def main : IO Unit := do
       range := some { startLine := 3, startColumn := 0, endLine := 5, endColumn := 1 } }
   let sourceUrl := "https://github.com/owner/repo/blob/abc123"
   s ← s.check "renderDecl links to source when both a base URL and a range are available"
-    ((renderDecl withRange (some sourceUrl)
+    ((renderDecl withRange (some sourceUrl) noInstances
       |>.splitOn "https://github.com/owner/repo/blob/abc123/Foo/Bar.lean#L3-L5").length > 1)
   s ← s.check "renderDecl omits the source link when there's no base URL"
-    ((renderDecl withRange none |>.splitOn "[source]").length == 1)
+    ((renderDecl withRange none noInstances |>.splitOn "[source]").length == 1)
   s ← s.check "renderDecl omits the source link when there's no range, even with a base URL"
-    ((renderDecl undocumented (some sourceUrl) |>.splitOn "[source]").length == 1)
+    ((renderDecl undocumented (some sourceUrl) noInstances |>.splitOn "[source]").length == 1)
+
+  -- ## Unit-level: T48's typeclass instance listings
+
+  let classDecl : DeclMeta :=
+    { module := "M", name := "Inhabited", kind := "structure", type := "Type -> Type"
+      docString := none, range := none }
+  let instanceDecl : DeclMeta :=
+    { module := "M", name := "instFooInhabited", kind := "def", type := "Inhabited Foo"
+      docString := none, range := none, instanceOf := some "Inhabited" }
+  let instancesByClass := groupInstancesByClass #[classDecl, instanceDecl]
+  s ← s.check "groupInstancesByClass groups an instance under its class"
+    ((instancesByClass.getD "Inhabited" #[]).any (·.name == "instFooInhabited"))
+  s ← s.check "renderDecl on a class lists its registered instances"
+    ((renderDecl classDecl none instancesByClass |>.splitOn "instFooInhabited").length > 1)
+  s ← s.check "renderDecl on a declaration with no instances shows no Instances section"
+    ((renderDecl instanceDecl none instancesByClass |>.splitOn "**Instances:**").length == 1)
 
   s ← s.check "parseGithubOwnerRepo handles an HTTPS remote with .git"
     (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
@@ -424,8 +441,8 @@ def main : IO Unit := do
   -- noise-filtering count, pinned instead of re-checked by hand)
 
   let demoMetas ← extractFile (moduleToFile demoRoot demoModule) demoModule
-  s ← s.check "extractFile keeps exactly the 10 real, documentable declarations"
-    (demoMetas.size == 10)
+  s ← s.check "extractFile keeps exactly the 14 real, documentable declarations"
+    (demoMetas.size == 14)
   s ← s.check "extractFile finds MyLeanFunction with the right kind and type"
     (demoMetas.any fun d =>
       d.name == "MyLeanModule.MyLeanFunction" && d.kind == "def" && d.type == "Nat → Nat")

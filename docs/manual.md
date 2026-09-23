@@ -302,6 +302,22 @@ those markers (e.g. a landing page you wrote by hand), LeanDoc leaves
 it completely alone — add the markers yourself once if you want the
 navigation section kept in sync automatically.
 
+### Typeclass instances
+
+A class's own declaration page (task T48) lists every registered
+instance of it project-wide (`instance : MyClass Foo`-shaped
+declarations, wherever they're defined), under an **Instances**
+heading — e.g. `Inhabited`'s page would list `instInhabitedNat`,
+`instInhabitedBool`, and so on. Each entry names the instance and the
+module it lives in, without a specific in-page link (same reasoning as
+`toc.md`'s entries above — no verified Jekyll anchor slugification to
+link to).
+
+This only covers "what instances does this class have," not doc-gen4's
+other direction ("what instances mention this *type*, across every
+class") — a class with no registered instances (or a declaration that
+isn't a class at all) simply gets no Instances section.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents
