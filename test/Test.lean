@@ -332,6 +332,26 @@ def main : IO Unit := do
   s ← s.check "extractFile excludes a @[leandoc_ignore]'d declaration"
     (!(demoMetas.any fun d => d.name == "MyLeanModule.myLeanInternalHelper"))
 
+  -- ## Fixture-level: T38's orphan cleanup — `render` must wipe
+  -- `reference/` fresh each run, not just write/overwrite, or a
+  -- renamed/removed module's old page lingers forever.
+
+  let renderScratchDir := scratchDir / "render-test"
+  if ← renderScratchDir.pathExists then IO.FS.removeDirAll renderScratchDir
+  IO.FS.createDirAll renderScratchDir
+  let renderScratchJson := renderScratchDir / "metadata.json"
+  IO.FS.writeFile renderScratchJson (toJson demoMetas).pretty
+  let renderScratchDocs := renderScratchDir / "docs"
+  let orphanPath := renderScratchDocs / "reference" / "SomeOldModule.md"
+  IO.FS.createDirAll (renderScratchDocs / "reference")
+  IO.FS.writeFile orphanPath "stale content from a module that no longer exists\n"
+  render renderScratchJson renderScratchDocs true
+  s ← s.check "render wipes an orphaned reference/ page that no longer corresponds to any module"
+    (!(← orphanPath.pathExists))
+  s ← s.check "render still writes the real, current module pages"
+    (← (renderScratchDocs / "reference" / "Demo" / "MyLeanFile.md").pathExists)
+  IO.FS.removeDirAll renderScratchDir
+
   -- ## Project hygiene: required top-level files exist, and the
   -- working-notes tracker / personal Claude Code config stay out of
   -- git.

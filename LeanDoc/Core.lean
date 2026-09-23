@@ -653,7 +653,17 @@ surface, and the name shouldn't claim curation the renderer doesn't do).
 whether the output targets Jekyll (front matter, `{% link %}` links, a
 written `_config.yml`) or is plain portable Markdown. Also writes
 `docs_dir/toc.md` (task T18's table of contents) and ensures
-`docs_dir/index.md` links to both (`ensureRootIndex`). -/
+`docs_dir/index.md` links to both (`ensureRootIndex`).
+
+`docs_dir/reference/` is wiped and recreated fresh on every run (task
+T38) rather than only ever written/overwritten — otherwise a renamed
+or removed module's old page lingers on disk forever, orphaned, never
+cleaned up (hit for real landing T18/T25's `reference/index.md` →
+`reference/modules.md` rename: the stale file had to be removed by
+hand). Safe to do unconditionally because `reference/` is exclusively
+generator-owned — nothing under it is ever meant to be hand-edited,
+unlike `_config.yml`/`assets/style.css`/`_layouts/default.html`, which
+stay write-once-only. -/
 def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
@@ -663,6 +673,8 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
     | IO.eprintln s!"LeanDoc: {jsonPath} doesn't match the DeclMeta schema, can't render."
       IO.Process.exit 1
   let referenceDir := docsDir / "reference"
+  if ← referenceDir.pathExists then
+    IO.FS.removeDirAll referenceDir
   IO.FS.createDirAll referenceDir
   if jekyll then
     ensureJekyllConfig docsDir
