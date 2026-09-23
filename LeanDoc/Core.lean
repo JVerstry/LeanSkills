@@ -48,6 +48,24 @@ structure LeanDocConfig where
   default — set to `false` for output meant to be read as plain
   Markdown (an IDE, a non-Jekyll/non-Pages host) instead. -/
   rendererJekyll : Bool := true
+  /-- Task T41: the overall opt-in/opt-out toggle for documentation-
+  convention/compliance checks derived from Mathlib's own style
+  guidelines (currently just the copyright/license header check below
+  — naming-conventions and docstring-quality checks are designed but
+  not built yet, pending task T42). Off by default: most projects
+  aren't Mathlib and shouldn't be held to its conventions unless they
+  explicitly ask. -/
+  complianceEnabled : Bool := false
+  /-- Task T41: the author name(s) `checkComplianceHeader` expects to
+  find in each file's copyright header when `complianceEnabled` is
+  true. Empty skips the author-specific part of that check even when
+  compliance checking is otherwise on (nothing configured to check
+  against). -/
+  complianceAuthor : String := ""
+  /-- Task T41: the license string `checkComplianceHeader` expects to
+  find in each file's copyright header. Same empty-skips treatment as
+  `complianceAuthor`. -/
+  complianceLicense : String := ""
 deriving Inhabited
 
 open Lake.Toml in
@@ -70,6 +88,7 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let output ← table.tryDecodeD `output Table.empty
       let modules ← table.tryDecodeD `modules Table.empty
       let renderer ← table.tryDecodeD `renderer Table.empty
+      let compliance ← table.tryDecodeD `compliance Table.empty
       -- Decoded as `String`, not `System.FilePath`, so a trailing `/`
       -- (as written in the schema, e.g. `.leandoc/`) can be trimmed
       -- before use — otherwise joining it with a filename below
@@ -82,7 +101,11 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let exclude ← modules.tryDecodeD `exclude (#[] : Array String)
       let rendererName ← renderer.tryDecodeD `name "markdown"
       let rendererJekyll ← renderer.tryDecodeD `jekyll true
-      pure { jsonDir, docsDir, includeModules, exclude, rendererName, rendererJekyll
+      let complianceEnabled ← compliance.tryDecodeD `enabled false
+      let complianceAuthor ← compliance.tryDecodeD `author ""
+      let complianceLicense ← compliance.tryDecodeD `license ""
+      pure { jsonDir, docsDir, includeModules, exclude, rendererName, rendererJekyll,
+             complianceEnabled, complianceAuthor, complianceLicense
              : LeanDocConfig }
     pure cfg
 
@@ -267,6 +290,38 @@ def extractFile (file : System.FilePath) (moduleName : Name) : IO (Array DeclMet
           acc := acc.push (← declMetaOf env moduleName c)
       pure acc
     : CoreM (Array DeclMeta)).toIO' coreCtx coreState
+
+/-- Whether `source`'s header mentions the expected author/license
+(task T41) — checked as plain substring presence within the file's
+first 1000 characters (generous enough to cover a real header without
+scanning the whole file), not a strict parse of Mathlib's exact
+copyright-header grammar (`/- Copyright (c) YEAR Name. ... Authors:
+... -/`). A header lives before any declaration, so this is a genuine
+gap in what `DeclMeta`-based extraction can see at all — a separate,
+purely textual check, not something bolted onto `extractFile`. Empty
+`expectedAuthor`/`expectedLicense` skip that part of the check
+(nothing configured to check against); always requires the literal
+word "Copyright" to appear, regardless. -/
+def hasCopyrightHeader (source expectedAuthor expectedLicense : String) : Bool :=
+  let header := (source.take (min source.length 1000)).toString
+  let mentionsCopyright := (header.splitOn "Copyright").length > 1
+  let mentionsAuthor := expectedAuthor.isEmpty || (header.splitOn expectedAuthor).length > 1
+  let mentionsLicense := expectedLicense.isEmpty || (header.splitOn expectedLicense).length > 1
+  mentionsCopyright && mentionsAuthor && mentionsLicense
+
+/-- Warns (never fails the build) on stderr if `file` is missing its
+expected copyright/license header, per `config`'s `[compliance]`
+settings (task T41). A no-op unless `complianceEnabled` is true *and*
+at least one of `complianceAuthor`/`complianceLicense` is actually
+configured — otherwise there's nothing meaningful to check against,
+and a bare "missing Copyright" warning on every file would be noise
+for a project that never asked for this. -/
+def checkComplianceHeader (config : LeanDocConfig) (file : System.FilePath) : IO Unit := do
+  if config.complianceEnabled &&
+      !(config.complianceAuthor.isEmpty && config.complianceLicense.isEmpty) then
+    let source ← IO.FS.readFile file
+    unless hasCopyrightHeader source config.complianceAuthor config.complianceLicense do
+      IO.eprintln s!"LeanDoc: warning: {file} is missing the expected copyright/license header (see [compliance] in leandoc.toml)."
 
 /-! ## Renderer
 

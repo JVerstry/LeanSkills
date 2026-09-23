@@ -1,7 +1,10 @@
 # LeanDoc
 
 A free tool to generate documentation for Lean 4 projects, using Lean
-itself.
+itself. Use it to generate documentation that conforms to Mathlib's
+own documentation conventions (task T41's `[compliance]` settings), or
+to generate documentation however you like with no conventions
+enforced at all — the default.
 
 ## Installation
 

@@ -28,3 +28,11 @@ name = "markdown"
 # internal links, a written _config.yml (task T22/T28) — vs. plain
 # portable Markdown with ordinary relative links (task T31).
 jekyll = true
+
+[compliance]
+# Off by default (task T41) — Mathlib-derived copyright/license header
+# checking. Warns, never fails the build. author/license only matter
+# when enabled = true; both default to empty (nothing to check).
+enabled = false
+# author = "..."
+# license = "..."

@@ -54,6 +54,11 @@ docs_dir = "docs/"       # final rendered output
 [renderer]
 name = "markdown"        # the only renderer that exists today
 jekyll = true             # see "Jekyll" below
+
+[compliance]
+enabled = false           # see "Documentation-compliance checking" below
+# author = "..."
+# license = "..."
 ```
 
 ### Inclusion and exclusion
@@ -80,6 +85,40 @@ documented.
   file as deliberately undocumented (as opposed to a real coverage
   gap). A `.docignore`-style mechanism for this is planned but not
   built — don't write documentation or tooling that assumes it exists.
+
+### Documentation-compliance checking
+
+`[compliance]` (task T41) lets you opt into checks derived from
+[Mathlib's own documentation style guidelines](https://leanprover-community.github.io/contribute/doc.html)
+— entirely **off by default**, since most projects aren't Mathlib and
+shouldn't be held to its conventions unless they explicitly ask.
+
+Today this covers one check: whether each documented file's header
+mentions the `author`/`license` you configure. Set `enabled = true`
+and at least one of `author`/`license` to turn it on — leaving both
+empty, even with `enabled = true`, means there's nothing to check
+against, so nothing runs. When it *does* run, a file missing the
+expected header gets a **warning on stderr**, never a build failure —
+`lake exe leandoc` still completes and writes its output either way.
+The check itself is intentionally loose: it looks for the literal word
+"Copyright" plus your configured `author`/`license` text appearing
+near the top of the file (first ~1000 characters), not a strict parse
+of Mathlib's exact header grammar
+(`/- Copyright (c) YEAR Name. ... Authors: ... -/`).
+
+**Not built yet**, even though they're part of the same planned
+feature area (`wip/todo.md` tasks T41/T42) — don't assume either
+exists: a naming-conventions check (Mathlib's `snake_case`/
+`UpperCamelCase` scheme) and a docstring-quality check (does a
+docstring read as plain-language explanation, not just a restated type
+signature). Both are pending an investigation into whether Mathlib's
+own linters (`docBlame`, `docBlameThm`, `tacticDocs`) can be reused
+rather than reimplemented from scratch.
+
+LeanDoc can be used either way: to generate documentation that
+conforms to Mathlib's conventions (`[compliance] enabled = true`,
+configured to match your project), or to generate documentation
+however you like with no conventions enforced at all (the default).
 
 ### Jekyll
 

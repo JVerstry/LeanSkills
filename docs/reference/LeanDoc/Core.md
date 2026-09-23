@@ -22,7 +22,7 @@ empty list falls back to whole-package scanning, task T21).
 *constructor*
 
 ```lean
-LeanDocConfig.mk : System.FilePath → System.FilePath → Array String → Array String → String → Bool → LeanDocConfig
+LeanDocConfig.mk : System.FilePath → System.FilePath → Array String → Array String → String → Bool → Bool → String → String → LeanDocConfig
 ```
 
 *(not documented)*
@@ -93,6 +93,48 @@ T22/T28) vs. plain portable Markdown with plain relative links and no
 for GitHub Pages by default (T15/T22), and GitHub Pages runs Jekyll by
 default — set to `false` for output meant to be read as plain
 Markdown (an IDE, a non-Jekyll/non-Pages host) instead. 
+
+### `LeanDocConfig.complianceEnabled`
+
+*def*
+
+```lean
+LeanDocConfig.complianceEnabled : LeanDocConfig → Bool
+```
+
+Task T41: the overall opt-in/opt-out toggle for documentation-
+convention/compliance checks derived from Mathlib's own style
+guidelines (currently just the copyright/license header check below
+— naming-conventions and docstring-quality checks are designed but
+not built yet, pending task T42). Off by default: most projects
+aren't Mathlib and shouldn't be held to its conventions unless they
+explicitly ask. 
+
+### `LeanDocConfig.complianceAuthor`
+
+*def*
+
+```lean
+LeanDocConfig.complianceAuthor : LeanDocConfig → String
+```
+
+Task T41: the author name(s) `checkComplianceHeader` expects to
+find in each file's copyright header when `complianceEnabled` is
+true. Empty skips the author-specific part of that check even when
+compliance checking is otherwise on (nothing configured to check
+against). 
+
+### `LeanDocConfig.complianceLicense`
+
+*def*
+
+```lean
+LeanDocConfig.complianceLicense : LeanDocConfig → String
+```
+
+Task T41: the license string `checkComplianceHeader` expects to
+find in each file's copyright header. Same empty-skips treatment as
+`complianceAuthor`. 
 
 ### `instInhabitedLeanDocConfig.default`
 
@@ -479,6 +521,42 @@ extractFile : System.FilePath → Lean.Name → IO (Array DeclMeta)
 
 Extracts every non-noise declaration added by elaborating `file` as
 module `moduleName`. 
+
+### `hasCopyrightHeader`
+
+*def*
+
+```lean
+hasCopyrightHeader : String → String → String → Bool
+```
+
+Whether `source`'s header mentions the expected author/license
+(task T41) — checked as plain substring presence within the file's
+first 1000 characters (generous enough to cover a real header without
+scanning the whole file), not a strict parse of Mathlib's exact
+copyright-header grammar (`/- Copyright (c) YEAR Name. ... Authors:
+... -/`). A header lives before any declaration, so this is a genuine
+gap in what `DeclMeta`-based extraction can see at all — a separate,
+purely textual check, not something bolted onto `extractFile`. Empty
+`expectedAuthor`/`expectedLicense` skip that part of the check
+(nothing configured to check against); always requires the literal
+word "Copyright" to appear, regardless. 
+
+### `checkComplianceHeader`
+
+*def*
+
+```lean
+checkComplianceHeader : LeanDocConfig → System.FilePath → IO Unit
+```
+
+Warns (never fails the build) on stderr if `file` is missing its
+expected copyright/license header, per `config`'s `[compliance]`
+settings (task T41). A no-op unless `complianceEnabled` is true *and*
+at least one of `complianceAuthor`/`complianceLicense` is actually
+configured — otherwise there's nothing meaningful to check against,
+and a bare "missing Copyright" warning on every file would be noise
+for a project that never asked for this. 
 
 ### `moduleToDocPath`
 

@@ -47,6 +47,7 @@ def main (args : List String) : IO Unit := do
   for moduleStr in effectiveModules do
     let moduleName := stringToModuleName moduleStr
     let file := moduleToFile projectRoot moduleName
+    checkComplianceHeader config file
     allMetas := allMetas ++ (← extractFile file moduleName)
     moduleCount := moduleCount + 1
   let outFile := projectRoot / config.jsonDir / "metadata.json"

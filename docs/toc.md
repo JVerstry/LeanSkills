@@ -13,6 +13,9 @@ layout: default
 - [`LeanDocConfig.exclude`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.rendererName`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.rendererJekyll`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`LeanDocConfig.complianceEnabled`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`LeanDocConfig.complianceAuthor`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`LeanDocConfig.complianceLicense`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig.default`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`loadConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -42,6 +45,8 @@ layout: default
 - [`declMetaOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`isNoise`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`extractFile`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`hasCopyrightHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`checkComplianceHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleToDocPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`linkPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderDecl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

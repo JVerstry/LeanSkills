@@ -225,6 +225,45 @@ def main : IO Unit := do
     (cfg.jsonDir == (".leandoc" : System.FilePath))
   s ← s.check "loadConfig trims a trailing slash off docs_dir"
     (cfg.docsDir == ("docs" : System.FilePath))
+  s ← s.check "loadConfig defaults compliance checking to off"
+    (!cfg.complianceEnabled && cfg.complianceAuthor.isEmpty && cfg.complianceLicense.isEmpty)
+
+  -- ## Unit-level: T41's copyright/license header check
+
+  let realHeader := "/- Copyright (c) 2026 Jane Doe. Released under Apache 2.0. Authors: Jane Doe -/\nimport Lean\n"
+  s ← s.check "hasCopyrightHeader passes a real header (author + license both configured)"
+    (hasCopyrightHeader realHeader "Jane Doe" "Apache 2.0")
+  s ← s.check "hasCopyrightHeader fails when the author doesn't match"
+    (!hasCopyrightHeader realHeader "John Smith" "Apache 2.0")
+  s ← s.check "hasCopyrightHeader fails when the license doesn't match"
+    (!hasCopyrightHeader realHeader "Jane Doe" "MIT")
+  s ← s.check "hasCopyrightHeader fails when there's no Copyright at all"
+    (!hasCopyrightHeader "import Lean\n\ndef foo := 1\n" "Jane Doe" "Apache 2.0")
+  s ← s.check "hasCopyrightHeader passes with nothing configured to check, as long as Copyright appears"
+    (hasCopyrightHeader realHeader "" "")
+  s ← s.check "hasCopyrightHeader still requires Copyright even with nothing else configured"
+    (!hasCopyrightHeader "import Lean\n" "" "")
+
+  -- ## Fixture-level: T41's [compliance] leandoc.toml section, and
+  -- checkComplianceHeader as a smoke test (its warning goes to stderr,
+  -- not something this harness captures — the real logic is already
+  -- covered above via hasCopyrightHeader directly).
+
+  let complianceTomlPath := scratchDir / "leandoc.toml"
+  IO.FS.writeFile complianceTomlPath
+    "[compliance]\nenabled = true\nauthor = \"Jane Doe\"\nlicense = \"Apache 2.0\"\n"
+  let complianceCfg ← loadConfig complianceTomlPath
+  s ← s.check "loadConfig parses [compliance] enabled"
+    complianceCfg.complianceEnabled
+  s ← s.check "loadConfig parses [compliance] author"
+    (complianceCfg.complianceAuthor == "Jane Doe")
+  s ← s.check "loadConfig parses [compliance] license"
+    (complianceCfg.complianceLicense == "Apache 2.0")
+  IO.FS.removeFile complianceTomlPath
+
+  checkComplianceHeader complianceCfg (demoRoot / "Demo" / "MyLeanFile.lean")
+  checkComplianceHeader (cfg : LeanDocConfig) (demoRoot / "Demo" / "MyLeanFile.lean")
+  s ← s.check "checkComplianceHeader runs without crashing, enabled or not" true
 
   -- ## Fixture-level: whole-package scanning (T21) against demo/'s
   -- real lakefile.toml

@@ -82,6 +82,23 @@ updates as the interface stabilizes.
         from elsewhere, or an existing Jekyll setup they don't want
         LeanDoc's `_config.yml`/`{% link %}` output mixed into — see
         step 4's note on existing `docs_dir` content either way).
+     g. **Documentation-compliance checking (`[compliance]`, task
+        T41).** Whether LeanDoc should warn (never fail the build) when
+        a scanned file is missing an expected copyright/license
+        header — a check derived from Mathlib's own documentation
+        conventions, not something every project wants. *Recommended
+        default:* off (`enabled = false`) — most projects aren't
+        Mathlib and shouldn't be held to its conventions unless they
+        explicitly ask. If the user *does* want it, also ask for the
+        `author` name(s) and `license` string they expect each file's
+        header to mention (both default to empty, which skips that
+        part of the check even when `enabled = true` — there's nothing
+        to check without it). This checks for the literal word
+        "Copyright" plus the configured author/license as plain text
+        near the top of each file, not a strict parse of Mathlib's
+        exact header grammar. Naming-conventions and docstring-quality
+        checks are planned (`wip/todo.md` tasks T41/T42) but not built
+        yet — don't tell the user they exist.
 
 3. Add LeanDoc as a Lake dependency
    - In `lakefile.lean` / `lakefile.toml`, add a `require` entry for the
@@ -164,6 +181,13 @@ updates as the interface stabilizes.
      jekyll = <step 2f value, default true>   # front matter, {% link %}
                          # links, and a written _config.yml (task
                          # T22/T28/T31) vs. plain portable Markdown
+
+     [compliance]
+     enabled = <step 2g value, default false>   # task T41: warn (never
+                         # fail) if a file is missing its expected
+                         # copyright/license header
+     # author = "<step 2g value>"    # only if enabled = true
+     # license = "<step 2g value>"   # only if enabled = true
 
    `include`/`exclude` entries are dotted Lean module names (e.g.
    `"Foo.Bar"`). Leaving `include` empty is now the recommended default
