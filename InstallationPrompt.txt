@@ -113,12 +113,21 @@ updates as the interface stabilizes.
    - **If `docs_dir` already has hand-written Markdown pages in it**
      (e.g. an existing landing page) and step 2f's answer is
      `jekyll = true`: LeanDoc's renderer only adds front matter to the
-     pages *it* generates (under `docs_dir/reference/`), never to existing
-     hand-written ones — task T31. Check any pre-existing `.md` files
-     directly under `docs_dir` and, if Jekyll processing is wanted site-
-     wide, add an empty front-matter block (`---\n---\n`) to each one
-     that's missing it; otherwise those pages stay unprocessed "static
-     files" sitting next to processed generated ones — an inconsistent,
+     pages *it* generates (under `docs_dir/reference/`, plus
+     `docs_dir/toc.md`), never to existing hand-written ones — task
+     T31. One exception, task T18: `docs_dir/index.md` specifically —
+     if it doesn't exist yet, LeanDoc creates it itself (with front
+     matter already included), so no manual step is needed for it. If
+     it *does* already exist, LeanDoc still never touches its front
+     matter (same as any other pre-existing page) — it only ever
+     rewrites the region between
+     `<!-- leandoc:nav:start -->`/`<!-- leandoc:nav:end -->` markers,
+     if those are present. Check any *other* pre-existing `.md` files
+     directly under `docs_dir` (and `docs_dir/index.md` if it already
+     existed) and, if Jekyll processing is wanted site-wide, add an
+     empty front-matter block (`---\n---\n`) to each one that's
+     missing it; otherwise those pages stay unprocessed "static files"
+     sitting next to processed generated ones — an inconsistent,
      partly-broken site. Tell the user what was changed rather than
      doing this silently. If `jekyll = false` was chosen instead, skip
      this — nothing in `docs_dir` should have Jekyll-specific content.
@@ -223,18 +232,25 @@ updates as the interface stabilizes.
            - run: lake exe leandoc
            - name: Check generated docs are committed and up to date
              run: |
-               if [ -n "$(git status --porcelain -- <docs_dir>/reference)" ]; then
+               PATHS="<docs_dir>/reference <docs_dir>/toc.md <docs_dir>/index.md"
+               if [ -n "$(git status --porcelain -- $PATHS)" ]; then
                  echo "::error::Generated docs are out of date or uncommitted." >&2
                  echo "Run 'lake exe leandoc' locally, then commit the result." >&2
-                 git status --porcelain -- <docs_dir>/reference
+                 git status --porcelain -- $PATHS
                  exit 1
                fi
      ```
 
      Substitute the real `docs_dir` (step 2c's value) for `<docs_dir>`.
-     This deliberately only gates `<docs_dir>/reference` (the *generated*
-     output), not all of `docs_dir` — a project may have hand-written
-     pages alongside it that CI shouldn't fail on. Fails the build
+     Gates `<docs_dir>/reference` and `<docs_dir>/toc.md` (fully
+     generated, task T18) plus `<docs_dir>/index.md` (task T18: only
+     partially generated — LeanDoc only ever touches the
+     `<!-- leandoc:nav:start -->`/`<!-- leandoc:nav:end -->`-delimited
+     region inside it, so this only flags real drift there, never a
+     hand-written page with no such markers, since LeanDoc never
+     changes those at all). Deliberately doesn't gate all of `docs_dir`
+     — a project may have other hand-written pages alongside it that CI
+     shouldn't fail on. Fails the build
      rather than auto-committing the regenerated docs: consistent with
      "do not commit on the user's behalf without asking," above — an
      auto-committing CI job is a bigger trust step this file doesn't
@@ -259,9 +275,10 @@ updates as the interface stabilizes.
      set -e
      echo "Checking generated docs are up to date..."
      lake exe leandoc
-     if [ -n "$(git status --porcelain -- <docs_dir>/reference)" ]; then
+     PATHS="<docs_dir>/reference <docs_dir>/toc.md <docs_dir>/index.md"
+     if [ -n "$(git status --porcelain -- $PATHS)" ]; then
        echo "Generated docs are out of date - committing the regenerated result too." >&2
-       git status --porcelain -- <docs_dir>/reference
+       git status --porcelain -- $PATHS
        exit 1
      fi
      ```

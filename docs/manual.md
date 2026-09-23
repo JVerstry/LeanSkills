@@ -106,12 +106,31 @@ processed generated ones — a half-broken, inconsistent site.
 
 Rendered pages land under `docs_dir/reference/` — one Markdown page per
 documented module (mirroring its dotted name, e.g. `Foo.Bar` →
-`reference/Foo/Bar.md`), plus a `reference/index.md` linking all of
+`reference/Foo/Bar.md`), plus a `reference/modules.md` linking all of
 them. Named `reference/`, not `api/`: it's a flat dump of every
 included declaration (compiler-generated noise filtered out), not a
 curated public API surface — nothing here distinguishes a genuinely
 public interface from an internal helper that merely lives in an
 included module.
+
+A `docs_dir/toc.md` (task T18) lists every documented declaration
+project-wide, grouped by kind — Definitions, Theorems & Axioms,
+Structures & Inductives, Other — rather than by module, so "show me
+every theorem" doesn't mean reading through every module page by hand.
+Each entry links to its declaration's module page (not a specific
+in-page anchor — Jekyll's `{% link %}` only validates that the target
+*file* exists, not a fragment within it, and there's no way to verify
+anchor slugification without a real Jekyll build, so this deliberately
+doesn't guess).
+
+`docs_dir/index.md`, the site's actual root page, gets a
+`<!-- leandoc:nav:start -->`/`<!-- leandoc:nav:end -->`-delimited
+section linking to both `reference/modules.md` and `toc.md`, kept
+current automatically on every `lake exe leandoc` run. If the file
+doesn't exist yet, LeanDoc creates a minimal one; if it exists without
+those markers (e.g. a landing page you wrote by hand), LeanDoc leaves
+it completely alone — add the markers yourself once if you want the
+navigation section kept in sync automatically.
 
 ### Optional: CI and pre-commit freshness checks
 

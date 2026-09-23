@@ -30,9 +30,11 @@ will suggest ways to address it.
 - **Toolchain:** managed by `elan` (`lean`, `lake` on `PATH`), pinned via
   `lean-toolchain`. `lake build` builds; `lake exe leandoc [path]` runs
   the real extractor + Markdown renderer (default path `.` — LeanDoc
-  documents itself; see [`docs/reference/`](docs/reference/index.md) —
+  documents itself; see [`docs/reference/`](docs/reference/modules.md) —
   task T25 named it `reference/`, not `api/`: it's a flat dump of every
-  included declaration, not a curated public API surface).
+  included declaration, not a curated public API surface — and
+  [`docs/toc.md`](docs/toc.md), task T18's project-wide table of
+  contents grouped by declaration kind).
 - **Where things live:** intermediate metadata JSON in `.leandoc/`
   (gitignored, regenerated every run); final rendered docs in `docs/`
   (committed to git); configuration in `leandoc.toml`.

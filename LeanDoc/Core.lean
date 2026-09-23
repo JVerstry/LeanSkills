@@ -281,6 +281,16 @@ mirrors `moduleToFile`'s convention but for Markdown output. -/
 def moduleToDocPath (m : String) : System.FilePath :=
   (m.splitOn ".").foldl (init := ("." : System.FilePath)) (· / ·) |>.addExtension "md"
 
+/-- Same mapping as `moduleToDocPath`, but as a plain `/`-joined string
+rather than a `System.FilePath` — a Markdown/web link needs `/`
+regardless of host OS, but `FilePath`'s string rendering uses the
+native separator (`\` on Windows), which would silently break links
+only on Windows (T9's original bug). Shared by every link-building
+function below rather than each redefining it locally. -/
+def linkPath (m : String) : String :=
+  (m.splitOn ".").foldl (init := "") fun acc part =>
+    if acc.isEmpty then part else s!"{acc}/{part}"
+
 /-- Renders one declaration as a Markdown section: a heading, the
 signature as a code block, and the docstring (or an explicit "not
 documented" note — silently omitting undocumented declarations would
@@ -313,10 +323,10 @@ def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bo
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# {moduleName}\n\n{body}"
 
-/-- Renders the reference section's index: one line per module, linking
-to its page. Deliberately minimal — task T18 covers a real table of
-contents/glossary; this is just enough for the module pages to be
-reachable at all.
+/-- Renders the list of documented modules, one line per module, linking
+to its page. Named `modules.md` (task T18 — not `index.md`, to avoid
+having two different-purposed `index.md` files in the tree: this one
+lists modules, `docs_dir/index.md` is the site's actual root page).
 
 Links use Jekyll's `link` Liquid tag (task T28), not plain Markdown
 links: Jekyll renames a converted page's extension (`Foo/Bar.md` ↦
@@ -331,23 +341,15 @@ Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
 current page's own directory the way a relative Markdown link would be
 — so it needs a `reference/` prefix (task T25 — renamed from `api/`,
 since this is a flat dump of every included declaration, not a curated
-public API surface) even though this index and the pages it links to
+public API surface) even though this page and the pages it links to
 live in the same directory. Getting this wrong would silently
 reintroduce the plain-relative-link bug this replaces.
-
-Link targets are still built as plain `/`-joined strings, not via
-`moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
-regardless of host OS, but `FilePath`'s string rendering uses the native
-separator (`\` on Windows), which would silently break these links only
-on Windows.
 
 `jekyll` (task T31) controls both the front matter and which link form
 is used: `false` falls back to a plain relative `.md` link (portable,
 readable outside Jekyll, but 404s once Jekyll *does* process the page —
 never mix the two within one `docs_dir`). -/
-def renderIndexPage (moduleNames : Array String) (jekyll : Bool) : String :=
-  let linkPath (m : String) : String := (m.splitOn ".").foldl (init := "") fun acc part =>
-    if acc.isEmpty then part else s!"{acc}/{part}"
+def renderModulesPage (moduleNames : Array String) (jekyll : Bool) : String :=
   let items := moduleNames.map fun m =>
     if jekyll then
       -- Built with `++`, not `s!"..."`, because the literal Liquid
@@ -358,7 +360,102 @@ def renderIndexPage (moduleNames : Array String) (jekyll : Bool) : String :=
       s!"- [{m}]({linkPath m}.md)"
   let body := String.join (items.toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
-  s!"{fm}# Reference\n\n{body}\n"
+  s!"{fm}# Modules\n\n{body}\n"
+
+/-- Buckets a declaration's `kind` (see `kindString`) into one of the
+table of contents' four groups. Every `kindString` output maps to
+exactly one bucket — `"quotient"`/`"recursor"` are rare enough to share
+"Other" rather than each getting a barely-populated section of their
+own. -/
+def kindBucket (kind : String) : String :=
+  match kind with
+  | "def" | "opaque" => "Definitions"
+  | "theorem" | "axiom" => "Theorems & Axioms"
+  | "structure" | "inductive" | "constructor" => "Structures & Inductives"
+  | _ => "Other"
+
+/-- Renders a flat, project-wide table of contents (task T18): every
+documented declaration across every module, grouped by `kindBucket`
+rather than by module — the point is "show me every theorem," not
+"show me what's in this file" (that's what `reference/`'s module pages
+are already for).
+
+Links point at the declaration's *module* page, not a per-declaration
+anchor within it. Deliberately not deep-linking to an in-page anchor:
+Jekyll's `{% link %}` only validates that the *target file* exists at
+build time, not a specific `#anchor` inside it, and this project has no
+local Jekyll available to empirically verify its Markdown-to-heading-id
+slugification matches what's assumed here (the same honesty standard
+T28 held itself to) — a wrong guess would silently produce broken
+in-page anchors that nothing catches. Revisit once that's verified for
+real, not before.
+
+A bucket with zero declarations is omitted entirely, not rendered as an
+empty heading. -/
+def renderToc (metas : Array DeclMeta) (jekyll : Bool) : String :=
+  let bucketOrder := #["Definitions", "Theorems & Axioms", "Structures & Inductives", "Other"]
+  let bucketed : Std.HashMap String (Array DeclMeta) := Id.run do
+    let mut m : Std.HashMap String (Array DeclMeta) := {}
+    for d in metas do
+      let b := kindBucket d.kind
+      m := m.insert b ((m.getD b #[]).push d)
+    return m
+  let renderEntry (d : DeclMeta) : String :=
+    if jekyll then
+      "- [`" ++ d.name ++ "`](" ++ "{% link reference/" ++ linkPath d.module ++ ".md %}" ++
+        ") — *" ++ d.module ++ "*"
+    else
+      s!"- [`{d.name}`]({linkPath d.module}.md) — *{d.module}*"
+  let sections := bucketOrder.filterMap fun b =>
+    let decls := bucketed.getD b #[]
+    if decls.isEmpty then none else
+    let items := String.join ((decls.map renderEntry).toList.intersperse "\n")
+    some s!"## {b}\n\n{items}\n"
+  let body := String.join (sections.toList.intersperse "\n")
+  let fm := if jekyll then frontMatter else ""
+  s!"{fm}# Table of Contents\n\n{body}\n"
+
+/-- The auto-managed navigation region inside `docs_dir/index.md`
+(task T18) — delimited by these markers so `ensureRootIndex` can keep
+it current as LeanDoc's own generated pages grow (a plain "write once,
+never touch again" file, like `_config.yml`, would go stale the moment
+a new generated page type ships, even for a user who never customized
+anything) without disturbing any hand-written content around it. -/
+def navMarkerStart : String := "<!-- leandoc:nav:start -->"
+def navMarkerEnd : String := "<!-- leandoc:nav:end -->"
+
+/-- Renders the nav block's current contents, markers included. -/
+def renderNavBlock (jekyll : Bool) : String :=
+  let refLink := if jekyll then "{% link reference/modules.md %}" else "reference/modules.md"
+  let tocLink := if jekyll then "{% link toc.md %}" else "toc.md"
+  s!"{navMarkerStart}\n- [Reference]({refLink})\n- [Table of Contents]({tocLink})\n{navMarkerEnd}"
+
+/-- Ensures `docsDir/index.md` — the site's actual root page — exists
+and links to the generated `reference/`/`toc.md` pages. Three cases:
+- **Missing entirely**: create a minimal page with just the nav block.
+- **Exists, contains the nav markers**: replace only what's between
+  them with a freshly rendered block, leaving everything outside it
+  (a hand-written intro, whatever else) untouched.
+- **Exists, no markers** (a hand-written page that predates this
+  mechanism): leave it completely alone. Silently injecting content
+  into a page someone hand-curated would be worse than an out-of-date
+  link — the fix there is adding the markers once, by hand, not having
+  LeanDoc decide where to put them. -/
+def ensureRootIndex (docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
+  let path := docsDir / "index.md"
+  let navBlock := renderNavBlock jekyll
+  if ← path.pathExists then
+    let content ← IO.FS.readFile path
+    let hasStart := (content.splitOn navMarkerStart).length > 1
+    let hasEnd := (content.splitOn navMarkerEnd).length > 1
+    if hasStart && hasEnd then
+      let beforeStart := (content.splitOn navMarkerStart).headD ""
+      let afterStart := ((content.splitOn navMarkerStart).drop 1).headD ""
+      let afterEnd := ((afterStart.splitOn navMarkerEnd).drop 1).headD ""
+      IO.FS.writeFile path (beforeStart ++ navBlock ++ afterEnd)
+  else
+    let fm := if jekyll then frontMatter else ""
+    IO.FS.writeFile path s!"{fm}# Documentation\n\n{navBlock}\n"
 
 /-- Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). -/
@@ -400,7 +497,9 @@ is a flat dump of every included declaration, not a curated public API
 surface, and the name shouldn't claim curation the renderer doesn't do).
 `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`) controls
 whether the output targets Jekyll (front matter, `{% link %}` links, a
-written `_config.yml`) or is plain portable Markdown. -/
+written `_config.yml`) or is plain portable Markdown. Also writes
+`docs_dir/toc.md` (task T18's table of contents) and ensures
+`docs_dir/index.md` links to both (`ensureRootIndex`). -/
 def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
@@ -420,5 +519,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
     if let some dir := path.parent then
       IO.FS.createDirAll dir
     IO.FS.writeFile path (renderModulePage moduleName decls jekyll)
-  IO.FS.writeFile (referenceDir / "index.md") (renderIndexPage moduleNames jekyll)
+  IO.FS.writeFile (referenceDir / "modules.md") (renderModulesPage moduleNames jekyll)
+  IO.FS.writeFile (docsDir / "toc.md") (renderToc metas jekyll)
+  ensureRootIndex docsDir jekyll
   IO.println s!"LeanDoc: rendered {moduleNames.size} module page(s) to {referenceDir}"

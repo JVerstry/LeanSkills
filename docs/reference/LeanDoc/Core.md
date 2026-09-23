@@ -491,6 +491,21 @@ Maps a dotted module name string (as stored in `DeclMeta.module`) to
 a relative doc path, e.g. `"Demo.MyLeanFile"` ↦ `Demo/MyLeanFile.md` —
 mirrors `moduleToFile`'s convention but for Markdown output. 
 
+### `linkPath`
+
+*def*
+
+```lean
+linkPath : String → String
+```
+
+Same mapping as `moduleToDocPath`, but as a plain `/`-joined string
+rather than a `System.FilePath` — a Markdown/web link needs `/`
+regardless of host OS, but `FilePath`'s string rendering uses the
+native separator (`\` on Windows), which would silently break links
+only on Windows (T9's original bug). Shared by every link-building
+function below rather than each redefining it locally. 
+
 ### `renderDecl`
 
 *def*
@@ -536,18 +551,18 @@ see `Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
 whether front matter is prepended — `false` produces plain portable
 Markdown with no Jekyll-specific content at all. 
 
-### `renderIndexPage`
+### `renderModulesPage`
 
 *def*
 
 ```lean
-renderIndexPage : Array String → Bool → String
+renderModulesPage : Array String → Bool → String
 ```
 
-Renders the reference section's index: one line per module, linking
-to its page. Deliberately minimal — task T18 covers a real table of
-contents/glossary; this is just enough for the module pages to be
-reachable at all.
+Renders the list of documented modules, one line per module, linking
+to its page. Named `modules.md` (task T18 — not `index.md`, to avoid
+having two different-purposed `index.md` files in the tree: this one
+lists modules, `docs_dir/index.md` is the site's actual root page).
 
 Links use Jekyll's `link` Liquid tag (task T28), not plain Markdown
 links: Jekyll renames a converted page's extension (`Foo/Bar.md` ↦
@@ -562,20 +577,110 @@ Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
 current page's own directory the way a relative Markdown link would be
 — so it needs a `reference/` prefix (task T25 — renamed from `api/`,
 since this is a flat dump of every included declaration, not a curated
-public API surface) even though this index and the pages it links to
+public API surface) even though this page and the pages it links to
 live in the same directory. Getting this wrong would silently
 reintroduce the plain-relative-link bug this replaces.
-
-Link targets are still built as plain `/`-joined strings, not via
-`moduleToDocPath`'s `System.FilePath` — a Markdown/web link needs `/`
-regardless of host OS, but `FilePath`'s string rendering uses the native
-separator (`\` on Windows), which would silently break these links only
-on Windows.
 
 `jekyll` (task T31) controls both the front matter and which link form
 is used: `false` falls back to a plain relative `.md` link (portable,
 readable outside Jekyll, but 404s once Jekyll *does* process the page —
 never mix the two within one `docs_dir`). 
+
+### `kindBucket`
+
+*def*
+
+```lean
+kindBucket : String → String
+```
+
+Buckets a declaration's `kind` (see `kindString`) into one of the
+table of contents' four groups. Every `kindString` output maps to
+exactly one bucket — `"quotient"`/`"recursor"` are rare enough to share
+"Other" rather than each getting a barely-populated section of their
+own. 
+
+### `renderToc`
+
+*def*
+
+```lean
+renderToc : Array DeclMeta → Bool → String
+```
+
+Renders a flat, project-wide table of contents (task T18): every
+documented declaration across every module, grouped by `kindBucket`
+rather than by module — the point is "show me every theorem," not
+"show me what's in this file" (that's what `reference/`'s module pages
+are already for).
+
+Links point at the declaration's *module* page, not a per-declaration
+anchor within it. Deliberately not deep-linking to an in-page anchor:
+Jekyll's `{% link %}` only validates that the *target file* exists at
+build time, not a specific `#anchor` inside it, and this project has no
+local Jekyll available to empirically verify its Markdown-to-heading-id
+slugification matches what's assumed here (the same honesty standard
+T28 held itself to) — a wrong guess would silently produce broken
+in-page anchors that nothing catches. Revisit once that's verified for
+real, not before.
+
+A bucket with zero declarations is omitted entirely, not rendered as an
+empty heading. 
+
+### `navMarkerStart`
+
+*def*
+
+```lean
+navMarkerStart : String
+```
+
+The auto-managed navigation region inside `docs_dir/index.md`
+(task T18) — delimited by these markers so `ensureRootIndex` can keep
+it current as LeanDoc's own generated pages grow (a plain "write once,
+never touch again" file, like `_config.yml`, would go stale the moment
+a new generated page type ships, even for a user who never customized
+anything) without disturbing any hand-written content around it. 
+
+### `navMarkerEnd`
+
+*def*
+
+```lean
+navMarkerEnd : String
+```
+
+*(not documented)*
+
+### `renderNavBlock`
+
+*def*
+
+```lean
+renderNavBlock : Bool → String
+```
+
+Renders the nav block's current contents, markers included. 
+
+### `ensureRootIndex`
+
+*def*
+
+```lean
+ensureRootIndex : System.FilePath → Bool → IO Unit
+```
+
+Ensures `docsDir/index.md` — the site's actual root page — exists
+and links to the generated `reference/`/`toc.md` pages. Three cases:
+- **Missing entirely**: create a minimal page with just the nav block.
+- **Exists, contains the nav markers**: replace only what's between
+  them with a freshly rendered block, leaving everything outside it
+  (a hand-written intro, whatever else) untouched.
+- **Exists, no markers** (a hand-written page that predates this
+  mechanism): leave it completely alone. Silently injecting content
+  into a page someone hand-curated would be worse than an out-of-date
+  link — the fix there is adding the markers once, by hand, not having
+  LeanDoc decide where to put them. 
 
 ### `groupDeclsByModule`
 
@@ -634,4 +739,6 @@ is a flat dump of every included declaration, not a curated public API
 surface, and the name shouldn't claim curation the renderer doesn't do).
 `jekyll` (task T31, from `LeanDocConfig.rendererJekyll`) controls
 whether the output targets Jekyll (front matter, `{% link %}` links, a
-written `_config.yml`) or is plain portable Markdown. 
+written `_config.yml`) or is plain portable Markdown. Also writes
+`docs_dir/toc.md` (task T18's table of contents) and ensures
+`docs_dir/index.md` links to both (`ensureRootIndex`). 

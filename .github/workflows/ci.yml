@@ -39,10 +39,11 @@ jobs:
 
       - name: Check generated docs are committed and up to date
         run: |
-          if [ -n "$(git status --porcelain -- docs/reference demo/docs/reference)" ]; then
+          PATHS="docs/reference demo/docs/reference docs/toc.md demo/docs/toc.md docs/index.md demo/docs/index.md"
+          if [ -n "$(git status --porcelain -- $PATHS)" ]; then
             echo "::error::Generated docs are out of date or uncommitted." >&2
             echo "Run 'lake exe leandoc' and 'lake exe leandoc demo' locally, then commit the result." >&2
-            git status --porcelain -- docs/reference demo/docs/reference
-            git --no-pager diff -- docs/reference demo/docs/reference
+            git status --porcelain -- $PATHS
+            git --no-pager diff -- $PATHS
             exit 1
           fi

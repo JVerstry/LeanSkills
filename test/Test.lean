@@ -25,7 +25,7 @@ project's size warrants). Three tiers:
 Several checks below exist specifically because a past bug slipped
 through without one: `loadConfig`'s trailing-slash trim (T8),
 `groupDeclsByModule`'s grouping (T9), the noise filter's declaration
-count (T7), and `renderIndexPage`'s forward-slash-only links (T9's
+count (T7), and `renderModulesPage`'s forward-slash-only links (T9's
 Windows path-separator bug) all have a named test now.
 -/
 
@@ -65,27 +65,89 @@ def main : IO Unit := do
       (("." : System.FilePath) / "Demo" / "MyLeanFile").addExtension "md")
 
   -- ## Regression: T9's Windows path-separator link bug.
-  -- `renderIndexPage` must emit forward-slash links unconditionally,
+  -- `renderModulesPage` must emit forward-slash links unconditionally,
   -- not via `System.FilePath`'s native-separator stringification.
-  let indexPage := renderIndexPage #["Demo.MyLeanFile"] true
-  s ← s.check "renderIndexPage never emits a backslash"
-    (!(indexPage.any (· == '\\')))
-  s ← s.check "renderIndexPage links with forward slashes"
-    ((indexPage.splitOn "Demo/MyLeanFile.md").length > 1)
+  let modulesPage := renderModulesPage #["Demo.MyLeanFile"] true
+  s ← s.check "renderModulesPage never emits a backslash"
+    (!(modulesPage.any (· == '\\')))
+  s ← s.check "renderModulesPage links with forward slashes"
+    ((modulesPage.splitOn "Demo/MyLeanFile.md").length > 1)
 
   -- ## Unit-level: T22/T28/T31's Jekyll-targeted output, and the
   -- `jekyll := false` opt-out (task T31).
-  s ← s.check "renderIndexPage (jekyll) emits front matter"
-    (indexPage.startsWith "---\n---\n")
-  s ← s.check "renderIndexPage (jekyll) links via {% link %}, reference/-prefixed"
-    ((indexPage.splitOn "{% link reference/Demo/MyLeanFile.md %}").length > 1)
-  let plainIndexPage := renderIndexPage #["Demo.MyLeanFile"] false
-  s ← s.check "renderIndexPage (no jekyll) has no front matter"
-    (!plainIndexPage.startsWith "---\n---\n")
-  s ← s.check "renderIndexPage (no jekyll) uses a plain relative link"
-    ((plainIndexPage.splitOn "(Demo/MyLeanFile.md)").length > 1)
-  s ← s.check "renderIndexPage (no jekyll) emits no Liquid syntax"
-    (!plainIndexPage.any (· == '%'))
+  s ← s.check "renderModulesPage (jekyll) emits front matter"
+    (modulesPage.startsWith "---\n---\n")
+  s ← s.check "renderModulesPage (jekyll) links via {% link %}, reference/-prefixed"
+    ((modulesPage.splitOn "{% link reference/Demo/MyLeanFile.md %}").length > 1)
+  let plainModulesPage := renderModulesPage #["Demo.MyLeanFile"] false
+  s ← s.check "renderModulesPage (no jekyll) has no front matter"
+    (!plainModulesPage.startsWith "---\n---\n")
+  s ← s.check "renderModulesPage (no jekyll) uses a plain relative link"
+    ((plainModulesPage.splitOn "(Demo/MyLeanFile.md)").length > 1)
+  s ← s.check "renderModulesPage (no jekyll) emits no Liquid syntax"
+    (!plainModulesPage.any (· == '%'))
+
+  -- ## Unit-level: T18's table of contents (kindBucket, renderToc)
+
+  s ← s.check "kindBucket: def" (kindBucket "def" == "Definitions")
+  s ← s.check "kindBucket: opaque" (kindBucket "opaque" == "Definitions")
+  s ← s.check "kindBucket: theorem" (kindBucket "theorem" == "Theorems & Axioms")
+  s ← s.check "kindBucket: axiom" (kindBucket "axiom" == "Theorems & Axioms")
+  s ← s.check "kindBucket: structure" (kindBucket "structure" == "Structures & Inductives")
+  s ← s.check "kindBucket: inductive" (kindBucket "inductive" == "Structures & Inductives")
+  s ← s.check "kindBucket: constructor" (kindBucket "constructor" == "Structures & Inductives")
+  s ← s.check "kindBucket: quotient falls into Other" (kindBucket "quotient" == "Other")
+  s ← s.check "kindBucket: recursor falls into Other" (kindBucket "recursor" == "Other")
+
+  let tocMetas : Array DeclMeta :=
+    #[ { module := "M", name := "myDef", kind := "def", type := "Nat", docString := none, range := none }
+     , { module := "M", name := "myThm", kind := "theorem", type := "Prop", docString := none, range := none } ]
+  let toc := renderToc tocMetas true
+  s ← s.check "renderToc includes a heading for a present bucket"
+    ((toc.splitOn "## Definitions").length > 1)
+  s ← s.check "renderToc includes a heading for another present bucket"
+    ((toc.splitOn "## Theorems & Axioms").length > 1)
+  s ← s.check "renderToc omits a heading for an empty bucket"
+    ((toc.splitOn "## Structures & Inductives").length == 1)
+  s ← s.check "renderToc links an entry to its module page"
+    ((toc.splitOn "{% link reference/M.md %}").length > 2)
+
+  -- ## Fixture-level: T18's root-index nav management (ensureRootIndex)
+  -- Uses a scratch directory under `.leandoc/` (already gitignored) —
+  -- not a real project, just a throwaway spot for file I/O checks.
+
+  let scratchDir : System.FilePath := ".leandoc" / "test-scratch"
+  IO.FS.createDirAll scratchDir
+  let scratchIndex := scratchDir / "index.md"
+
+  -- Case 1: no file yet — creates one with the nav block.
+  if ← scratchIndex.pathExists then IO.FS.removeFile scratchIndex
+  ensureRootIndex scratchDir true
+  let created ← IO.FS.readFile scratchIndex
+  s ← s.check "ensureRootIndex creates a missing index.md with the nav block"
+    ((created.splitOn navMarkerStart).length > 1 && (created.splitOn navMarkerEnd).length > 1)
+
+  -- Case 2: markers already present — only the region between them changes,
+  -- hand-written content outside it survives untouched.
+  let handWritten := s!"# My Project\n\nSome intro text.\n\n{navMarkerStart}\nstale content\n{navMarkerEnd}\n\nMore text after.\n"
+  IO.FS.writeFile scratchIndex handWritten
+  ensureRootIndex scratchDir true
+  let updated ← IO.FS.readFile scratchIndex
+  s ← s.check "ensureRootIndex preserves hand-written content around the markers"
+    ((updated.splitOn "Some intro text.").length > 1 && (updated.splitOn "More text after.").length > 1)
+  s ← s.check "ensureRootIndex refreshes stale content between the markers"
+    ((updated.splitOn "stale content").length == 1)
+
+  -- Case 3: an existing page with no markers at all — left byte-for-byte
+  -- untouched, never silently modified.
+  let noMarkers := "# Someone else's landing page\n\nNo markers here.\n"
+  IO.FS.writeFile scratchIndex noMarkers
+  ensureRootIndex scratchDir true
+  let untouched ← IO.FS.readFile scratchIndex
+  s ← s.check "ensureRootIndex never touches a page with no markers"
+    (untouched == noMarkers)
+
+  IO.FS.removeFile scratchIndex
 
   -- ## Unit-level: rendering content
 
