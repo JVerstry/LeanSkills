@@ -14,4 +14,4 @@ main : List String → IO Unit
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/fbf631e9b732095eb65a4518732d36dcb7ecb21e/Main.lean#L19-L72)
+[source](https://github.com/JVerstry/LeanDoc/blob/a765419a9f8a5360eb0ab50a3162d6b9fc0f09a7/Main.lean#L19-L72)

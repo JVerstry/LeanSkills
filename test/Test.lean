@@ -183,22 +183,26 @@ def main : IO Unit := do
   let scratchColorScheme := scratchDir / "assets" / "color-scheme.js"
   let scratchSearchJs := scratchDir / "assets" / "search.js"
   let scratchMathjaxConfig := scratchDir / "assets" / "mathjax-config.js"
+  let scratchFindPage := scratchDir / "find.html"
   if ← scratchStyle.pathExists then IO.FS.removeFile scratchStyle
   if ← scratchLayout.pathExists then IO.FS.removeFile scratchLayout
   if ← scratchColorScheme.pathExists then IO.FS.removeFile scratchColorScheme
   if ← scratchSearchJs.pathExists then IO.FS.removeFile scratchSearchJs
   if ← scratchMathjaxConfig.pathExists then IO.FS.removeFile scratchMathjaxConfig
+  if ← scratchFindPage.pathExists then IO.FS.removeFile scratchFindPage
 
   ensureStyleAsset scratchDir
   ensureDefaultLayout scratchDir
   ensureColorSchemeScript scratchDir
   ensureSearchScript scratchDir
   ensureMathjaxConfig scratchDir
+  ensureFindPage scratchDir
   let styleContent ← IO.FS.readFile scratchStyle
   let layoutContent ← IO.FS.readFile scratchLayout
   let colorSchemeContent ← IO.FS.readFile scratchColorScheme
   let searchJsContent ← IO.FS.readFile scratchSearchJs
   let mathjaxConfigContent ← IO.FS.readFile scratchMathjaxConfig
+  let findPageContent ← IO.FS.readFile scratchFindPage
   s ← s.check "ensureStyleAsset writes the vendored doc-gen4 stylesheet"
     (styleContent == LeanDoc.Assets.styleCss)
   s ← s.check "ensureDefaultLayout writes LeanDoc's own layout"
@@ -234,6 +238,11 @@ def main : IO Unit := do
   s ← s.check "mathjax-config.js configures $...$ and $$...$$ delimiters"
     ((mathjaxConfigContent.splitOn "inlineMath").length > 1 &&
      (mathjaxConfigContent.splitOn "displayMath").length > 1)
+  s ← s.check "ensureFindPage writes the /find.html redirect page"
+    (findPageContent == LeanDoc.Assets.findHtml)
+  s ← s.check "find.html reads a ?pattern= query parameter and fetches the search index"
+    ((findPageContent.splitOn "pattern").length > 1 &&
+     (findPageContent.splitOn "assets/search-index.json").length > 1)
 
   -- Write-once: a customized file must survive a second `render` run.
   let customStyle := "/* my custom override */\n"
@@ -248,6 +257,7 @@ def main : IO Unit := do
   IO.FS.removeFile scratchColorScheme
   IO.FS.removeFile scratchSearchJs
   IO.FS.removeFile scratchMathjaxConfig
+  IO.FS.removeFile scratchFindPage
 
   -- ## Unit-level: renderSearchIndex (task T47)
 

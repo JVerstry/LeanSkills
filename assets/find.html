@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!--
+  A stable permalink redirect (task T52): /find.html?pattern=<Name>
+  looks the name up in assets/search-index.json (task T47) and
+  redirects to its doc page, so an external link doesn't need to know
+  which file a declaration lives in -- that can change (a module gets
+  renamed/split) without breaking a link written against this page.
+
+  Scoped to exact-name lookup only, redirecting to the doc page.
+  Doc-gen4's own /find also supports a #src fragment redirecting to
+  the declaration's *source* link instead of its doc page --
+  search-index.json doesn't carry that (only the doc link), so this
+  is deliberately left unimplemented rather than guessed at; the
+  doc page itself already links to source (task T46) once there.
+
+  Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0),
+  same license as LeanDoc itself. Original, not adapted from doc-gen4.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Find — LeanDoc</title>
+</head>
+<body>
+  <p id="find-message">Looking up declaration…</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var pattern = params.get("pattern");
+      var msg = document.getElementById("find-message");
+      if (!pattern) {
+        msg.textContent = "No pattern given -- use find.html?pattern=<DeclarationName>.";
+        return;
+      }
+      fetch("assets/search-index.json")
+        .then(function (r) { return r.json(); })
+        .then(function (index) {
+          var match = index.find(function (d) { return d.name === pattern; });
+          if (match) {
+            window.location.replace(match.link);
+          } else {
+            msg.textContent = "No declaration named \"" + pattern + "\" found.";
+          }
+        })
+        .catch(function () {
+          msg.textContent = "Couldn't load the search index.";
+        });
+    })();
+  </script>
+</body>
+</html>

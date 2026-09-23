@@ -886,6 +886,21 @@ def ensureMathjaxConfig (docsDir : System.FilePath) : IO Unit := do
       IO.FS.createDirAll dir
     IO.FS.writeFile path LeanDoc.Assets.mathjaxConfigJs
 
+/-- Ensures `docsDir/find.html` exists, writing the stable-permalink
+redirect page (task T52 — see `assets/find.html`,
+`LeanDoc.Assets.findHtml`) if it's missing. Lives at the site root
+(not under `assets/`, unlike the other write-once JS/CSS here), since
+`/find.html?pattern=<Name>` is meant to be a stable, memorable URL
+external links target directly. Never overwrites an existing file,
+same write-once treatment as `ensureStyleAsset`. Depends on
+`assets/search-index.json` existing to look anything up in, so only
+meaningful for Jekyll output — same as `ensureSearchScript`. -/
+def ensureFindPage (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "find.html"
+  unless (← path.pathExists) do
+    IO.FS.createDirAll docsDir
+    IO.FS.writeFile path LeanDoc.Assets.findHtml
+
 /-- The auto-managed navigation region inside `docs_dir/index.md`
 (task T18) — delimited by these markers so `ensureRootIndex` can keep
 it current as LeanDoc's own generated pages grow (a plain "write once,
@@ -1066,6 +1081,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureColorSchemeScript docsDir
     ensureSearchScript docsDir
     ensureMathjaxConfig docsDir
+    ensureFindPage docsDir
   let instancesByClass := groupInstancesByClass metas
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do

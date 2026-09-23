@@ -359,6 +359,23 @@ library, not something a project would ever want to hand-edit.
 Non-Jekyll output has no MathJax include; `$...$` in a docstring just
 renders as literal text there.
 
+### Stable permalinks
+
+`docs_dir/find.html?pattern=<DeclarationName>` (task T52, Jekyll
+output only) redirects straight to that declaration's doc page —
+useful for an external link that shouldn't need to know which module
+file a declaration currently lives in, since that can change (a module
+gets renamed or split) without breaking a link written against this
+page. It looks the name up in `assets/search-index.json` (task T47)
+client-side and redirects on a match; an unrecognized name shows a
+plain "not found" message rather than a broken redirect.
+
+Scoped to exact-name lookup redirecting to the doc page only — doc-gen4's
+own `/find` also supports jumping straight to a declaration's *source*
+link via a `#src` fragment, which `search-index.json` doesn't carry
+data for (only the doc link); the doc page itself already links to
+source (task T46) once you're there.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents
