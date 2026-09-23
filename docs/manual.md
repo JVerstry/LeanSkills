@@ -36,6 +36,22 @@ project's own executables — no separate checkout needed). Writes
 intermediate metadata to `json_dir` (gitignored, regenerated every run)
 and rendered pages to `docs_dir` (committed by default).
 
+### Auditing the output
+
+`lake exe leandoc` running without error doesn't mean the result is
+actually good documentation — it can be technically valid and still
+stale, low-quality, or misconfigured. Hand
+[`QualityAuditPrompt.txt`](https://github.com/JVerstry/LeanDoc/blob/main/QualityAuditPrompt.txt)
+(task T17) to your AI coding assistant after generating docs to
+sanity-check the result: freshness, docstring coverage and quality,
+generated-noise leaks, navigation/structure, Jekyll/GitHub Pages
+compatibility (if applicable), and more — it reads your `leandoc.toml`
+(including "Documentation-compliance checking," below) rather than
+assuming a fixed one-size-fits-all standard. This is a manual, one-off
+or periodic check, not a substitute for the CI/pre-commit freshness
+checks described in "Optional: CI and pre-commit freshness checks"
+below — those two are about *drift*, this is about *quality*.
+
 ### Configuration (`leandoc.toml`)
 
 Sibling to `lakefile.toml`, at your project's root. Every field has a

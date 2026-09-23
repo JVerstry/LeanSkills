@@ -18,9 +18,9 @@ project's size warrants). Three tiers:
   against throughout this backlog, now pinned as an automated check
   instead of something re-verified by hand after every change.
 - **Project hygiene**: required top-level files (`README.md`,
-  `InstallationPrompt.txt`) still exist, and `wip/`/`CLAUDE.md` stay
-  untracked by git — not code checks, but
-  regressions with no other automated guard.
+  `InstallationPrompt.txt`, `docs/manual.md`, `QualityAuditPrompt.txt`)
+  still exist, and `wip/`/`CLAUDE.md` stay untracked by git — not code
+  checks, but regressions with no other automated guard.
 
 Several checks below exist specifically because a past bug slipped
 through without one: `loadConfig`'s trailing-slash trim (T8),
@@ -298,13 +298,9 @@ def main : IO Unit := do
   -- from `README.md` — its useful content moved to a personal,
   -- gitignored `CLAUDE.md` instead, same treatment as `wip/`.
 
-  for file in #["README.md", "InstallationPrompt.txt", "docs/manual.md"] do
+  for file in #["README.md", "InstallationPrompt.txt", "docs/manual.md",
+                "QualityAuditPrompt.txt"] do
     s ← s.check s!"{file} exists" (← System.FilePath.pathExists file)
-  -- `QualityAuditPrompt.txt` intentionally left out until T17 actually
-  -- ships (2026-09-22): a draft existed briefly but T17 was explicitly
-  -- kept open rather than committed, and a permanently-failing check
-  -- here would block every future commit via the pre-commit hook.
-  -- Restore this check as part of landing T17 for real, not before.
 
   let wipTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "wip"] }
   s ← s.check "wip/ has no files tracked by git"
