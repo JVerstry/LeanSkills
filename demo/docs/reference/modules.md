@@ -4,4 +4,4 @@ layout: default
 
 # Modules
 
-- [Demo.MyLeanFile]({% link reference/Demo/MyLeanFile.md %})
+<ul><li><details><summary>Demo</summary><ul><li>[MyLeanFile]({% link reference/Demo/MyLeanFile.md %})</li></ul></details></li></ul>

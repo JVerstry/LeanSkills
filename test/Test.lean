@@ -87,6 +87,31 @@ def main : IO Unit := do
   s ← s.check "renderModulesPage (no jekyll) emits no Liquid syntax"
     (!plainModulesPage.any (· == '%'))
 
+  -- ## Unit-level: T49's nested module tree
+
+  let multiModuleTree := buildModuleTree #["Foo.Bar", "Foo.Baz", "Quux"]
+  s ← s.check "buildModuleTree groups Foo.Bar and Foo.Baz under a shared Foo namespace node"
+    (match multiModuleTree with
+      | .node children _ => children.any fun (seg, child) =>
+          seg == "Foo" && match child with
+            | .node grandchildren _ => grandchildren.size == 2
+      )
+  s ← s.check "buildModuleTree keeps a top-level module (Quux) as its own leaf"
+    (match multiModuleTree with
+      | .node children _ => children.any fun (seg, child) =>
+          seg == "Quux" && match child with
+            | .node _ full => full == some "Quux"
+      )
+  let treeHtml := renderModuleTree #["Foo.Bar", "Foo.Baz", "Quux"] true
+  s ← s.check "renderModuleTree nests Foo's children under one collapsible Foo entry"
+    ((treeHtml.splitOn "<summary>Foo</summary>").length == 2)
+  s ← s.check "renderModuleTree links each leaf module via {% link %}"
+    ((treeHtml.splitOn "{% link reference/Foo/Bar.md %}").length > 1 &&
+     (treeHtml.splitOn "{% link reference/Foo/Baz.md %}").length > 1 &&
+     (treeHtml.splitOn "{% link reference/Quux.md %}").length > 1)
+  s ← s.check "renderModuleTree never emits a backslash"
+    (!(treeHtml.any (· == '\\')))
+
   -- ## Unit-level: T18's table of contents (kindBucket, renderToc)
 
   s ← s.check "kindBucket: def" (kindBucket "def" == "Definitions")

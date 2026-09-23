@@ -318,6 +318,24 @@ other direction ("what instances mention this *type*, across every
 class") — a class with no registered instances (or a declaration that
 isn't a class at all) simply gets no Instances section.
 
+### Module navigation
+
+Jekyll output's `reference/modules.md` (task T49) renders the
+project's modules as a nested, collapsible tree grouped by namespace
+— `Foo.Bar` and `Foo.Baz` both appear under one expandable `Foo` entry
+— rather than one flat list, using plain HTML `<details>`/`<summary>`
+(no JavaScript needed to expand or collapse a namespace). Non-Jekyll
+output keeps the flat list, since raw `<details>` HTML has no obvious
+plain-Markdown equivalent.
+
+Deliberately simpler than doc-gen4's own nav tree: no shared sidebar
+persisted across every page via an iframe, and no auto-expanding to
+the page you're currently on — both matter at Mathlib's scale (one
+tree spanning an entire dependency closure, visible on every page at
+once), but `reference/modules.md` here is a single, standalone index
+page, not something embedded in every other page. LeanDoc typically
+documents one project, not an entire ecosystem.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents

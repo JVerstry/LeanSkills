@@ -61,6 +61,11 @@ layout: default
 - [`renderDecl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`frontMatter`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderModulePage`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ModuleTree.empty`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`insertModule`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`buildModuleTree`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`renderModuleTreeNode`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`renderModuleTree`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderModulesPage`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`kindBucket`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderToc`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -95,6 +100,8 @@ layout: default
 - [`DeclRange.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ModuleTree`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`ModuleTree.node`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`SearchEntry`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`SearchEntry.mk`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 

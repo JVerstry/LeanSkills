@@ -615,44 +615,118 @@ def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bo
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# {moduleName}\n\n{body}"
 
-/-- Renders the list of documented modules, one line per module, linking
-to its page. Named `modules.md` (task T18 — not `index.md`, to avoid
-having two different-purposed `index.md` files in the tree: this one
-lists modules, `docs_dir/index.md` is the site's actual root page).
+/-- One node of the module tree (task T49): a namespace segment,
+its own module page if one exists exactly at this path (`some m` for
+a leaf like `Demo.MyLeanFile`; `none` for a pure namespace prefix like
+`Demo` when nothing is documented at `Demo` itself), and its children
+keyed by the *next* path segment. Built purely by splitting each
+module's dotted name on `.` — no separate hierarchy-tracking needed,
+since Lean's own module naming already encodes it. -/
+inductive ModuleTree where
+  | node (children : Array (String × ModuleTree)) (full : Option String)
 
-Links use Jekyll's `link` Liquid tag (task T28), not plain Markdown
-links: Jekyll renames a converted page's extension (`Foo/Bar.md` ↦
-`Foo/Bar.html`), so a plain `.md` link would 404 once Jekyll processing
-is on. The `link` tag resolves the *source* path to its converted
-output URL at build time, and fails the build if the target doesn't
-exist (`jekyllrb.com/docs/liquid/tags/`) — a stronger guarantee than the
-plain links this replaces gave us.
+def ModuleTree.empty : ModuleTree := .node #[] none
+
+partial def insertModule : ModuleTree → List String → String → ModuleTree
+  | .node children _, [], full => .node children (some full)
+  | .node children leaf, s :: rest, full =>
+    match children.findIdx? (·.1 == s) with
+    | some i =>
+      match children[i]? with
+      | some (_, child) => .node (children.set! i (s, insertModule child rest full)) leaf
+      | none => .node children leaf
+    | none =>
+      .node (children.push (s, insertModule .empty rest full)) leaf
+
+/-- Builds the module tree from the flat list `render` already has —
+every module's dotted name, split on `.`. -/
+def buildModuleTree (moduleNames : Array String) : ModuleTree :=
+  moduleNames.foldl (init := ModuleTree.empty) fun t m => insertModule t (m.splitOn ".") m
+
+/-- Renders one tree node as a nested `<li>`, natively-collapsible via
+`<details>`/`<summary>` — no JS needed for the collapse mechanism
+itself, mirroring doc-gen4's own choice there. Children are sorted
+alphabetically by segment at each level. A leaf module's segment is a
+link (Jekyll `{% link %}` or a plain relative link, same `jekyll`
+branching every other renderer here already uses); a pure namespace
+prefix with no module of its own (e.g. `Demo` when only
+`Demo.MyLeanFile` is documented) renders as plain, unlinked text. -/
+partial def renderModuleTreeNode (label : String) (tree : ModuleTree) (jekyll : Bool) : String :=
+  match tree with
+  | .node children full =>
+    let selfText := match full with
+      | some m =>
+        if jekyll then
+          "[" ++ label ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
+        else
+          s!"[{label}]({linkPath m}.md)"
+      | none => label
+    if children.isEmpty then
+      s!"<li>{selfText}</li>"
+    else
+      let sorted := children.qsort (fun a b => a.1 < b.1)
+      let childItems := String.join
+        ((sorted.map fun (seg, child) => renderModuleTreeNode seg child jekyll).toList)
+      s!"<li><details><summary>{selfText}</summary><ul>{childItems}</ul></details></li>"
+
+/-- Renders the whole module tree as a `<ul>` of top-level namespace
+segments — the entry point `renderModulesPage` calls.
+
+Scoped deliberately narrower than doc-gen4's own nav tree (task T49's
+backlog entry left this open): no shared iframe nav-frame persisting
+expand/collapse state across page loads, and no auto-expand-to-the-
+current-page's-own-entry — both are meaningful when a *whole
+ecosystem's* dependency closure needs one shared, always-visible
+sidebar (Mathlib's actual scale), but `reference/modules.md` is a
+single, standalone index page here, not something rendered inside
+every other page — LeanDoc typically documents one project, not an
+entire ecosystem, so there is no "current page's own entry" to expand
+to on this page in the first place. -/
+def renderModuleTree (moduleNames : Array String) (jekyll : Bool) : String :=
+  let tree := buildModuleTree moduleNames
+  match tree with
+  | .node children _ =>
+    let sorted := children.qsort (fun a b => a.1 < b.1)
+    let items := String.join
+      ((sorted.map fun (seg, child) => renderModuleTreeNode seg child jekyll).toList)
+    s!"<ul>{items}</ul>"
+
+/-- Renders the list of documented modules, linking to its page.
+Named `modules.md` (task T18 — not `index.md`, to avoid having two
+different-purposed `index.md` files in the tree: this one lists
+modules, `docs_dir/index.md` is the site's actual root page).
+
+Jekyll output (task T31) renders a nested, collapsible tree (task
+T49, see `renderModuleTree`) grouped by namespace rather than a flat
+list — links use Jekyll's `{% link %}` tag (task T28), not plain
+Markdown links: Jekyll renames a converted page's extension
+(`Foo/Bar.md` ↦ `Foo/Bar.html`), so a plain `.md` link would 404 once
+Jekyll processing is on. The `link` tag resolves the *source* path to
+its converted output URL at build time, and fails the build if the
+target doesn't exist (`jekyllrb.com/docs/liquid/tags/`).
 
 Crucially, the path inside the `link` tag is resolved from the
 Jekyll *source root* (this page's `docsDir`, e.g. `docs/`), not from the
 current page's own directory the way a relative Markdown link would be
 — so it needs a `reference/` prefix (task T25 — renamed from `api/`,
-since this is a flat dump of every included declaration, not a curated
-public API surface) even though this page and the pages it links to
-live in the same directory. Getting this wrong would silently
+since this is a flat dump of every included declaration, not a
+curated public API surface) even though this page and the pages it
+links to live in the same directory. Getting this wrong would silently
 reintroduce the plain-relative-link bug this replaces.
 
-`jekyll` (task T31) controls both the front matter and which link form
-is used: `false` falls back to a plain relative `.md` link (portable,
-readable outside Jekyll, but 404s once Jekyll *does* process the page —
-never mix the two within one `docs_dir`). -/
+Non-Jekyll output (`jekyll = false`) falls back to a flat, plain
+relative `.md` list — portable, readable outside Jekyll, but 404s once
+Jekyll *does* process the page (never mix the two within one
+`docs_dir`), and raw `<details>` HTML has no obvious "plain Markdown"
+equivalent worth inventing here. -/
 def renderModulesPage (moduleNames : Array String) (jekyll : Bool) : String :=
-  let items := moduleNames.map fun m =>
-    if jekyll then
-      -- Built with `++`, not `s!"..."`, because the literal Liquid
-      -- `{% ... %}` braces would otherwise be parsed as string
-      -- interpolation syntax.
-      "- [" ++ m ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
-    else
-      s!"- [{m}]({linkPath m}.md)"
-  let body := String.join (items.toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
-  s!"{fm}# Modules\n\n{body}\n"
+  if jekyll then
+    s!"{fm}# Modules\n\n{renderModuleTree moduleNames jekyll}\n"
+  else
+    let items := moduleNames.map fun m => s!"- [{m}]({linkPath m}.md)"
+    let body := String.join (items.toList.intersperse "\n")
+    s!"{fm}# Modules\n\n{body}\n"
 
 /-- Buckets a declaration's `kind` (see `kindString`) into one of the
 table of contents' four groups. Every `kindString` output maps to
