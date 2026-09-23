@@ -44,6 +44,8 @@ layout: default
 - [`kindString`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`declMetaOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`isNoise`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`leandocIgnoreAttr`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`isDeliberatelyIgnored`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`extractFile`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`hasCopyrightHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`checkComplianceHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

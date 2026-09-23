@@ -511,6 +511,46 @@ against the demo project's `MyLeanStructure` (which exercises all of the
 above) that this correctly keeps only the 7 real declarations out of 21
 total. 
 
+### `leandocIgnoreAttr`
+
+*opaque*
+
+```lean
+leandocIgnoreAttr : Lean.TagAttribute
+```
+
+Task T19: `@[leandoc_ignore]` marks a declaration as *deliberately*
+undocumented — a real decision by whoever wrote it, not a coverage gap
+LeanDoc should report. A `TagAttribute` (Lean's own lightweight
+boolean-attribute mechanism, `Lean.registerTagAttribute` — the same
+shape `@[inline]` uses), not a custom parametric attribute: there's
+nothing to configure, a declaration either has it or doesn't.
+
+Deliberately LeanDoc's *own* attribute, not an attempt to recognize
+Mathlib/Batteries' `@[nolint docBlame]`: that tag suppresses a
+*lint warning* when running `#lint`, it doesn't affect what doc-gen4
+renders at all (doc-gen4 shows every declaration it finds, documented
+or not) — treating it as equivalent to "hide from generated docs"
+would misrepresent what a project using it actually meant. Recognizing
+it for real would also require adding Batteries as a genuine compile-
+time dependency of LeanDoc itself (its `nolint` attribute is a
+`ParametricAttribute` with no generic, type-erased way to query it
+without importing the module that defines it) — a real, recurring
+cost (toolchain-compatibility tracking) LeanDoc doesn't currently have
+at all, not worth taking on for a tag that wouldn't even mean the
+right thing here. 
+
+### `isDeliberatelyIgnored`
+
+*def*
+
+```lean
+isDeliberatelyIgnored : Lean.Environment → Lean.Name → Bool
+```
+
+Whether `declName` was tagged `@[leandoc_ignore]` (task T19) — see
+`leandocIgnoreAttr`. 
+
 ### `extractFile`
 
 *def*
@@ -519,8 +559,8 @@ total.
 extractFile : System.FilePath → Lean.Name → IO (Array DeclMeta)
 ```
 
-Extracts every non-noise declaration added by elaborating `file` as
-module `moduleName`. 
+Extracts every non-noise, non-`@[leandoc_ignore]`'d declaration
+added by elaborating `file` as module `moduleName`. 
 
 ### `hasCopyrightHeader`
 

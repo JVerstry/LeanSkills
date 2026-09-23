@@ -276,7 +276,7 @@ def main : IO Unit := do
   -- noise-filtering count, pinned instead of re-checked by hand)
 
   let demoMetas ← extractFile (moduleToFile demoRoot demoModule) demoModule
-  s ← s.check "extractFile keeps exactly the 7 real declarations, not the 21 raw ones"
+  s ← s.check "extractFile keeps exactly the 7 real, documentable declarations"
     (demoMetas.size == 7)
   s ← s.check "extractFile finds MyLeanFunction with the right kind and type"
     (demoMetas.any fun d =>
@@ -284,6 +284,13 @@ def main : IO Unit := do
   s ← s.check "extractFile finds the undocumented declaration as actually undocumented"
     (demoMetas.any fun d =>
       d.name == "MyLeanModule.myLeanUndocumentedFunction" && d.docString.isNone)
+
+  -- ## Fixture-level: T19's @[leandoc_ignore] attribute, exercised
+  -- through the real extractor against demo/'s real fixture (not a
+  -- fabricated environment) — proves the attribute actually removes a
+  -- declaration from extraction output, not just that it parses.
+  s ← s.check "extractFile excludes a @[leandoc_ignore]'d declaration"
+    (!(demoMetas.any fun d => d.name == "MyLeanModule.myLeanInternalHelper"))
 
   -- ## Project hygiene: required top-level files exist, and the
   -- working-notes tracker / personal Claude Code config stay out of

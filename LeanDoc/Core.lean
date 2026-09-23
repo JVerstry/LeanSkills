@@ -262,8 +262,39 @@ total. -/
 def isNoise (c : AsyncConstantInfo) : CoreM Bool :=
   if c.kind == ConstantKind.recursor then pure true else isAutoDeclOrPrivate_Internal c.name
 
-/-- Extracts every non-noise declaration added by elaborating `file` as
-module `moduleName`. -/
+/-- Task T19: `@[leandoc_ignore]` marks a declaration as *deliberately*
+undocumented — a real decision by whoever wrote it, not a coverage gap
+LeanDoc should report. A `TagAttribute` (Lean's own lightweight
+boolean-attribute mechanism, `Lean.registerTagAttribute` — the same
+shape `@[inline]` uses), not a custom parametric attribute: there's
+nothing to configure, a declaration either has it or doesn't.
+
+Deliberately LeanDoc's *own* attribute, not an attempt to recognize
+Mathlib/Batteries' `@[nolint docBlame]`: that tag suppresses a
+*lint warning* when running `#lint`, it doesn't affect what doc-gen4
+renders at all (doc-gen4 shows every declaration it finds, documented
+or not) — treating it as equivalent to "hide from generated docs"
+would misrepresent what a project using it actually meant. Recognizing
+it for real would also require adding Batteries as a genuine compile-
+time dependency of LeanDoc itself (its `nolint` attribute is a
+`ParametricAttribute` with no generic, type-erased way to query it
+without importing the module that defines it) — a real, recurring
+cost (toolchain-compatibility tracking) LeanDoc doesn't currently have
+at all, not worth taking on for a tag that wouldn't even mean the
+right thing here. -/
+initialize leandocIgnoreAttr : TagAttribute ←
+  registerTagAttribute `leandoc_ignore
+    "Marks a declaration as deliberately excluded from LeanDoc's generated documentation \
+     (task T19) — a decision by the author, distinct from `isNoise`'s compiler-generated-\
+     scaffolding filter."
+
+/-- Whether `declName` was tagged `@[leandoc_ignore]` (task T19) — see
+`leandocIgnoreAttr`. -/
+def isDeliberatelyIgnored (env : Environment) (declName : Name) : Bool :=
+  leandocIgnoreAttr.hasTag env declName
+
+/-- Extracts every non-noise, non-`@[leandoc_ignore]`'d declaration
+added by elaborating `file` as module `moduleName`. -/
 def extractFile (file : System.FilePath) (moduleName : Name) : IO (Array DeclMeta) := do
   -- Required before *every* `runFrontend` call, not just the first one
   -- per process: `Lean.withImporting`'s `finally` resets this flag to
@@ -287,7 +318,8 @@ def extractFile (file : System.FilePath) (moduleName : Name) : IO (Array DeclMet
       let mut acc : Array DeclMeta := #[]
       for c in consts do
         unless (← isNoise c) do
-          acc := acc.push (← declMetaOf env moduleName c)
+          unless isDeliberatelyIgnored env c.name do
+            acc := acc.push (← declMetaOf env moduleName c)
       pure acc
     : CoreM (Array DeclMeta)).toIO' coreCtx coreState
 

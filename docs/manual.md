@@ -95,12 +95,37 @@ documented.
   scanning. A module is excluded if it matches an entry exactly or sits
   under one as a dotted prefix (excluding `"Foo"` also excludes
   `"Foo.Bar"`).
-- **Per-declaration opt-out — not implemented yet.** Today, exclusion
-  only works at the module level: an entire file is either documented
-  or not, with no way to mark one `def` inside an otherwise-documented
-  file as deliberately undocumented (as opposed to a real coverage
-  gap). A `.docignore`-style mechanism for this is planned but not
-  built — don't write documentation or tooling that assumes it exists.
+- **`@[leandoc_ignore]`** (task T19) — marks a single declaration as
+  *deliberately* undocumented, distinct from a real coverage gap.
+  Requires `import LeanDoc.Core` (the same import a `require`d
+  dependency already gives you access to):
+
+  ```lean
+  @[leandoc_ignore]
+  def myInternalHelper (n : Nat) : Nat := n - 1
+  ```
+
+  A tagged declaration is fully omitted from generated output — not
+  shown with an "ignored" marker, simply absent, the same treatment as
+  Lean's own compiler-generated scaffolding (recursors, `noConfusion`,
+  equation lemmas, ...) that LeanDoc already filters out by default.
+  There's no `.docignore` file, and no plan to add one: it would just
+  be a second mechanism doing the same job `[modules] exclude` already
+  does for whole modules — a real design call, not an oversight.
+
+  **LeanDoc deliberately does *not* recognize Mathlib/Batteries'
+  `@[nolint docBlame]`** as an equivalent, even though it looks
+  similar. That tag only suppresses a *lint warning* when running
+  Batteries' `#lint` — it has no effect on what doc-gen4 (or any
+  documentation generator) actually renders; a `@[nolint docBlame]`'d
+  declaration still shows up, undocumented, in Mathlib's own generated
+  docs. Treating it as "hide from LeanDoc's output" would silently
+  misrepresent what a project using it actually meant. Recognizing it
+  for real would also require adding Batteries as a genuine compile-
+  time dependency of LeanDoc itself (its `nolint` attribute has no
+  generic way to be queried without importing the module that defines
+  it) — a real, ongoing cost not worth taking on for a tag that
+  wouldn't even mean the right thing here.
 
 ### Documentation-compliance checking
 

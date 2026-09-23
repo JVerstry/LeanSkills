@@ -42,6 +42,17 @@ will suggest ways to address it.
 - **Where things live:** intermediate metadata JSON in `.leandoc/`
   (gitignored, regenerated every run); final rendered docs in `docs/`
   (committed to git); configuration in `leandoc.toml`.
+- **What gets left out, and why:** LeanDoc filters out Lean's own
+  compiler-generated scaffolding — recursors, `noConfusion`, equation
+  lemmas, `_sizeOf_*`, and similar (`isNoise`, using the same predicate
+  Lean's own environment linter uses, `isAutoDeclOrPrivate_Internal`) —
+  since none of that was written by a human and none of it belongs in
+  generated docs. This is separate from `@[leandoc_ignore]` (task T19,
+  see [`docs/manual.md`](docs/manual.md)'s "Inclusion and exclusion"):
+  `isNoise` answers "did the *compiler* generate this," `@[leandoc_
+  ignore]` answers "did the *author* deliberately opt this out" — two
+  different reasons, checked independently, for the same mechanical
+  outcome (omitted from output entirely, not shown with a marker).
 
 ## Users vs. developers of LeanDoc
 

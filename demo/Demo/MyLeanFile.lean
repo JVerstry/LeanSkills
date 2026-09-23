@@ -1,3 +1,5 @@
+import LeanDoc.Core
+
 /-!
 # My Lean Module
 
@@ -9,6 +11,10 @@ Lean project"). It doubles as a worked example: once LeanDoc can render
 documentation, this file's docstrings are what that rendered output will
 be built from — so they're written as genuine, readable documentation,
 not throwaway placeholder text.
+
+`import LeanDoc.Core` here (task T19) is what makes `@[leandoc_ignore]`
+available below — the same thing a real adopting project needs once it
+`require`s LeanDoc to use the attribute in its own code.
 -/
 
 namespace MyLeanModule
@@ -42,5 +48,13 @@ structure MyLeanStructure where
 -- "no docstring" rather than skipping the declaration entirely.
 def myLeanUndocumentedFunction (n : Nat) : Nat :=
   n + 1
+
+/-- An internal helper, deliberately excluded from generated
+documentation (task T19) — proves `@[leandoc_ignore]` actually removes
+a declaration from LeanDoc's output rather than just being parsed and
+ignored. -/
+@[leandoc_ignore]
+def myLeanInternalHelper (n : Nat) : Nat :=
+  n - 1
 
 end MyLeanModule
