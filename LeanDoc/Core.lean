@@ -1,5 +1,6 @@
 import Lean
 import Lake.Toml
+import LeanDoc.Assets
 
 /-!
 # LeanDoc core (extractor + renderer)
@@ -307,11 +308,16 @@ Liquid tags, honoring `_config.yml`, everything — if it has *front
 matter*: per Jekyll's own docs
 (`jekyllrb.com/docs/static-files/`), "a static file is a file that does
 not contain any front matter", and static files are copied through
-byte-for-byte. An empty `---\n---\n` block is the minimum that counts.
-Without this, GitHub Pages would silently serve our Markdown unprocessed
-even with Jekyll turned on (`.nojekyll` removed) — the file simply
-wouldn't be "a page" as far as Jekyll is concerned. -/
-def frontMatter : String := "---\n---\n\n"
+byte-for-byte. An empty front-matter block would technically satisfy
+that, but front matter here also carries `layout: default` (task T29):
+Jekyll only applies a layout's styling to a page when that page's front
+matter names one — confirmed against Jekyll's own docs
+(`jekyllrb.com/docs/themes/`) after realizing the previous empty
+`---\n---\n` block meant generated pages likely never actually picked
+up any theme/stylesheet at all, `_config.yml`'s `theme:` key
+notwithstanding. `default` refers to `_layouts/default.html`, written
+by `ensureDefaultLayout`. -/
+def frontMatter : String := "---\nlayout: default\n---\n\n"
 
 /-- Renders one module's page: a heading plus every declaration's
 section, in the order the extractor emitted them (elaboration order —
@@ -469,17 +475,16 @@ def groupDeclsByModule (metas : Array DeclMeta) : Array (String × Array DeclMet
       byModule := byModule.insert d.module ((byModule.getD d.module #[]).push d)
     return order.map fun m => (m, byModule[m]!)
 
-/-- Minimal `_config.yml` written once (task T28) so Jekyll has a place
-to pick a theme/CSS from — without it, a Jekyll-processed page still
-renders with no styling at all, just as GitHub-flavored-Markdown-free
-plain HTML. `jekyll-theme-minimal` is one of GitHub Pages' natively
-supported themes (no gem install needed beyond what Pages already runs),
-chosen as a reasonable default; anyone can change or replace it later.
-Only ever written if the file doesn't already exist — like
-`InstallationPrompt.txt`'s other one-time setup steps, this must not
-clobber a customization on a later `lake exe leandoc` run. -/
+/-- Minimal `_config.yml` written once. No `theme:`/`remote_theme:` key
+(task T29 — dropped `jekyll-theme-minimal`): LeanDoc now ships its own
+complete stylesheet and layout (`ensureStyleAsset`/
+`ensureDefaultLayout`) rather than pulling in a GitHub Pages theme, so
+there's nothing else `_config.yml` needs to say. Only ever written if
+the file doesn't already exist — like `InstallationPrompt.txt`'s other
+one-time setup steps, this must not clobber a customization on a later
+`lake exe leandoc` run. -/
 def defaultJekyllConfig : String :=
-  "theme: jekyll-theme-minimal\n"
+  ""
 
 /-- Ensures `docsDir/_config.yml` exists, writing the default (see
 `defaultJekyllConfig`) if it's missing. Never overwrites an existing
@@ -488,6 +493,29 @@ def ensureJekyllConfig (docsDir : System.FilePath) : IO Unit := do
   let path := docsDir / "_config.yml"
   unless (← path.pathExists) do
     IO.FS.writeFile path defaultJekyllConfig
+
+/-- Ensures `docsDir/assets/style.css` exists, writing doc-gen4's
+vendored stylesheet (task T29 — see `assets/style.css`,
+`LeanDoc.Assets.styleCss`) if it's missing. Never overwrites an
+existing file, so a project is free to edit it after that first write
+— LeanDoc never touches it again. -/
+def ensureStyleAsset (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "assets" / "style.css"
+  unless (← path.pathExists) do
+    if let some dir := path.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile path LeanDoc.Assets.styleCss
+
+/-- Ensures `docsDir/_layouts/default.html` exists, writing LeanDoc's
+minimal layout (task T29 — see `assets/layouts/default.html`,
+`LeanDoc.Assets.defaultLayoutHtml`) if it's missing. Never overwrites
+an existing file, same write-once treatment as `ensureStyleAsset`. -/
+def ensureDefaultLayout (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "_layouts" / "default.html"
+  unless (← path.pathExists) do
+    if let some dir := path.parent then
+      IO.FS.createDirAll dir
+    IO.FS.writeFile path LeanDoc.Assets.defaultLayoutHtml
 
 /-- Reads `jsonPath` back off disk (not the extractor's in-memory
 result — see the module docstring), groups declarations by module, and
@@ -512,6 +540,8 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
   IO.FS.createDirAll referenceDir
   if jekyll then
     ensureJekyllConfig docsDir
+    ensureStyleAsset docsDir
+    ensureDefaultLayout docsDir
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
     moduleNames := moduleNames.push moduleName

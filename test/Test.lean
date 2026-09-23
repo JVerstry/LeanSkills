@@ -75,13 +75,13 @@ def main : IO Unit := do
 
   -- ## Unit-level: T22/T28/T31's Jekyll-targeted output, and the
   -- `jekyll := false` opt-out (task T31).
-  s ← s.check "renderModulesPage (jekyll) emits front matter"
-    (modulesPage.startsWith "---\n---\n")
+  s ← s.check "renderModulesPage (jekyll) emits front matter with layout: default"
+    (modulesPage.startsWith "---\nlayout: default\n---\n")
   s ← s.check "renderModulesPage (jekyll) links via {% link %}, reference/-prefixed"
     ((modulesPage.splitOn "{% link reference/Demo/MyLeanFile.md %}").length > 1)
   let plainModulesPage := renderModulesPage #["Demo.MyLeanFile"] false
   s ← s.check "renderModulesPage (no jekyll) has no front matter"
-    (!plainModulesPage.startsWith "---\n---\n")
+    (!plainModulesPage.startsWith "---\n")
   s ← s.check "renderModulesPage (no jekyll) uses a plain relative link"
     ((plainModulesPage.splitOn "(Demo/MyLeanFile.md)").length > 1)
   s ← s.check "renderModulesPage (no jekyll) emits no Liquid syntax"
@@ -148,6 +148,39 @@ def main : IO Unit := do
     (untouched == noMarkers)
 
   IO.FS.removeFile scratchIndex
+
+  -- ## Fixture-level: T29's vendored stylesheet/layout assets
+  -- (ensureStyleAsset, ensureDefaultLayout) — same scratch directory,
+  -- same write-once guarantee as ensureJekyllConfig/ensureRootIndex.
+
+  let scratchStyle := scratchDir / "assets" / "style.css"
+  let scratchLayout := scratchDir / "_layouts" / "default.html"
+  if ← scratchStyle.pathExists then IO.FS.removeFile scratchStyle
+  if ← scratchLayout.pathExists then IO.FS.removeFile scratchLayout
+
+  ensureStyleAsset scratchDir
+  ensureDefaultLayout scratchDir
+  let styleContent ← IO.FS.readFile scratchStyle
+  let layoutContent ← IO.FS.readFile scratchLayout
+  s ← s.check "ensureStyleAsset writes the vendored doc-gen4 stylesheet"
+    (styleContent == LeanDoc.Assets.styleCss)
+  s ← s.check "ensureDefaultLayout writes LeanDoc's own layout"
+    (layoutContent == LeanDoc.Assets.defaultLayoutHtml)
+  s ← s.check "the vendored stylesheet mentions its doc-gen4 origin"
+    ((styleContent.splitOn "doc-gen4").length > 1)
+  s ← s.check "the default layout links assets/style.css"
+    ((layoutContent.splitOn "/assets/style.css").length > 1)
+
+  -- Write-once: a customized file must survive a second `render` run.
+  let customStyle := "/* my custom override */\n"
+  IO.FS.writeFile scratchStyle customStyle
+  ensureStyleAsset scratchDir
+  let styleAfterCustomization ← IO.FS.readFile scratchStyle
+  s ← s.check "ensureStyleAsset never overwrites a customized stylesheet"
+    (styleAfterCustomization == customStyle)
+
+  IO.FS.removeFile scratchStyle
+  IO.FS.removeFile scratchLayout
 
   -- ## Unit-level: rendering content
 

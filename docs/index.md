@@ -1,4 +1,5 @@
 ---
+layout: default
 ---
 
 # LeanDoc
@@ -44,17 +45,20 @@ ships.)
 
 This directory is served through **Jekyll** (task T22/T28) — the
 default GitHub Pages behavior — rather than disabling it via
-`.nojekyll`. Every `.md` file in `docs/` carries an (empty) front-matter
-block so Jekyll actually converts it to HTML instead of copying it
-through unprocessed (Jekyll only treats a file with front matter as a
-page at all); internal links use Jekyll's
+`.nojekyll`. Every `.md` file in `docs/` carries a front-matter block
+with `layout: default` so Jekyll actually converts it to HTML instead
+of copying it through unprocessed (Jekyll only treats a file with
+front matter as a page at all, and only applies a layout's styling to
+a page whose front matter names one — task T29, confirmed against
+Jekyll's own docs); internal links use Jekyll's
 [`{% link %}` tag](https://jekyllrb.com/docs/liquid/tags/) rather than
 plain Markdown links, since Jekyll renames converted pages `.md` →
 `.html` and `{% link %}` resolves that automatically (and fails the
-build if a target doesn't exist). A minimal `_config.yml` picks a
-GitHub-Pages-supported theme (`jekyll-theme-minimal`) so the site isn't
-completely unstyled; see `wip/todo.md` task T29 for further,
-Mathlib/cslib-inspired styling.
+build if a target doesn't exist). `assets/style.css` (task T29) is
+doc-gen4's own stylesheet, vendored unmodified — matching what
+Mathlib/cslib actually look like, rather than a GitHub Pages
+`theme:`/`remote_theme:` or something LeanDoc invented — paired with
+`_layouts/default.html`, LeanDoc's own minimal layout that links it.
 
 To publish: point the repo's GitHub Pages setting at the `main` branch,
 `/docs` folder. No further CI/build step is required for the committed

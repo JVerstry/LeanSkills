@@ -105,11 +105,16 @@ updates as the interface stabilizes.
      the directory exists so the repo's Pages settings can be pointed at
      `main` / that directory immediately. If step 2f's answer was
      `jekyll = true` (the default), no `.nojekyll` marker is needed:
-     LeanDoc's renderer emits Jekyll-ready output itself (front matter
-     on every page, a `_config.yml` picking a GitHub-Pages-supported
-     theme, internal links via Jekyll's `{% link %}` tag — task
-     T22/T28), so GitHub Pages' default Jekyll processing is what
-     actually turns the generated Markdown into a styled site.
+     LeanDoc's renderer emits Jekyll-ready output itself — front matter
+     with `layout: default` on every generated page, its own vendored
+     stylesheet (`docs_dir/assets/style.css`, task T29 — matches the
+     Lean ecosystem's own look, sourced from doc-gen4) and layout
+     (`docs_dir/_layouts/default.html`), internal links via Jekyll's
+     `{% link %}` tag (task T22/T28) — so GitHub Pages' default Jekyll
+     processing turns the generated Markdown into a styled site
+     without a GitHub Pages `theme:`/`remote_theme:` dependency at
+     all. Both the stylesheet and layout are written once and never
+     overwritten — free to edit either directly afterward.
    - **If `docs_dir` already has hand-written Markdown pages in it**
      (e.g. an existing landing page) and step 2f's answer is
      `jekyll = true`: LeanDoc's renderer only adds front matter to the
@@ -124,13 +129,17 @@ updates as the interface stabilizes.
      `<!-- leandoc:nav:start -->`/`<!-- leandoc:nav:end -->` markers,
      if those are present. Check any *other* pre-existing `.md` files
      directly under `docs_dir` (and `docs_dir/index.md` if it already
-     existed) and, if Jekyll processing is wanted site-wide, add an
-     empty front-matter block (`---\n---\n`) to each one that's
-     missing it; otherwise those pages stay unprocessed "static files"
-     sitting next to processed generated ones — an inconsistent,
-     partly-broken site. Tell the user what was changed rather than
-     doing this silently. If `jekyll = false` was chosen instead, skip
-     this — nothing in `docs_dir` should have Jekyll-specific content.
+     existed) and, if Jekyll processing is wanted site-wide, add a
+     front-matter block with `layout: default`
+     (`---\nlayout: default\n---\n`) to each one that's missing it —
+     not just an empty `---\n---\n` block, since (task T29) a layout is
+     what actually makes LeanDoc's stylesheet apply to that page, not
+     front matter alone; otherwise those pages stay unprocessed
+     "static files" (or processed but unstyled) sitting next to
+     properly-styled generated ones — an inconsistent, partly-broken
+     site. Tell the user what was changed rather than doing this
+     silently. If `jekyll = false` was chosen instead, skip this —
+     nothing in `docs_dir` should have Jekyll-specific content.
 
 5. Create a `leandoc.toml` config file at the repo root, sibling to
    `lakefile.toml`, using the values confirmed in step 2. This schema

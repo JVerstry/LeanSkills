@@ -1,4 +1,5 @@
 ---
+layout: default
 ---
 
 # Manual
@@ -83,10 +84,11 @@ documented.
 ### Jekyll
 
 `[renderer] jekyll` (default `true`) controls whether generated pages
-target Jekyll — front matter, internal links via Jekyll's `{% link %}`
-tag, and a written `_config.yml` picking a GitHub-Pages-supported theme
-— or are plain, portable Markdown instead (ordinary relative links, no
-Jekyll-specific content, readable as-is outside Jekyll).
+target Jekyll — front matter (`layout: default`), internal links via
+Jekyll's `{% link %}` tag, and written `_config.yml`/`assets/style.css`/
+`_layouts/default.html` files (task T29) — or are plain, portable
+Markdown instead (ordinary relative links, no Jekyll-specific content,
+readable as-is outside Jekyll).
 
 Leave it `true` if `docs_dir` will be published via GitHub Pages —
 Pages runs Jekyll by default, and `false` output left there would be
@@ -98,9 +100,30 @@ setup you don't want LeanDoc's output mixed into).
 If `docs_dir` already has hand-written Markdown pages of your own
 (e.g. a landing page) and `jekyll = true`: LeanDoc's renderer only adds
 front matter to the pages *it* generates, never to existing
-hand-written ones. Give those pages front matter yourself
-(`---\n---\n`), or they'll stay unprocessed "static files" next to your
+hand-written ones. Give those pages `---\nlayout: default\n---\n`
+yourself, or they'll stay unprocessed "static files" next to your
 processed generated ones — a half-broken, inconsistent site.
+
+### Styling and customizing the CSS
+
+`docs_dir/assets/style.css` is doc-gen4's own stylesheet (task T29),
+vendored unmodified — this is deliberate: it's what Mathlib's and
+cslib's published documentation actually looks like (verified by
+diffing the live CSS from both sites — they turned out to be
+byte-identical to doc-gen4's own default, and doc-gen4 itself has no
+per-project color/theme customization mechanism at all), so LeanDoc's
+output matches what Lean-ecosystem readers already expect rather than
+inventing its own look. It ships with doc-gen4's own light/dark theme
+toggle built in.
+
+Both `docs_dir/assets/style.css` and `docs_dir/_layouts/default.html`
+are written **once** and never touched again by LeanDoc on later
+`lake exe leandoc` runs — the same write-once guarantee as
+`_config.yml`. Edit either file directly to customize your site's
+look; nothing will overwrite your changes. There's no `leandoc.toml`
+option for "pick a different palette" — if you want something other
+than the vendored default, edit the CSS itself after the first
+generation.
 
 ### Generated output
 

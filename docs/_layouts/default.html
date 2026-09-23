@@ -1,0 +1,21 @@
+<!-- LeanDoc's own minimal Jekyll layout (task T29, 2026-09-23).
+     Needed because Jekyll only applies a layout's styling to a page
+     when that page's front matter has `layout: <name>` — a plain
+     `theme:`/`remote_theme:` in _config.yml is not, by itself,
+     enough (confirmed against jekyllrb.com's own docs). LeanDoc's
+     generated front matter now sets `layout: default`, so this file
+     is what actually gets used. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title | default: site.title | default: "LeanDoc" }}</title>
+  <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+</head>
+<body>
+  <main>
+    {{ content }}
+  </main>
+</body>
+</html>

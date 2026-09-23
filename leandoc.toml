@@ -13,7 +13,9 @@ docs_dir = "docs/"
 # two reasons: it's internal tooling, not public API worth documenting
 # either way, and T21's whole-package scanning doesn't understand
 # per-target `srcDir` yet (a real, known limitation — see wip/todo.md).
-exclude = ["Test"]
+# `LeanDoc.Assets` (task T29) is generated plumbing (embedded static
+# asset content) — internal, not public API, same reasoning as `Test`.
+exclude = ["Test", "LeanDoc.Assets"]
 
 [renderer]
 name = "markdown"

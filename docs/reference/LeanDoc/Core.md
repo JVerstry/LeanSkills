@@ -1,4 +1,5 @@
 ---
+layout: default
 ---
 
 # LeanDoc.Core
@@ -532,10 +533,15 @@ Liquid tags, honoring `_config.yml`, everything — if it has *front
 matter*: per Jekyll's own docs
 (`jekyllrb.com/docs/static-files/`), "a static file is a file that does
 not contain any front matter", and static files are copied through
-byte-for-byte. An empty `---\n---\n` block is the minimum that counts.
-Without this, GitHub Pages would silently serve our Markdown unprocessed
-even with Jekyll turned on (`.nojekyll` removed) — the file simply
-wouldn't be "a page" as far as Jekyll is concerned. 
+byte-for-byte. An empty front-matter block would technically satisfy
+that, but front matter here also carries `layout: default` (task T29):
+Jekyll only applies a layout's styling to a page when that page's front
+matter names one — confirmed against Jekyll's own docs
+(`jekyllrb.com/docs/themes/`) after realizing the previous empty
+`---\n---\n` block meant generated pages likely never actually picked
+up any theme/stylesheet at all, `_config.yml`'s `theme:` key
+notwithstanding. `default` refers to `_layouts/default.html`, written
+by `ensureDefaultLayout`. 
 
 ### `renderModulePage`
 
@@ -701,15 +707,14 @@ Groups declarations by module, preserving first-seen module order
 defaultJekyllConfig : String
 ```
 
-Minimal `_config.yml` written once (task T28) so Jekyll has a place
-to pick a theme/CSS from — without it, a Jekyll-processed page still
-renders with no styling at all, just as GitHub-flavored-Markdown-free
-plain HTML. `jekyll-theme-minimal` is one of GitHub Pages' natively
-supported themes (no gem install needed beyond what Pages already runs),
-chosen as a reasonable default; anyone can change or replace it later.
-Only ever written if the file doesn't already exist — like
-`InstallationPrompt.txt`'s other one-time setup steps, this must not
-clobber a customization on a later `lake exe leandoc` run. 
+Minimal `_config.yml` written once. No `theme:`/`remote_theme:` key
+(task T29 — dropped `jekyll-theme-minimal`): LeanDoc now ships its own
+complete stylesheet and layout (`ensureStyleAsset`/
+`ensureDefaultLayout`) rather than pulling in a GitHub Pages theme, so
+there's nothing else `_config.yml` needs to say. Only ever written if
+the file doesn't already exist — like `InstallationPrompt.txt`'s other
+one-time setup steps, this must not clobber a customization on a later
+`lake exe leandoc` run. 
 
 ### `ensureJekyllConfig`
 
@@ -722,6 +727,33 @@ ensureJekyllConfig : System.FilePath → IO Unit
 Ensures `docsDir/_config.yml` exists, writing the default (see
 `defaultJekyllConfig`) if it's missing. Never overwrites an existing
 file. 
+
+### `ensureStyleAsset`
+
+*def*
+
+```lean
+ensureStyleAsset : System.FilePath → IO Unit
+```
+
+Ensures `docsDir/assets/style.css` exists, writing doc-gen4's
+vendored stylesheet (task T29 — see `assets/style.css`,
+`LeanDoc.Assets.styleCss`) if it's missing. Never overwrites an
+existing file, so a project is free to edit it after that first write
+— LeanDoc never touches it again. 
+
+### `ensureDefaultLayout`
+
+*def*
+
+```lean
+ensureDefaultLayout : System.FilePath → IO Unit
+```
+
+Ensures `docsDir/_layouts/default.html` exists, writing LeanDoc's
+minimal layout (task T29 — see `assets/layouts/default.html`,
+`LeanDoc.Assets.defaultLayoutHtml`) if it's missing. Never overwrites
+an existing file, same write-once treatment as `ensureStyleAsset`. 
 
 ### `render`
 
