@@ -376,6 +376,18 @@ link via a `#src` fragment, which `search-index.json` doesn't carry
 data for (only the doc link); the doc page itself already links to
 source (task T46) once you're there.
 
+### A friendlier 404 page
+
+Jekyll output includes `docs_dir/404.html` (task T53) — GitHub Pages
+serves this file automatically for any unmatched path, no extra
+configuration needed. Instead of a bare "not found," it takes a guess
+at what you meant from the broken URL's own last path segment and
+suggests matching declarations from `assets/search-index.json`
+(task T47), the same simple substring match `find.html`/`search.js`
+use — real fuzzy/edit-distance matching wasn't judged worth the extra
+complexity at LeanDoc's typical project scale. No suggestions are shown
+if nothing matches, or if the search index can't be reached at all.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents

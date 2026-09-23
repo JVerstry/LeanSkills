@@ -24,6 +24,7 @@ ASSETS = [
     ("searchJs", "assets/search.js"),
     ("mathjaxConfigJs", "assets/mathjax-config.js"),
     ("findHtml", "assets/find.html"),
+    ("notFoundHtml", "assets/404.html"),
 ]
 
 

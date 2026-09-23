@@ -901,6 +901,22 @@ def ensureFindPage (docsDir : System.FilePath) : IO Unit := do
     IO.FS.createDirAll docsDir
     IO.FS.writeFile path LeanDoc.Assets.findHtml
 
+/-- Ensures `docsDir/404.html` exists, writing a friendlier 404 page
+(task T53 — see `assets/404.html`, `LeanDoc.Assets.notFoundHtml`) if
+it's missing. GitHub Pages serves this file automatically for any
+unmatched path, so it needs no wiring beyond existing at this exact
+path. Suggests plausible declarations from `assets/search-index.json`
+(task T47) based on the broken URL's own last path segment — a simple
+substring match, not real fuzzy matching, same scoping decision T47
+itself made. Never overwrites an existing file, same write-once
+treatment as `ensureStyleAsset`. Only meaningful for Jekyll output,
+same as `ensureFindPage`/`ensureSearchScript`. -/
+def ensureNotFoundPage (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "404.html"
+  unless (← path.pathExists) do
+    IO.FS.createDirAll docsDir
+    IO.FS.writeFile path LeanDoc.Assets.notFoundHtml
+
 /-- The auto-managed navigation region inside `docs_dir/index.md`
 (task T18) — delimited by these markers so `ensureRootIndex` can keep
 it current as LeanDoc's own generated pages grow (a plain "write once,
@@ -1082,6 +1098,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureSearchScript docsDir
     ensureMathjaxConfig docsDir
     ensureFindPage docsDir
+    ensureNotFoundPage docsDir
   let instancesByClass := groupInstancesByClass metas
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do
