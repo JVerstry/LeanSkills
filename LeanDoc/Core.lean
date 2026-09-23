@@ -524,6 +524,32 @@ def githubSourceBaseUrl (projectRoot : System.FilePath) : IO (Option String) := 
   let base := s!"https://github.com/{ownerRepo}/blob/{commit}"
   return some (if subdir.isEmpty then base else s!"{base}/{subdir}")
 
+/-- A module's own direct imports, read straight off its source file
+(task T50) via `Lean.parseImports'` — the same fast header-only parser
+Lake itself uses to resolve a module's dependencies, not hand-rolled
+text scanning, and considerably cheaper than a full `runFrontend` just
+to read `import` lines. Returns dotted module name strings, matching
+`DeclMeta.module`'s own convention. -/
+def moduleImports (path : System.FilePath) : IO (Array String) := do
+  let content ← IO.FS.readFile path
+  let header ← Lean.parseImports' content path.toString
+  pure (header.imports.map (·.module.toString))
+
+/-- Inverts a module → its-own-imports map into module → modules-that-
+import-it (task T50's "imported by"), restricted to modules that are
+themselves documented — an import of `Init`/`Lean`/a dependency
+outside the project isn't something LeanDoc has a page for, so it's
+silently dropped rather than rendered as a dead link. -/
+def buildImportedByMap (moduleImports : Std.HashMap String (Array String)) :
+    Std.HashMap String (Array String) :=
+  Id.run do
+    let mut m : Std.HashMap String (Array String) := {}
+    for (importer, imports) in moduleImports.toArray do
+      for imported in imports do
+        if moduleImports.contains imported then
+          m := m.insert imported ((m.getD imported #[]).push importer)
+    return m
+
 /-! ## Renderer
 
 Everything below only touches `DeclMeta`/`Json` — no `Environment`,
@@ -601,19 +627,39 @@ notwithstanding. `default` refers to `_layouts/default.html`, written
 by `ensureDefaultLayout`. -/
 def frontMatter : String := "---\nlayout: default\n---\n\n"
 
-/-- Renders one module's page: a heading plus every declaration's
-section, in the order the extractor emitted them (elaboration order —
-see `Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
+/-- Renders the "Imported by" line for a module's page (task T50):
+which other *documented* modules import this one, if any — `none` when
+nothing does, so `renderModulePage` can omit the line entirely rather
+than print an empty "Imported by:". Links use the same `jekyll`
+branching every other renderer here follows. -/
+def renderImportedBy (moduleName : String) (jekyll : Bool)
+    (importedByMap : Std.HashMap String (Array String)) : Option String :=
+  let importers := importedByMap.getD moduleName #[]
+  if importers.isEmpty then none else
+  let items := importers.qsort (· < ·) |>.map fun m =>
+    if jekyll then
+      "[" ++ m ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
+    else
+      s!"[{m}]({linkPath m}.md)"
+  some s!"**Imported by:** {String.intercalate ", " items.toList}\n"
+
+/-- Renders one module's page: a heading, an optional "Imported by"
+line (task T50), plus every declaration's section, in the order the
+extractor emitted them (elaboration order — see
+`Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
 whether front matter is prepended — `false` produces plain portable
 Markdown with no Jekyll-specific content at all. `sourceBaseUrl` (task
 T46) is threaded through to `renderDecl` for jump-to-source links. -/
 def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bool)
-    (sourceBaseUrl : Option String) (instancesByClass : Std.HashMap String (Array DeclMeta)) :
-    String :=
+    (sourceBaseUrl : Option String) (instancesByClass : Std.HashMap String (Array DeclMeta))
+    (importedByMap : Std.HashMap String (Array String)) : String :=
   let body := String.join
     ((decls.map (renderDecl · sourceBaseUrl instancesByClass)).toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
-  s!"{fm}# {moduleName}\n\n{body}"
+  let importedByLine := match renderImportedBy moduleName jekyll importedByMap with
+    | some line => s!"\n{line}"
+    | none => ""
+  s!"{fm}# {moduleName}\n{importedByLine}\n{body}"
 
 /-- One node of the module tree (task T49): a namespace segment,
 its own module page if one exists exactly at this path (`some m` for
@@ -967,10 +1013,16 @@ generator-owned — nothing under it is ever meant to be hand-edited,
 unlike `_config.yml`/`assets/style.css`/`_layouts/default.html`, which
 stay write-once-only.
 
-`sourceBaseUrl` (task T46, from `githubSourceBaseUrl`) is threaded
-through to every `renderModulePage` call for jump-to-source links —
-computed once by the caller (`Main.lean`, which has `projectRoot`;
-`render` itself only ever sees `docsDir`), not per-module.
+`sourceBaseUrl` (task T46, from `githubSourceBaseUrl`) and
+`importedByMap` (task T50, from `buildImportedByMap`) are both threaded
+through to every `renderModulePage` call — computed once by the caller
+(`Main.lean`, which has `projectRoot` and each module's file path;
+`render` itself only ever sees `docsDir` and the already-extracted
+JSON), not per-module. Same reasoning as `sourceBaseUrl`: reading a
+module's own source file to find its imports is an extractor-side
+concern, not something the renderer (which only ever touches
+`DeclMeta`/`Json` — see this section's own module docstring) should be
+doing.
 
 For Jekyll output, also writes `docs_dir/assets/search-index.json`
 (task T47) powering the layout's client-side search box — after
@@ -979,7 +1031,8 @@ For Jekyll output, also writes `docs_dir/assets/search-index.json`
 "only meaningful for Jekyll" writes together keeps them visually
 separate from the always-on Markdown writes above. -/
 def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
-    (sourceBaseUrl : Option String) : IO Unit := do
+    (sourceBaseUrl : Option String) (importedByMap : Std.HashMap String (Array String)) :
+    IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
     | IO.eprintln s!"LeanDoc: {jsonPath} is not valid JSON, can't render."
@@ -1004,7 +1057,8 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     let path := referenceDir / moduleToDocPath moduleName
     if let some dir := path.parent then
       IO.FS.createDirAll dir
-    IO.FS.writeFile path (renderModulePage moduleName decls jekyll sourceBaseUrl instancesByClass)
+    IO.FS.writeFile path
+      (renderModulePage moduleName decls jekyll sourceBaseUrl instancesByClass importedByMap)
   IO.FS.writeFile (referenceDir / "modules.md") (renderModulesPage moduleNames jekyll)
   IO.FS.writeFile (docsDir / "toc.md") (renderToc metas jekyll)
   ensureRootIndex docsDir jekyll

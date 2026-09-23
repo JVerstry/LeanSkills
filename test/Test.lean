@@ -300,6 +300,51 @@ def main : IO Unit := do
   s ← s.check "renderDecl on a declaration with no instances shows no Instances section"
     ((renderDecl instanceDecl none instancesByClass |>.splitOn "**Instances:**").length == 1)
 
+  -- ## Unit-level: T50's "imported by"
+
+  let moduleImportsFixture : Std.HashMap String (Array String) :=
+    Std.HashMap.ofList
+      [ ("Demo.AnotherFile", #["Demo.MyLeanFile"])
+      , ("Demo.MyLeanFile", #[]) ]
+  let importedByMap := buildImportedByMap moduleImportsFixture
+  s ← s.check "buildImportedByMap records the importer under the imported module"
+    ((importedByMap.getD "Demo.MyLeanFile" #[]) == #["Demo.AnotherFile"])
+  s ← s.check "buildImportedByMap has no entry for a module nothing imports"
+    ((importedByMap.getD "Demo.AnotherFile" #[]).isEmpty)
+  s ← s.check "renderImportedBy renders a line for an imported module"
+    ((renderImportedBy "Demo.MyLeanFile" true importedByMap).isSome)
+  s ← s.check "renderImportedBy omits the line for a module nothing imports"
+    ((renderImportedBy "Demo.AnotherFile" true importedByMap).isNone)
+  s ← s.check "renderImportedBy links via {% link %} in Jekyll mode"
+    (match renderImportedBy "Demo.MyLeanFile" true importedByMap with
+      | some line => (line.splitOn "{% link reference/Demo/AnotherFile.md %}").length > 1
+      | none => false)
+
+  let externalImportsFixture : Std.HashMap String (Array String) :=
+    Std.HashMap.ofList [("Demo.MyLeanFile", #["Init", "Lean"])]
+  s ← s.check "buildImportedByMap drops imports of undocumented (external) modules"
+    ((buildImportedByMap externalImportsFixture).isEmpty)
+
+  -- Real-file check: moduleImports against demo/'s actual source, not
+  -- just a synthetic HashMap. Deliberately does NOT exercise a genuine
+  -- Demo.X-imports-Demo.Y case end-to-end: that would need a second
+  -- demo module importing the first, which real elaboration can't
+  -- currently resolve unless the importED module was already built and
+  -- on the search path — found the hard way while developing this task
+  -- (see wip/todo.md's newly-registered follow-on task) and reverted
+  -- rather than shipped as a broken fixture. moduleImports itself
+  -- doesn't need elaboration at all (Lean.parseImports' is a fast,
+  -- header-only text parse), so this still genuinely exercises it
+  -- against real source.
+  -- `Init` also appears here (twice, even) -- Lean's implicit default
+  -- prelude import, not something the source text itself writes.
+  -- Doesn't affect buildImportedByMap: it already filters to imports
+  -- that are themselves documented modules, and nothing here documents
+  -- `Init`.
+  let realImports ← moduleImports (moduleToFile demoRoot demoModule)
+  s ← s.check "moduleImports finds demo/MyLeanFile.lean's real import of LeanDoc.Core"
+    (realImports.contains "LeanDoc.Core")
+
   s ← s.check "parseGithubOwnerRepo handles an HTTPS remote with .git"
     (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
   s ← s.check "parseGithubOwnerRepo handles an HTTPS remote without .git"
@@ -503,7 +548,7 @@ def main : IO Unit := do
   let orphanPath := renderScratchDocs / "reference" / "SomeOldModule.md"
   IO.FS.createDirAll (renderScratchDocs / "reference")
   IO.FS.writeFile orphanPath "stale content from a module that no longer exists\n"
-  render renderScratchJson renderScratchDocs true none
+  render renderScratchJson renderScratchDocs true none {}
   s ← s.check "render wipes an orphaned reference/ page that no longer corresponds to any module"
     (!(← orphanPath.pathExists))
   s ← s.check "render still writes the real, current module pages"

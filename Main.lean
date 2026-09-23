@@ -47,11 +47,17 @@ def main (args : List String) : IO Unit := do
     IO.Process.exit 1
   let mut allMetas : Array DeclMeta := #[]
   let mut moduleCount := 0
+  -- Task T50: each documented module's own direct imports, read
+  -- straight off its source file alongside extraction — cheap (header-
+  -- only parsing, not full elaboration) and avoids a second pass over
+  -- the same file list.
+  let mut moduleImportsMap : Std.HashMap String (Array String) := {}
   for moduleStr in effectiveModules do
     let moduleName := stringToModuleName moduleStr
     let file := moduleToFile projectRoot moduleName
     checkComplianceHeader config file
     allMetas := allMetas ++ (← extractFile file moduleName)
+    moduleImportsMap := moduleImportsMap.insert moduleStr (← moduleImports file)
     moduleCount := moduleCount + 1
   let outFile := projectRoot / config.jsonDir / "metadata.json"
   if let some dir := outFile.parent then
@@ -62,4 +68,5 @@ def main (args : List String) : IO Unit := do
   -- ever sees `docsDir`, not `projectRoot`, and this is a project-level
   -- fact, not a per-module one.
   let sourceBaseUrl ← githubSourceBaseUrl projectRoot
-  render outFile (projectRoot / config.docsDir) config.rendererJekyll sourceBaseUrl
+  let importedByMap := buildImportedByMap moduleImportsMap
+  render outFile (projectRoot / config.docsDir) config.rendererJekyll sourceBaseUrl importedByMap

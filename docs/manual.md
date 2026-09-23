@@ -336,6 +336,17 @@ once), but `reference/modules.md` here is a single, standalone index
 page, not something embedded in every other page. LeanDoc typically
 documents one project, not an entire ecosystem.
 
+### "Imported by"
+
+Each module's own page (task T50) shows an **Imported by** line
+listing every other *documented* module that imports it, if any — read
+straight off each module's own source file (a fast header-only parse,
+not a full re-elaboration just to see its `import` lines). An import
+of something outside the project (the Lean core library, Mathlib, any
+other dependency) isn't shown — LeanDoc has no page for it to link to,
+so it's silently dropped rather than rendered as a dead link. A module
+nothing else imports gets no line at all.
+
 ### Optional: CI and pre-commit freshness checks
 
 Neither is set up automatically. `InstallationPrompt.txt` documents
