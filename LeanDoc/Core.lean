@@ -438,6 +438,60 @@ def checkVersionTag (config : LeanDocConfig) (projectRoot : System.FilePath) : I
         unless normalizeVersion config.projectVersion == normalizeVersion latestTag do
           IO.eprintln s!"LeanDoc: warning: leandoc.toml's [project] version ({config.projectVersion}) doesn't match the latest git tag ({latestTag}) — did you forget to bump it?"
 
+/-- Parses a git remote URL into `"owner/repo"`, if — and only if — it's
+recognizably a GitHub URL (task T46). Handles the two common forms:
+`git@github.com:owner/repo.git` (SSH) and `https://github.com/owner/
+repo[.git]` (HTTPS). Deliberately `none` for anything else, including
+other hosts (GitLab, Codeberg, self-hosted Gitea, ...) — those use
+different source-line-range URL schemes, and a wrong guess is worse
+than no link at all. -/
+def parseGithubOwnerRepo (remote : String) : Option String :=
+  let stripGitSuffix (s : String) : String :=
+    if s.endsWith ".git" then (s.dropEnd 4).toString else s
+  if remote.startsWith "git@github.com:" then
+    some (stripGitSuffix ((remote.drop "git@github.com:".length).toString))
+  else if remote.startsWith "https://github.com/" then
+    some (stripGitSuffix ((remote.drop "https://github.com/".length).toString))
+  else if remote.startsWith "http://github.com/" then
+    some (stripGitSuffix ((remote.drop "http://github.com/".length).toString))
+  else
+    none
+
+/-- Attempts to build a GitHub "blob" URL prefix for jump-to-source
+links (task T46), e.g. `"https://github.com/owner/repo/blob/<commit>"`
+— `none` if `projectRoot` isn't a git repo, has no `origin` remote, or
+that remote isn't recognizably GitHub (`parseGithubOwnerRepo`).
+Degrades silently, not with a warning: not every project is hosted on
+GitHub, and that's a completely normal, unremarkable state, not
+something to nag about the way a missing compliance header (T41) or a
+version mismatch (T27) is.
+
+Also folds in `git rev-parse --show-prefix` — `projectRoot` need not
+*be* the git repo's own root (e.g. `demo/` is a subdirectory of
+LeanDoc's own repo, not a repo of its own); without this, a link built
+from module-relative paths alone would point at the wrong location in
+the real repo (`.../Demo/MyLeanFile.lean` instead of the real
+`.../demo/Demo/MyLeanFile.lean`) — caught by generating LeanDoc's own
+`demo/` docs for real and checking the actual output URL, not assumed
+correct from reading the code alone. -/
+def githubSourceBaseUrl (projectRoot : System.FilePath) : IO (Option String) := do
+  let remoteResult ← IO.Process.output
+    { cmd := "git", args := #["remote", "get-url", "origin"], cwd := some projectRoot }
+  if remoteResult.exitCode != 0 then return none
+  let remote := remoteResult.stdout.trimAscii.toString
+  let some ownerRepo := parseGithubOwnerRepo remote
+    | return none
+  let commitResult ← IO.Process.output
+    { cmd := "git", args := #["rev-parse", "HEAD"], cwd := some projectRoot }
+  if commitResult.exitCode != 0 then return none
+  let commit := commitResult.stdout.trimAscii.toString
+  let subdirResult ← IO.Process.output
+    { cmd := "git", args := #["rev-parse", "--show-prefix"], cwd := some projectRoot }
+  let rawSubdir := if subdirResult.exitCode == 0 then subdirResult.stdout.trimAscii.toString else ""
+  let subdir := if rawSubdir.endsWith "/" then (rawSubdir.dropEnd 1).toString else rawSubdir
+  let base := s!"https://github.com/{ownerRepo}/blob/{commit}"
+  return some (if subdir.isEmpty then base else s!"{base}/{subdir}")
+
 /-! ## Renderer
 
 Everything below only touches `DeclMeta`/`Json` — no `Environment`,
@@ -463,15 +517,28 @@ def linkPath (m : String) : String :=
     if acc.isEmpty then part else s!"{acc}/{part}"
 
 /-- Renders one declaration as a Markdown section: a heading, the
-signature as a code block, and the docstring (or an explicit "not
+signature as a code block, the docstring (or an explicit "not
 documented" note — silently omitting undocumented declarations would
-hide exactly the coverage gaps T17's audit is meant to catch). -/
-def renderDecl (d : DeclMeta) : String :=
+hide exactly the coverage gaps T17's audit is meant to catch), and — if
+`sourceBaseUrl` is available and `d.range` was captured — a
+jump-to-source link (task T46). `DeclMeta.range` (task T7) has always
+been captured but never rendered until now; confirmed by direct
+comparison with a real Mathlib page that this is genuinely expected,
+not just a nice-to-have (every declaration there links to its exact
+GitHub line range). `sourceBaseUrl` is `none` whenever
+`githubSourceBaseUrl` couldn't build one (no git repo, no `origin`,
+non-GitHub remote) — silently omit the link then, not an error. -/
+def renderDecl (d : DeclMeta) (sourceBaseUrl : Option String) : String :=
   let doc := d.docString.getD "*(not documented)*"
+  let sourceLink := match sourceBaseUrl, d.range with
+    | some base, some r =>
+      let path := linkPath d.module ++ ".lean"
+      s!"\n\n[source]({base}/{path}#L{r.startLine}-L{r.endLine})"
+    | _, _ => ""
   s!"### `{d.name}`\n\n\
      *{d.kind}*\n\n\
      ```lean\n{d.name} : {d.type}\n```\n\n\
-     {doc}\n"
+     {doc}{sourceLink}\n"
 
 /-- Jekyll (task T22/T28) only converts a Markdown file at all — running
 Liquid tags, honoring `_config.yml`, everything — if it has *front
@@ -493,9 +560,11 @@ def frontMatter : String := "---\nlayout: default\n---\n\n"
 section, in the order the extractor emitted them (elaboration order —
 see `Environment.getLocalConstantInfos`). `jekyll` (task T31) controls
 whether front matter is prepended — `false` produces plain portable
-Markdown with no Jekyll-specific content at all. -/
-def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bool) : String :=
-  let body := String.join ((decls.map renderDecl).toList.intersperse "\n")
+Markdown with no Jekyll-specific content at all. `sourceBaseUrl` (task
+T46) is threaded through to `renderDecl` for jump-to-source links. -/
+def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bool)
+    (sourceBaseUrl : Option String) : String :=
+  let body := String.join ((decls.map (renderDecl · sourceBaseUrl)).toList.intersperse "\n")
   let fm := if jekyll then frontMatter else ""
   s!"{fm}# {moduleName}\n\n{body}"
 
@@ -719,8 +788,14 @@ cleaned up (hit for real landing T18/T25's `reference/index.md` →
 hand). Safe to do unconditionally because `reference/` is exclusively
 generator-owned — nothing under it is ever meant to be hand-edited,
 unlike `_config.yml`/`assets/style.css`/`_layouts/default.html`, which
-stay write-once-only. -/
-def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
+stay write-once-only.
+
+`sourceBaseUrl` (task T46, from `githubSourceBaseUrl`) is threaded
+through to every `renderModulePage` call for jump-to-source links —
+computed once by the caller (`Main.lean`, which has `projectRoot`;
+`render` itself only ever sees `docsDir`), not per-module. -/
+def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
+    (sourceBaseUrl : Option String) : IO Unit := do
   let raw ← IO.FS.readFile jsonPath
   let some json := Json.parse raw |>.toOption
     | IO.eprintln s!"LeanDoc: {jsonPath} is not valid JSON, can't render."
@@ -743,7 +818,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool) : IO Unit := do
     let path := referenceDir / moduleToDocPath moduleName
     if let some dir := path.parent then
       IO.FS.createDirAll dir
-    IO.FS.writeFile path (renderModulePage moduleName decls jekyll)
+    IO.FS.writeFile path (renderModulePage moduleName decls jekyll sourceBaseUrl)
   IO.FS.writeFile (referenceDir / "modules.md") (renderModulesPage moduleNames jekyll)
   IO.FS.writeFile (docsDir / "toc.md") (renderToc metas jekyll)
   ensureRootIndex docsDir jekyll

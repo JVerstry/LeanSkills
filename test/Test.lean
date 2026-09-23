@@ -202,10 +202,68 @@ def main : IO Unit := do
     { module := "M", name := "foo", kind := "def", type := "Nat"
       docString := none, range := none }
   s ← s.check "renderDecl shows a not-documented fallback, not silence"
-    ((renderDecl undocumented |>.splitOn "not documented").length > 1)
+    ((renderDecl undocumented none |>.splitOn "not documented").length > 1)
   let documented := { undocumented with docString := some "does a thing" }
   s ← s.check "renderDecl shows the real docstring"
-    ((renderDecl documented |>.splitOn "does a thing").length > 1)
+    ((renderDecl documented none |>.splitOn "does a thing").length > 1)
+
+  -- ## Unit-level: T46's jump-to-source links
+
+  let withRange : DeclMeta :=
+    { module := "Foo.Bar", name := "baz", kind := "def", type := "Nat"
+      docString := none
+      range := some { startLine := 3, startColumn := 0, endLine := 5, endColumn := 1 } }
+  let sourceUrl := "https://github.com/owner/repo/blob/abc123"
+  s ← s.check "renderDecl links to source when both a base URL and a range are available"
+    ((renderDecl withRange (some sourceUrl)
+      |>.splitOn "https://github.com/owner/repo/blob/abc123/Foo/Bar.lean#L3-L5").length > 1)
+  s ← s.check "renderDecl omits the source link when there's no base URL"
+    ((renderDecl withRange none |>.splitOn "[source]").length == 1)
+  s ← s.check "renderDecl omits the source link when there's no range, even with a base URL"
+    ((renderDecl undocumented (some sourceUrl) |>.splitOn "[source]").length == 1)
+
+  s ← s.check "parseGithubOwnerRepo handles an HTTPS remote with .git"
+    (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
+  s ← s.check "parseGithubOwnerRepo handles an HTTPS remote without .git"
+    (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc" == some "JVerstry/LeanDoc")
+  s ← s.check "parseGithubOwnerRepo handles an SSH remote"
+    (parseGithubOwnerRepo "git@github.com:JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
+  s ← s.check "parseGithubOwnerRepo rejects a non-GitHub remote rather than guessing"
+    (parseGithubOwnerRepo "https://gitlab.com/JVerstry/LeanDoc.git" == none)
+
+  -- Fixture-level: against LeanDoc's own real repo (which does have a
+  -- GitHub `origin` remote) — should produce a real base URL.
+  let realBaseUrl ← githubSourceBaseUrl "."
+  s ← s.check "githubSourceBaseUrl finds a real base URL for LeanDoc's own repo"
+    realBaseUrl.isSome
+
+  -- Regression: `demo/` is a *subdirectory* of LeanDoc's own repo, not
+  -- a repo of its own — a real bug caught by generating demo/'s actual
+  -- docs and inspecting the output URL, not assumed correct from
+  -- reading the code. The base URL for `demo/` must include a `demo/`
+  -- path segment, or every link it produces points at the wrong file
+  -- in the real repo.
+  let demoBaseUrl ← githubSourceBaseUrl demoRoot
+  s ← s.check "githubSourceBaseUrl includes demo/'s own path prefix, not just the repo root's"
+    (match demoBaseUrl with
+      | some url => (url.splitOn "/demo").length > 1
+      | none => false)
+
+  -- And against a genuinely separate scratch git repo with no `origin`
+  -- configured — deliberately *not* a plain non-git subdirectory:
+  -- `git` searches upward through parent directories for `.git`, so a
+  -- subdirectory with no `.git` of its own (nested inside this repo)
+  -- would just resolve to *this* repo's real remote, not test the
+  -- "no remote" bail-out path at all. A repo with its own `.git` but
+  -- no `origin` is the correct way to exercise that path.
+  let noRemoteDir := scratchDir / "no-remote"
+  if ← noRemoteDir.pathExists then IO.FS.removeDirAll noRemoteDir
+  IO.FS.createDirAll noRemoteDir
+  discard <| IO.Process.output { cmd := "git", args := #["init", "-q"], cwd := some noRemoteDir }
+  let noRemoteBaseUrl ← githubSourceBaseUrl noRemoteDir
+  s ← s.check "githubSourceBaseUrl returns none for a repo with no origin remote"
+    noRemoteBaseUrl.isNone
+  IO.FS.removeDirAll noRemoteDir
 
   -- ## Unit-level: grouping
 
@@ -367,7 +425,7 @@ def main : IO Unit := do
   let orphanPath := renderScratchDocs / "reference" / "SomeOldModule.md"
   IO.FS.createDirAll (renderScratchDocs / "reference")
   IO.FS.writeFile orphanPath "stale content from a module that no longer exists\n"
-  render renderScratchJson renderScratchDocs true
+  render renderScratchJson renderScratchDocs true none
   s ← s.check "render wipes an orphaned reference/ page that no longer corresponds to any module"
     (!(← orphanPath.pathExists))
   s ← s.check "render still writes the real, current module pages"

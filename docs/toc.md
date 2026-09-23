@@ -52,6 +52,8 @@ layout: default
 - [`checkComplianceHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`normalizeVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`checkVersionTag`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`parseGithubOwnerRepo`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`githubSourceBaseUrl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleToDocPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`linkPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderDecl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

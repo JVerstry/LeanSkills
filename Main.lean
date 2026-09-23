@@ -58,4 +58,8 @@ def main (args : List String) : IO Unit := do
     IO.FS.createDirAll dir
   IO.FS.writeFile outFile (toJson allMetas).pretty
   IO.println s!"LeanDoc: wrote {allMetas.size} declarations from {moduleCount} module(s) to {outFile}"
-  render outFile (projectRoot / config.docsDir) config.rendererJekyll
+  -- Task T46: computed once here, not inside `render` — `render` only
+  -- ever sees `docsDir`, not `projectRoot`, and this is a project-level
+  -- fact, not a per-module one.
+  let sourceBaseUrl ← githubSourceBaseUrl projectRoot
+  render outFile (projectRoot / config.docsDir) config.rendererJekyll sourceBaseUrl
