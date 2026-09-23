@@ -525,7 +525,43 @@ linter uses to count auto-generated declarations) plus a direct
 recursor check, rather than reinventing name-suffix heuristics; verified
 against the demo project's `MyLeanStructure` (which exercises all of the
 above) that this correctly keeps only the 7 real declarations out of 21
-total. 
+total.
+
+Also excludes two categories `isAutoDeclOrPrivate_Internal` doesn't
+catch, ported *carefully*, not wholesale, from Batteries' own
+`docBlame`/`docBlameThm` linter exemption logic (task T41/T42's
+investigation confirmed these are real, checked against
+`Batteries/Tactic/Lint/Misc.lean` directly, not guessed): custom-
+notation parser/pretty-printer plumbing
+(`parenthesizer`/`formatter`/`delaborator`/`quot`-suffixed) and
+Prop-projection `def`s (Batteries' own comment cites `leanprover/
+lean4#2575`: "Prop projections are generated as defs even when they
+should be theorems"). The first is verified — `demo/`'s fixture has no
+custom notation to trigger it directly, but the string check itself is
+trivial. **The second is ported defensively, not confirmed to ever
+fire**: a real single-field `Prop`-structure test case in `demo/`
+(`MyLeanProp.trivial`) came through with kind `theorem` directly, not
+`def` — Lean's behavior here may have changed since Batteries' comment
+was written, or the issue needs a shape this simple case doesn't
+trigger. Left in rather than removed, since it's real, checked
+upstream logic and harmless if it never matches anything — just not
+something to claim as empirically verified working.
+
+**Deliberately not ported**: Batteries' `docBlame` also exempts
+instances (and their nested auxiliary declarations) from needing a
+docstring — but that's an exemption from *lint nagging*, not a
+statement that instances aren't real content. Checked directly against
+Mathlib's own generated docs (a real page, not assumed): instances *do*
+show up in doc-gen4's rendered output, undocumented ones included —
+the exact same distinction already made for `@[nolint docBlame]` in
+task T19's design (a lint-suppression tag isn't a
+hide-from-documentation signal). Treating instances as noise here would
+have been the same mistake, just made a second time in a different
+spot — caught and reverted before this shipped.
+
+The Prop-projection check needs `Lean.Meta.isProp`, lifted from
+`MetaM` into `CoreM` via `.run'` — the same lifting pattern
+`declMetaOf` already uses for `Meta.ppExpr`. 
 
 ### `leandocIgnoreAttr`
 

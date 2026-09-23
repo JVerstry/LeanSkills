@@ -14,9 +14,12 @@ layout: default
 ## Theorems & Axioms
 
 - [`MyLeanModule.MyLeanTheorem`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
+- [`MyLeanModule.MyLeanProp.trivial`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
 
 ## Structures & Inductives
 
 - [`MyLeanModule.MyLeanStructure`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
 - [`MyLeanModule.MyLeanStructure.mk`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
+- [`MyLeanModule.MyLeanProp`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
+- [`MyLeanModule.MyLeanProp.mk`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
 

@@ -57,4 +57,16 @@ ignored. -/
 def myLeanInternalHelper (n : Nat) : Nat :=
   n - 1
 
+/-- A `Prop`-valued structure. Originally added to exercise task
+T41/T42's Prop-projection noise exclusion (`isNoise`) — but empirically
+this simple, single-field case elaborates its projection
+(`MyLeanProp.trivial`) as a genuine `theorem` directly, not the `def`
+Batteries' own comment describes, so that exclusion never actually
+fires here. Kept anyway as a real `Prop`-structure example; see
+`isNoise`'s doc comment in `LeanDoc/Core.lean` for the honest status of
+that check. -/
+structure MyLeanProp : Prop where
+  /-- Always true. -/
+  trivial : True
+
 end MyLeanModule

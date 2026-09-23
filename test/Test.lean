@@ -316,8 +316,8 @@ def main : IO Unit := do
   -- noise-filtering count, pinned instead of re-checked by hand)
 
   let demoMetas ← extractFile (moduleToFile demoRoot demoModule) demoModule
-  s ← s.check "extractFile keeps exactly the 7 real, documentable declarations"
-    (demoMetas.size == 7)
+  s ← s.check "extractFile keeps exactly the 10 real, documentable declarations"
+    (demoMetas.size == 10)
   s ← s.check "extractFile finds MyLeanFunction with the right kind and type"
     (demoMetas.any fun d =>
       d.name == "MyLeanModule.MyLeanFunction" && d.kind == "def" && d.type == "Nat → Nat")
@@ -331,6 +331,14 @@ def main : IO Unit := do
   -- declaration from extraction output, not just that it parses.
   s ← s.check "extractFile excludes a @[leandoc_ignore]'d declaration"
     (!(demoMetas.any fun d => d.name == "MyLeanModule.myLeanInternalHelper"))
+
+  -- ## Fixture-level: T41/T42's isNoise refinements, exercised through
+  -- the real extractor.
+  s ← s.check "extractFile finds MyLeanProp (the Prop structure itself is real content)"
+    (demoMetas.any fun d => d.name == "MyLeanModule.MyLeanProp")
+  s ← s.check "extractFile finds MyLeanProp.trivial — Lean elaborates it as a real \
+               theorem here, so it's not noise-filtered (see isNoise's honest doc comment)"
+    (demoMetas.any fun d => d.name == "MyLeanModule.MyLeanProp.trivial" && d.kind == "theorem")
 
   -- ## Fixture-level: T38's orphan cleanup — `render` must wipe
   -- `reference/` fresh each run, not just write/overwrite, or a

@@ -83,3 +83,40 @@ MyLeanModule.myLeanUndocumentedFunction : Nat → Nat
 ```
 
 *(not documented)*
+
+### `MyLeanModule.MyLeanProp`
+
+*structure*
+
+```lean
+MyLeanModule.MyLeanProp : Prop
+```
+
+A `Prop`-valued structure. Originally added to exercise task
+T41/T42's Prop-projection noise exclusion (`isNoise`) — but empirically
+this simple, single-field case elaborates its projection
+(`MyLeanProp.trivial`) as a genuine `theorem` directly, not the `def`
+Batteries' own comment describes, so that exclusion never actually
+fires here. Kept anyway as a real `Prop`-structure example; see
+`isNoise`'s doc comment in `LeanDoc/Core.lean` for the honest status of
+that check. 
+
+### `MyLeanModule.MyLeanProp.mk`
+
+*constructor*
+
+```lean
+MyLeanModule.MyLeanProp.mk : True → MyLeanModule.MyLeanProp
+```
+
+*(not documented)*
+
+### `MyLeanModule.MyLeanProp.trivial`
+
+*theorem*
+
+```lean
+MyLeanModule.MyLeanProp.trivial : MyLeanModule.MyLeanProp → True
+```
+
+Always true. 
