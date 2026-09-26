@@ -524,6 +524,57 @@ def githubSourceBaseUrl (projectRoot : System.FilePath) : IO (Option String) := 
   let base := s!"https://github.com/{ownerRepo}/blob/{commit}"
   return some (if subdir.isEmpty then base else s!"{base}/{subdir}")
 
+/-- Extracts `LEAN_PATH`'s value from `lake env`'s output (one
+`NAME=value` line per variable), parsed with the platform's own
+search-path separator. `[]` if there's no such line. -/
+def parseLeanPathFromLakeEnv (output : String) : System.SearchPath :=
+  let line? := (output.splitOn "\n").find? (·.startsWith "LEAN_PATH=")
+  match line? with
+  | some line => System.SearchPath.parse ((line.drop "LEAN_PATH=".length).trimAscii.toString)
+  | none => []
+
+/-- The target project's own module search path (task T54), as Lake
+itself computes it: its own build output plus every dependency's. Read
+from `lake env` (run in `projectRoot`) rather than reconstructed by
+hand, so `require`d packages, custom `buildDir`s, etc. all come out
+right without LeanDoc re-implementing Lake's resolution logic.
+
+This is what lets one of a project's modules `import` another of its
+own: `runFrontend` never writes an `.olean`, so an imported sibling can
+only resolve against one already compiled by `lake build` — the same
+requirement doc-gen4 has (it runs as a Lake facet that builds the
+library first). Uses the `LAKE` environment variable when set — `lake
+exe leandoc` sets it to the exact Lake binary running us — so the
+toolchain matches, falling back to whatever `lake` is on `PATH`.
+Returns `[]`, with a warning, if `lake env` fails. -/
+def projectSearchPath (projectRoot : System.FilePath) : IO System.SearchPath := do
+  let lake := (← IO.getEnv "LAKE").getD "lake"
+  let result ← IO.Process.output { cmd := lake, args := #["env"], cwd := some projectRoot }
+  if result.exitCode != 0 then
+    IO.eprintln s!"LeanDoc: warning: `lake env` failed in {projectRoot}, so its own modules \
+      and dependencies won't be on the search path — imports of them will fail to resolve.\n\
+      {result.stderr}"
+    return []
+  return parseLeanPathFromLakeEnv result.stdout
+
+/-- Builds `modules` in the target project with Lake (`lake build
++Mod …`, run in `projectRoot`) before extraction (task T54), so the
+`.olean`s `projectSearchPath` points at exist and aren't stale: a
+module `import`ing a sibling resolves against that sibling's compiled
+`.olean`, never its source. Builds exactly the documented modules (and,
+transitively, whatever they import) rather than the project's default
+targets, which needn't cover every documented module. A no-op when
+everything's already up to date. Lake's own progress output goes
+straight to the terminal — a first build can take a while. Returns
+whether the build succeeded; docs can't be generated from code that
+doesn't compile, the same requirement doc-gen4 has. -/
+def buildProjectModules (projectRoot : System.FilePath) (modules : Array String) :
+    IO Bool := do
+  let lake := (← IO.getEnv "LAKE").getD "lake"
+  let child ← IO.Process.spawn
+    { cmd := lake, args := #["build"] ++ modules.map ("+" ++ ·), cwd := some projectRoot }
+  return (← child.wait) == 0
+
 /-- A module's own direct imports, read straight off its source file
 (task T50) via `Lean.parseImports'` — the same fast header-only parser
 Lake itself uses to resolve a module's dependencies, not hand-rolled

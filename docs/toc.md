@@ -56,6 +56,9 @@ layout: default
 - [`checkVersionTag`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`parseGithubOwnerRepo`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`githubSourceBaseUrl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`parseLeanPathFromLakeEnv`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`projectSearchPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`buildProjectModules`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleImports`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`buildImportedByMap`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleToDocPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

@@ -43,17 +43,21 @@ def TestState.check (s : TestState) (label : String) (ok : Bool) : IO TestState 
     pure { s with failed := s.failed + 1 }
 
 def main : IO Unit := do
+  let demoRoot : System.FilePath := "demo"
+  let demoModule : Name := `Demo.MyLeanFile
   -- Needed for the fixture-level tests, which call `extractFile` for
-  -- real — same setup `Main.lean`'s `main` does before `runFrontend`.
-  Lean.initSearchPath (← Lean.findSysroot)
+  -- real — same setup `Main.lean`'s `main` does before `runFrontend`,
+  -- including task T54's build step and demo/'s own search path, so
+  -- `Demo.AnotherFile`'s import of `Demo.MyLeanFile` resolves.
+  let demoBuilt ← buildProjectModules demoRoot #["Demo.MyLeanFile", "Demo.AnotherFile"]
+  let demoSearchPath ← projectSearchPath demoRoot
+  Lean.initSearchPath (← Lean.findSysroot) demoSearchPath
   unsafe enableInitializersExecution
 
   let mut s : TestState := {}
 
   -- ## Unit-level: path/name conversions
 
-  let demoRoot : System.FilePath := "demo"
-  let demoModule : Name := `Demo.MyLeanFile
   s ← s.check "moduleToFile builds the expected path"
     (moduleToFile demoRoot demoModule == demoRoot / "Demo" / "MyLeanFile.lean")
   s ← s.check "fileToModuleName round-trips moduleToFile"
@@ -358,25 +362,21 @@ def main : IO Unit := do
   s ← s.check "buildImportedByMap drops imports of undocumented (external) modules"
     ((buildImportedByMap externalImportsFixture).isEmpty)
 
-  -- Real-file check: moduleImports against demo/'s actual source, not
-  -- just a synthetic HashMap. Deliberately does NOT exercise a genuine
-  -- Demo.X-imports-Demo.Y case end-to-end: that would need a second
-  -- demo module importing the first, which real elaboration can't
-  -- currently resolve unless the importED module was already built and
-  -- on the search path — found the hard way while developing this task
-  -- (see wip/todo.md's newly-registered follow-on task) and reverted
-  -- rather than shipped as a broken fixture. moduleImports itself
-  -- doesn't need elaboration at all (Lean.parseImports' is a fast,
-  -- header-only text parse), so this still genuinely exercises it
-  -- against real source.
-  -- `Init` also appears here (twice, even) -- Lean's implicit default
-  -- prelude import, not something the source text itself writes.
-  -- Doesn't affect buildImportedByMap: it already filters to imports
-  -- that are themselves documented modules, and nothing here documents
-  -- `Init`.
+  -- Real-file checks against demo/'s actual source, not just synthetic
+  -- HashMaps. `Init` also shows up in moduleImports' result (twice,
+  -- even) -- Lean's implicit default prelude import, not something the
+  -- source text writes. Harmless: buildImportedByMap only keeps imports
+  -- of documented modules.
   let realImports ← moduleImports (moduleToFile demoRoot demoModule)
   s ← s.check "moduleImports finds demo/MyLeanFile.lean's real import of LeanDoc.Core"
     (realImports.contains "LeanDoc.Core")
+  -- End-to-end on demo/'s two real modules — possible only since task
+  -- T54 made a demo module importing another one actually elaborate.
+  let anotherImports ← moduleImports (demoRoot / "Demo" / "AnotherFile.lean")
+  let realImportedBy := buildImportedByMap (Std.HashMap.ofList
+    [ ("Demo.MyLeanFile", realImports), ("Demo.AnotherFile", anotherImports) ])
+  s ← s.check "buildImportedByMap on demo/'s real modules: MyLeanFile is imported by AnotherFile"
+    ((realImportedBy.getD "Demo.MyLeanFile" #[]) == #["Demo.AnotherFile"])
 
   s ← s.check "parseGithubOwnerRepo handles an HTTPS remote with .git"
     (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
@@ -537,8 +537,31 @@ def main : IO Unit := do
   -- real lakefile.toml
 
   let discovered ← discoverModules demoRoot
-  s ← s.check "discoverModules finds demo/'s one module via lean_lib globs"
-    (discovered == #["Demo.MyLeanFile"])
+  s ← s.check "discoverModules finds both of demo/'s modules via lean_lib globs"
+    (discovered.qsort (· < ·) == #["Demo.AnotherFile", "Demo.MyLeanFile"])
+
+  -- ## Unit-level + fixture-level: T54's project search path and build
+  -- step — what lets one of a project's modules import another.
+
+  let sep := System.SearchPath.separator.toString
+  s ← s.check "parseLeanPathFromLakeEnv extracts and splits LEAN_PATH"
+    ((parseLeanPathFromLakeEnv s!"LAKE=x\nLEAN_PATH=a{sep}b\r\nOTHER=y\n").map toString
+      == ["a", "b"])
+  s ← s.check "parseLeanPathFromLakeEnv returns [] when there's no LEAN_PATH line"
+    (parseLeanPathFromLakeEnv "LAKE=x\nOTHER=y\n").isEmpty
+  s ← s.check "buildProjectModules builds demo/'s modules" demoBuilt
+  let demoBuildLib := (demoRoot / ".lake" / "build" / "lib" / "lean").toString
+  s ← s.check "projectSearchPath includes demo/'s own build output"
+    (demoSearchPath.any fun p => p.toString.endsWith demoBuildLib)
+  s ← s.check "projectSearchPath includes demo/'s LeanDoc path dependency's build output"
+    (demoSearchPath.any fun p =>
+      (p.toString.splitOn "demo").length == 1 && p.toString.endsWith
+        (System.FilePath.mk ".lake" / "build" / "lib" / "lean").toString)
+  -- The T54 regression itself: before this fix, elaborating this file
+  -- failed outright with "unknown module prefix 'Demo'".
+  let anotherMetas ← extractFile (demoRoot / "Demo" / "AnotherFile.lean") `Demo.AnotherFile
+  s ← s.check "extractFile documents a module that imports a sibling module (T54)"
+    (anotherMetas.any fun d => d.name == "MyLeanModule.MyLeanQuadrupled")
 
   -- ## Fixture-level: the real extractor against demo/ (T7's
   -- noise-filtering count, pinned instead of re-checked by hand)

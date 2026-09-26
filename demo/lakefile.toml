@@ -1,6 +1,15 @@
 name = "Demo"
 defaultTargets = ["Demo"]
 
+# LeanDoc itself, as a path dependency on the enclosing repo (task T54) —
+# the same shape a real adopting project has (`require`-ing LeanDoc so
+# `import LeanDoc.Core` and `@[leandoc_ignore]` resolve), rather than
+# `demo/` silently relying on LeanDoc's own build output happening to
+# be on the running `leandoc` process's search path.
+[[require]]
+name = "LeanDoc"
+path = ".."
+
 [[lean_lib]]
 name = "Demo"
 globs = ["Demo.+"]

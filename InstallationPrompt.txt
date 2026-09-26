@@ -235,6 +235,16 @@ updates as the interface stabilizes.
    — e.g. pointing at its `demo/` test fixture from within its own
    repo — not for a normal install.)
 
+   LeanDoc runs `lake build` on the modules it documents before
+   extracting anything (task T54), so the project must compile. A
+   first run on a large project can take a while; later runs are
+   quick when nothing has changed. If the project depends on Mathlib,
+   run `lake exe cache get` first, as for any Mathlib build, so Lake
+   downloads Mathlib instead of compiling it from source. If the build
+   fails, LeanDoc stops with Lake's own error output: fix those errors
+   (or leave the failing modules out via `[modules] exclude`) rather
+   than working around LeanDoc.
+
 8. Report back to the user
    - Show what was added/changed (dependency line, `leandoc.toml`,
      `.gitignore` diff), and restate the parameter choices from step 2

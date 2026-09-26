@@ -19,7 +19,7 @@ a project can omit the file entirely, or any section/field within it —
 `include` is the only field with no *useful* default on its own (an
 empty list falls back to whole-package scanning, task T21). 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L31-L76)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L31-L76)
 
 ### `LeanDocConfig.mk`
 
@@ -32,7 +32,7 @@ LeanDocConfig.mk : System.FilePath →
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L35-L35)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L35-L35)
 
 ### `LeanDocConfig.jsonDir`
 
@@ -44,7 +44,7 @@ LeanDocConfig.jsonDir : LeanDocConfig → System.FilePath
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L36-L36)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L36-L36)
 
 ### `LeanDocConfig.docsDir`
 
@@ -56,7 +56,7 @@ LeanDocConfig.docsDir : LeanDocConfig → System.FilePath
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L37-L37)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L37-L37)
 
 ### `LeanDocConfig.includeModules`
 
@@ -68,7 +68,7 @@ LeanDocConfig.includeModules : LeanDocConfig → Array String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L38-L38)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L38-L38)
 
 ### `LeanDocConfig.exclude`
 
@@ -80,7 +80,7 @@ LeanDocConfig.exclude : LeanDocConfig → Array String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L39-L39)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L39-L39)
 
 ### `LeanDocConfig.rendererName`
 
@@ -93,7 +93,7 @@ LeanDocConfig.rendererName : LeanDocConfig → String
 Reserved for a future renderer choice — Markdown is the only one
 that exists, so this isn't acted on yet. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L42-L42)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L42-L42)
 
 ### `LeanDocConfig.rendererJekyll`
 
@@ -111,7 +111,7 @@ for GitHub Pages by default (T15/T22), and GitHub Pages runs Jekyll by
 default — set to `false` for output meant to be read as plain
 Markdown (an IDE, a non-Jekyll/non-Pages host) instead. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L50-L50)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L50-L50)
 
 ### `LeanDocConfig.complianceEnabled`
 
@@ -129,7 +129,7 @@ not built yet, pending task T42). Off by default: most projects
 aren't Mathlib and shouldn't be held to its conventions unless they
 explicitly ask. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L58-L58)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L58-L58)
 
 ### `LeanDocConfig.complianceAuthor`
 
@@ -145,7 +145,7 @@ true. Empty skips the author-specific part of that check even when
 compliance checking is otherwise on (nothing configured to check
 against). 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L64-L64)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L64-L64)
 
 ### `LeanDocConfig.complianceLicense`
 
@@ -159,7 +159,7 @@ Task T41: the license string `checkComplianceHeader` expects to
 find in each file's copyright header. Same empty-skips treatment as
 `complianceAuthor`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L68-L68)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L68-L68)
 
 ### `LeanDocConfig.projectVersion`
 
@@ -176,7 +176,7 @@ warning about a version nobody configured. Only ever compared against
 the project's latest git tag, never rendered anywhere a reader would
 see it — see `checkVersionTag`'s doc comment for why. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L75-L75)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L75-L75)
 
 ### `instInhabitedLeanDocConfig.default`
 
@@ -198,7 +198,7 @@ instInhabitedLeanDocConfig : Inhabited LeanDocConfig
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L76-L76)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L76-L76)
 
 ### `loadConfig`
 
@@ -213,7 +213,7 @@ Loads `<projectRoot>/leandoc.toml`, falling back to
 Reuses Lake's own TOML parser/decoder (`Lake.Toml`) — the same one
 `lakefile.toml` itself is parsed with — rather than hand-rolling one. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L79-L119)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L79-L119)
 
 ### `moduleToFile`
 
@@ -227,7 +227,7 @@ Maps a module name to its source file, assuming the plain Lean
 convention (`Foo.Bar` ↔ `<root>/Foo/Bar.lean`) — no `srcDir` override
 support yet. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L121-L126)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L121-L126)
 
 ### `fileToModuleName`
 
@@ -246,7 +246,7 @@ care whether the path uses `/` or `\` — the same class of bug T9 hit
 building *links* out of raw `FilePath` strings, avoided here by not
 doing that in the first place. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L128-L139)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L128-L139)
 
 ### `discoverModules`
 
@@ -272,7 +272,7 @@ walks the filesystem (`System.FilePath.walkDir`) rather than trying to
 statically enumerate without touching disk, since that's what "which
 files actually exist" requires. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L142-L195)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L142-L195)
 
 ### `stringToModuleName`
 
@@ -286,7 +286,7 @@ Builds a hierarchical `Name` (`Foo.Bar`) from its dotted-string form
 (`"Foo.Bar"`), as `leandoc.toml`'s `[modules] include` entries are
 written. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L197-L201)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L197-L201)
 
 ### `DeclRange`
 
@@ -300,7 +300,7 @@ A declaration's source location. Line is 1-indexed and column is
 0-indexed, matching Lean's own `Position` (and LSP, for `charUtf16`-free
 consumers) — deliberately not reinvented here. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L203-L211)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L203-L211)
 
 ### `DeclRange.mk`
 
@@ -312,7 +312,7 @@ DeclRange.mk : Nat → Nat → Nat → Nat → DeclRange
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L206-L206)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L206-L206)
 
 ### `DeclRange.startLine`
 
@@ -324,7 +324,7 @@ DeclRange.startLine : DeclRange → Nat
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L207-L207)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L207-L207)
 
 ### `DeclRange.startColumn`
 
@@ -336,7 +336,7 @@ DeclRange.startColumn : DeclRange → Nat
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L208-L208)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L208-L208)
 
 ### `DeclRange.endLine`
 
@@ -348,7 +348,7 @@ DeclRange.endLine : DeclRange → Nat
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L209-L209)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L209-L209)
 
 ### `DeclRange.endColumn`
 
@@ -360,7 +360,7 @@ DeclRange.endColumn : DeclRange → Nat
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L210-L210)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L210-L210)
 
 ### `instToJsonDeclRange.toJson`
 
@@ -372,7 +372,7 @@ instToJsonDeclRange.toJson : DeclRange → Lean.Json
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L211-L211)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L211-L211)
 
 ### `instToJsonDeclRange`
 
@@ -384,7 +384,7 @@ instToJsonDeclRange : Lean.ToJson DeclRange
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L211-L211)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L211-L211)
 
 ### `instFromJsonDeclRange.fromJson`
 
@@ -396,7 +396,7 @@ instFromJsonDeclRange.fromJson : Lean.Json → Except String DeclRange
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L211-L211)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L211-L211)
 
 ### `instFromJsonDeclRange`
 
@@ -408,7 +408,7 @@ instFromJsonDeclRange : Lean.FromJson DeclRange
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L211-L211)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L211-L211)
 
 ### `DeclMeta`
 
@@ -432,7 +432,7 @@ Known gaps, left for a later pass rather than guessed at now:
 - No import list yet (T7 also asks for per-module imports).
 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L213-L239)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L213-L239)
 
 ### `DeclMeta.mk`
 
@@ -444,7 +444,7 @@ DeclMeta.mk : String → String → String → String → Option String → Opti
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L226-L226)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L226-L226)
 
 ### `DeclMeta.module`
 
@@ -456,7 +456,7 @@ DeclMeta.module : DeclMeta → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L227-L227)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L227-L227)
 
 ### `DeclMeta.name`
 
@@ -468,7 +468,7 @@ DeclMeta.name : DeclMeta → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L228-L228)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L228-L228)
 
 ### `DeclMeta.kind`
 
@@ -480,7 +480,7 @@ DeclMeta.kind : DeclMeta → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L229-L229)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L229-L229)
 
 ### `DeclMeta.type`
 
@@ -492,7 +492,7 @@ DeclMeta.type : DeclMeta → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L230-L230)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L230-L230)
 
 ### `DeclMeta.docString`
 
@@ -504,7 +504,7 @@ DeclMeta.docString : DeclMeta → Option String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L231-L231)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L231-L231)
 
 ### `DeclMeta.range`
 
@@ -516,7 +516,7 @@ DeclMeta.range : DeclMeta → Option DeclRange
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L232-L232)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L232-L232)
 
 ### `DeclMeta.instanceOf`
 
@@ -532,7 +532,7 @@ T48), e.g. `some "Inhabited"` for an `instance : Inhabited Foo`.
 conclusion's head isn't itself a class (shouldn't happen for a
 well-formed instance, but not asserted). See `instanceClassOf`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L238-L238)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L238-L238)
 
 ### `instToJsonDeclMeta.toJson`
 
@@ -544,7 +544,7 @@ instToJsonDeclMeta.toJson : DeclMeta → Lean.Json
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L239-L239)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L239-L239)
 
 ### `instToJsonDeclMeta`
 
@@ -556,7 +556,7 @@ instToJsonDeclMeta : Lean.ToJson DeclMeta
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L239-L239)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L239-L239)
 
 ### `instFromJsonDeclMeta.fromJson`
 
@@ -568,7 +568,7 @@ instFromJsonDeclMeta.fromJson : Lean.Json → Except String DeclMeta
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L239-L239)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L239-L239)
 
 ### `instFromJsonDeclMeta`
 
@@ -580,7 +580,7 @@ instFromJsonDeclMeta : Lean.FromJson DeclMeta
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L239-L239)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L239-L239)
 
 ### `kindString`
 
@@ -595,7 +595,7 @@ distinguishable from `ConstantKind` alone (a structure *is* a
 single-constructor inductive under the hood) — `Lean.isStructure` is
 Lean's own way of telling them apart. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L241-L253)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L241-L253)
 
 ### `instanceClassOf`
 
@@ -620,7 +620,7 @@ page regardless of which class each belongs to). That second direction
 needs walking every argument of the conclusion, not just its head, and
 was left for a later pass rather than guessed at now. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L255-L278)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L255-L278)
 
 ### `declMetaOf`
 
@@ -634,7 +634,7 @@ Extracts one declaration's metadata. Runs in `CoreM` because
 `Lean.isAutoDeclOrPrivate_Internal` (the noise filter, see `isNoise`
 below) and type pretty-printing both need it. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L280-L292)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L280-L292)
 
 ### `isNoise`
 
@@ -690,7 +690,7 @@ The Prop-projection check needs `Lean.Meta.isProp`, lifted from
 `MetaM` into `CoreM` via `.run'` — the same lifting pattern
 `declMetaOf` already uses for `Meta.ppExpr`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L294-L348)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L294-L348)
 
 ### `leandocIgnoreAttr`
 
@@ -721,7 +721,7 @@ cost (toolchain-compatibility tracking) LeanDoc doesn't currently have
 at all, not worth taking on for a tag that wouldn't even mean the
 right thing here. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L350-L374)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L350-L374)
 
 ### `isDeliberatelyIgnored`
 
@@ -734,7 +734,7 @@ isDeliberatelyIgnored : Lean.Environment → Lean.Name → Bool
 Whether `declName` was tagged `@[leandoc_ignore]` (task T19) — see
 `leandocIgnoreAttr`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L376-L379)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L376-L379)
 
 ### `extractFile`
 
@@ -747,7 +747,7 @@ extractFile : System.FilePath → Lean.Name → IO (Array DeclMeta)
 Extracts every non-noise, non-`@[leandoc_ignore]`'d declaration
 added by elaborating `file` as module `moduleName`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L381-L409)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L381-L409)
 
 ### `hasCopyrightHeader`
 
@@ -769,7 +769,7 @@ purely textual check, not something bolted onto `extractFile`. Empty
 (nothing configured to check against); always requires the literal
 word "Copyright" to appear, regardless. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L411-L427)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L411-L427)
 
 ### `checkComplianceHeader`
 
@@ -787,7 +787,7 @@ configured — otherwise there's nothing meaningful to check against,
 and a bare "missing Copyright" warning on every file would be noise
 for a project that never asked for this. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L429-L441)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L429-L441)
 
 ### `normalizeVersion`
 
@@ -801,7 +801,7 @@ Strips a single leading `v`/`V` (e.g. `"v1.2.0"` → `"1.2.0"`), so a
 git tag written either way compares equal to a plain `[project]
 version` value (task T27). 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L443-L447)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L443-L447)
 
 ### `checkVersionTag`
 
@@ -826,7 +826,7 @@ anywhere a reader would see it, only ever a build-time developer
 warning — see the task's own discussion in `wip/todo.md` for why a
 reader-facing stamp was dropped in favor of this instead. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L449-L471)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L449-L471)
 
 ### `parseGithubOwnerRepo`
 
@@ -844,7 +844,7 @@ other hosts (GitLab, Codeberg, self-hosted Gitea, ...) — those use
 different source-line-range URL schemes, and a wrong guess is worse
 than no link at all. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L473-L490)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L473-L490)
 
 ### `githubSourceBaseUrl`
 
@@ -872,7 +872,68 @@ the real repo (`.../Demo/MyLeanFile.lean` instead of the real
 `demo/` docs for real and checking the actual output URL, not assumed
 correct from reading the code alone. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L492-L525)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L492-L525)
+
+### `parseLeanPathFromLakeEnv`
+
+*def*
+
+```lean
+parseLeanPathFromLakeEnv : String → System.SearchPath
+```
+
+Extracts `LEAN_PATH`'s value from `lake env`'s output (one
+`NAME=value` line per variable), parsed with the platform's own
+search-path separator. `[]` if there's no such line. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L527-L534)
+
+### `projectSearchPath`
+
+*def*
+
+```lean
+projectSearchPath : System.FilePath → IO System.SearchPath
+```
+
+The target project's own module search path (task T54), as Lake
+itself computes it: its own build output plus every dependency's. Read
+from `lake env` (run in `projectRoot`) rather than reconstructed by
+hand, so `require`d packages, custom `buildDir`s, etc. all come out
+right without LeanDoc re-implementing Lake's resolution logic.
+
+This is what lets one of a project's modules `import` another of its
+own: `runFrontend` never writes an `.olean`, so an imported sibling can
+only resolve against one already compiled by `lake build` — the same
+requirement doc-gen4 has (it runs as a Lake facet that builds the
+library first). Uses the `LAKE` environment variable when set — `lake
+exe leandoc` sets it to the exact Lake binary running us — so the
+toolchain matches, falling back to whatever `lake` is on `PATH`.
+Returns `[]`, with a warning, if `lake env` fails. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L536-L558)
+
+### `buildProjectModules`
+
+*def*
+
+```lean
+buildProjectModules : System.FilePath → Array String → IO Bool
+```
+
+Builds `modules` in the target project with Lake (`lake build
++Mod …`, run in `projectRoot`) before extraction (task T54), so the
+`.olean`s `projectSearchPath` points at exist and aren't stale: a
+module `import`ing a sibling resolves against that sibling's compiled
+`.olean`, never its source. Builds exactly the documented modules (and,
+transitively, whatever they import) rather than the project's default
+targets, which needn't cover every documented module. A no-op when
+everything's already up to date. Lake's own progress output goes
+straight to the terminal — a first build can take a while. Returns
+whether the build succeeded; docs can't be generated from code that
+doesn't compile, the same requirement doc-gen4 has. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L560-L576)
 
 ### `moduleImports`
 
@@ -889,7 +950,7 @@ text scanning, and considerably cheaper than a full `runFrontend` just
 to read `import` lines. Returns dotted module name strings, matching
 `DeclMeta.module`'s own convention. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L527-L536)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L578-L587)
 
 ### `buildImportedByMap`
 
@@ -905,7 +966,7 @@ themselves documented — an import of `Init`/`Lean`/a dependency
 outside the project isn't something LeanDoc has a page for, so it's
 silently dropped rather than rendered as a dead link. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L538-L551)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L589-L602)
 
 ### `moduleToDocPath`
 
@@ -919,7 +980,7 @@ Maps a dotted module name string (as stored in `DeclMeta.module`) to
 a relative doc path, e.g. `"Demo.MyLeanFile"` ↦ `Demo/MyLeanFile.md` —
 mirrors `moduleToFile`'s convention but for Markdown output. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L561-L565)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L612-L616)
 
 ### `linkPath`
 
@@ -936,7 +997,7 @@ native separator (`\` on Windows), which would silently break links
 only on Windows (T9's original bug). Shared by every link-building
 function below rather than each redefining it locally. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L567-L575)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L618-L626)
 
 ### `renderDecl`
 
@@ -959,7 +1020,7 @@ GitHub line range). `sourceBaseUrl` is `none` whenever
 `githubSourceBaseUrl` couldn't build one (no git repo, no `origin`,
 non-GitHub remote) — silently omit the link then, not an error. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L577-L612)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L628-L663)
 
 ### `frontMatter`
 
@@ -984,7 +1045,7 @@ up any theme/stylesheet at all, `_config.yml`'s `theme:` key
 notwithstanding. `default` refers to `_layouts/default.html`, written
 by `ensureDefaultLayout`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L614-L628)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L665-L679)
 
 ### `renderImportedBy`
 
@@ -1000,7 +1061,7 @@ nothing does, so `renderModulePage` can omit the line entirely rather
 than print an empty "Imported by:". Links use the same `jekyll`
 branching every other renderer here follows. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L630-L644)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L681-L695)
 
 ### `renderModulePage`
 
@@ -1020,7 +1081,7 @@ whether front matter is prepended — `false` produces plain portable
 Markdown with no Jekyll-specific content at all. `sourceBaseUrl` (task
 T46) is threaded through to `renderDecl` for jump-to-source links. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L646-L662)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L697-L713)
 
 ### `ModuleTree`
 
@@ -1038,7 +1099,7 @@ keyed by the *next* path segment. Built purely by splitting each
 module's dotted name on `.` — no separate hierarchy-tracking needed,
 since Lean's own module naming already encodes it. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L664-L672)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L715-L723)
 
 ### `ModuleTree.node`
 
@@ -1050,7 +1111,7 @@ ModuleTree.node : Array (String × ModuleTree) → Option String → ModuleTree
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L672-L672)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L723-L723)
 
 ### `ModuleTree.empty`
 
@@ -1062,7 +1123,7 @@ ModuleTree.empty : ModuleTree
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L674-L674)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L725-L725)
 
 ### `insertModule`
 
@@ -1074,7 +1135,7 @@ insertModule : ModuleTree → List String → String → ModuleTree
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L676-L685)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L727-L736)
 
 ### `buildModuleTree`
 
@@ -1087,7 +1148,7 @@ buildModuleTree : Array String → ModuleTree
 Builds the module tree from the flat list `render` already has —
 every module's dotted name, split on `.`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L687-L690)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L738-L741)
 
 ### `renderModuleTreeNode`
 
@@ -1106,7 +1167,7 @@ branching every other renderer here already uses); a pure namespace
 prefix with no module of its own (e.g. `Demo` when only
 `Demo.MyLeanFile` is documented) renders as plain, unlinked text. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L692-L716)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L743-L767)
 
 ### `renderModuleTree`
 
@@ -1130,7 +1191,7 @@ every other page — LeanDoc typically documents one project, not an
 entire ecosystem, so there is no "current page's own entry" to expand
 to on this page in the first place. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L718-L738)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L769-L789)
 
 ### `renderModulesPage`
 
@@ -1169,7 +1230,7 @@ Jekyll *does* process the page (never mix the two within one
 `docs_dir`), and raw `<details>` HTML has no obvious "plain Markdown"
 equivalent worth inventing here. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L740-L775)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L791-L826)
 
 ### `kindBucket`
 
@@ -1185,7 +1246,7 @@ exactly one bucket — `"quotient"`/`"recursor"` are rare enough to share
 "Other" rather than each getting a barely-populated section of their
 own. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L777-L787)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L828-L838)
 
 ### `renderToc`
 
@@ -1214,7 +1275,7 @@ real, not before.
 A bucket with zero declarations is omitted entirely, not rendered as an
 empty heading. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L789-L828)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L840-L879)
 
 ### `SearchEntry`
 
@@ -1233,7 +1294,7 @@ module ++ ".html"`, matching Jekyll's default converted-file naming
 (`.md` sources become same-path `.html` outputs) the same way
 `renderModulesPage`'s `{% link %}` tags already rely on. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L830-L843)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L881-L894)
 
 ### `SearchEntry.mk`
 
@@ -1245,7 +1306,7 @@ SearchEntry.mk : String → String → String → String → SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L838-L838)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L889-L889)
 
 ### `SearchEntry.name`
 
@@ -1257,7 +1318,7 @@ SearchEntry.name : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L839-L839)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L890-L890)
 
 ### `SearchEntry.kind`
 
@@ -1269,7 +1330,7 @@ SearchEntry.kind : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L840-L840)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L891-L891)
 
 ### `SearchEntry.module`
 
@@ -1281,7 +1342,7 @@ SearchEntry.module : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L841-L841)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L892-L892)
 
 ### `SearchEntry.link`
 
@@ -1293,7 +1354,7 @@ SearchEntry.link : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L842-L842)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L893-L893)
 
 ### `instToJsonSearchEntry.toJson`
 
@@ -1305,7 +1366,7 @@ instToJsonSearchEntry.toJson : SearchEntry → Lean.Json
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L843-L843)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L894-L894)
 
 ### `instToJsonSearchEntry`
 
@@ -1317,7 +1378,7 @@ instToJsonSearchEntry : Lean.ToJson SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L843-L843)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L894-L894)
 
 ### `instFromJsonSearchEntry.fromJson`
 
@@ -1329,7 +1390,7 @@ instFromJsonSearchEntry.fromJson : Lean.Json → Except String SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L843-L843)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L894-L894)
 
 ### `instFromJsonSearchEntry`
 
@@ -1341,7 +1402,7 @@ instFromJsonSearchEntry : Lean.FromJson SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L843-L843)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L894-L894)
 
 ### `renderSearchIndex`
 
@@ -1364,7 +1425,7 @@ flagged index size as a real scale concern (Mathlib's equivalent is
 67.6MB) — no reason to spend extra bytes on human-readable whitespace
 nobody reads. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L845-L861)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L896-L912)
 
 ### `ensureSearchScript`
 
@@ -1379,7 +1440,7 @@ search script (task T47 — see `assets/search.js`,
 `LeanDoc.Assets.searchJs`) if it's missing. Never overwrites an
 existing file, same write-once treatment as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L863-L872)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L914-L923)
 
 ### `ensureMathjaxConfig`
 
@@ -1398,7 +1459,7 @@ directly from its CDN in the layout, not vendored — unlike the other
 assets here, it's a large, versioned third-party library, not
 something a project would ever want to hand-edit after the fact. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L874-L887)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L925-L938)
 
 ### `ensureFindPage`
 
@@ -1418,7 +1479,7 @@ same write-once treatment as `ensureStyleAsset`. Depends on
 `assets/search-index.json` existing to look anything up in, so only
 meaningful for Jekyll output — same as `ensureSearchScript`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L889-L902)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L940-L953)
 
 ### `ensureNotFoundPage`
 
@@ -1439,7 +1500,7 @@ itself made. Never overwrites an existing file, same write-once
 treatment as `ensureStyleAsset`. Only meaningful for Jekyll output,
 same as `ensureFindPage`/`ensureSearchScript`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L904-L918)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L955-L969)
 
 ### `navMarkerStart`
 
@@ -1456,7 +1517,7 @@ never touch again" file, like `_config.yml`, would go stale the moment
 a new generated page type ships, even for a user who never customized
 anything) without disturbing any hand-written content around it. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L920-L926)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L971-L977)
 
 ### `navMarkerEnd`
 
@@ -1468,7 +1529,7 @@ navMarkerEnd : String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L927-L927)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L978-L978)
 
 ### `renderNavBlock`
 
@@ -1480,7 +1541,7 @@ renderNavBlock : Bool → String
 
 Renders the nav block's current contents, markers included. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L929-L933)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L980-L984)
 
 ### `ensureRootIndex`
 
@@ -1502,7 +1563,7 @@ and links to the generated `reference/`/`toc.md` pages. Three cases:
   link — the fix there is adding the markers once, by hand, not having
   LeanDoc decide where to put them. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L935-L960)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L986-L1011)
 
 ### `groupInstancesByClass`
 
@@ -1517,7 +1578,7 @@ Groups instance declarations by the class they're an instance of
 section. Project-wide, not per-module: an instance can (and often
 does) live in a different module than the class it's an instance of. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L962-L972)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1013-L1023)
 
 ### `groupDeclsByModule`
 
@@ -1530,7 +1591,7 @@ groupDeclsByModule : Array DeclMeta → Array (String × Array DeclMeta)
 Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L974-L984)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1025-L1035)
 
 ### `defaultJekyllConfig`
 
@@ -1549,7 +1610,7 @@ the file doesn't already exist — like `InstallationPrompt.txt`'s other
 one-time setup steps, this must not clobber a customization on a later
 `lake exe leandoc` run. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L986-L995)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1037-L1046)
 
 ### `ensureJekyllConfig`
 
@@ -1563,7 +1624,7 @@ Ensures `docsDir/_config.yml` exists, writing the default (see
 `defaultJekyllConfig`) if it's missing. Never overwrites an existing
 file. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L997-L1003)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1048-L1054)
 
 ### `ensureStyleAsset`
 
@@ -1579,7 +1640,7 @@ vendored stylesheet (task T29 — see `assets/style.css`,
 existing file, so a project is free to edit it after that first write
 — LeanDoc never touches it again. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L1005-L1015)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1056-L1066)
 
 ### `ensureDefaultLayout`
 
@@ -1594,7 +1655,7 @@ minimal layout (task T29 — see `assets/layouts/default.html`,
 `LeanDoc.Assets.defaultLayoutHtml`) if it's missing. Never overwrites
 an existing file, same write-once treatment as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L1017-L1026)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1068-L1077)
 
 ### `ensureColorSchemeScript`
 
@@ -1610,7 +1671,7 @@ light/dark/system theme switcher script (task T45 — see
 missing. Never overwrites an existing file, same write-once treatment
 as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L1028-L1038)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1079-L1089)
 
 ### `render`
 
@@ -1660,4 +1721,4 @@ For Jekyll output, also writes `docs_dir/assets/search-index.json`
 "only meaningful for Jekyll" writes together keeps them visually
 separate from the always-on Markdown writes above. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/65892d8bc60e7a44add11747080378ed082c4f02/LeanDoc/Core.lean#L1040-L1119)
+[source](https://github.com/JVerstry/LeanDoc/blob/d3f1d0e06c86cfd28a8d1fb37f735ca018d84987/LeanDoc/Core.lean#L1091-L1170)

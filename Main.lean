@@ -17,15 +17,16 @@ LeanDoc's own source is the primary case now that the pipeline works;
 open Lean
 
 def main (args : List String) : IO Unit := do
-  -- Needed so `Init`'s (and any other core module's) `.olean`s resolve;
-  -- see `Lean.Shell`'s `lean` driver, which does the same before calling
-  -- `runFrontend`.
-  Lean.initSearchPath (← Lean.findSysroot)
+  let projectRoot : System.FilePath := args.headD "."
+  -- The sysroot makes `Init`'s (and any other core module's) `.olean`s
+  -- resolve, as `Lean.Shell`'s `lean` driver does before `runFrontend`.
+  -- Task T54: the target project's own search path comes first, so its
+  -- modules can import each other and its dependencies.
+  Lean.initSearchPath (← Lean.findSysroot) (← projectSearchPath projectRoot)
   -- Required before any import that loads environment extensions (which
   -- `runFrontend` does); see `Lake.importModulesUsingCache`, which does
   -- the same before its own `importModules (loadExts := true)`.
   unsafe enableInitializersExecution
-  let projectRoot : System.FilePath := args.headD "."
   let config ← loadConfig (projectRoot / "leandoc.toml")
   -- Task T27: once per run, not once per module — a project-level
   -- check, not a per-file one.
@@ -44,6 +45,11 @@ def main (args : List String) : IO Unit := do
   let effectiveModules := discovered.filter (!isExcluded ·)
   if effectiveModules.isEmpty then
     IO.eprintln "LeanDoc: nothing to document — leandoc.toml has no [modules] include list and whole-package scanning found nothing (or every discovered module was excluded)."
+    IO.Process.exit 1
+  -- Task T54: compile first, so imports between the project's own
+  -- modules resolve against up-to-date `.olean`s.
+  unless ← buildProjectModules projectRoot effectiveModules do
+    IO.eprintln "LeanDoc: `lake build` failed for the modules to document (see its output above) — fix the build errors first; LeanDoc can only document code that compiles."
     IO.Process.exit 1
   let mut allMetas : Array DeclMeta := #[]
   let mut moduleCount := 0

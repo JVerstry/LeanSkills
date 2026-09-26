@@ -36,6 +36,18 @@ project's own executables — no separate checkout needed). Writes
 intermediate metadata to `json_dir` (gitignored, regenerated every run)
 and rendered pages to `docs_dir` (committed by default).
 
+**Your project must compile.** Before extracting anything, LeanDoc runs
+`lake build` on exactly the modules it's about to document (task T54).
+Lake's progress output is shown as it runs, and the step is a no-op
+when everything is already up to date. This is what lets one of your
+modules `import` another: LeanDoc reads each module from source, but
+imports resolve against compiled `.olean` files, so they must exist
+and be current (doc-gen4 has the same requirement). If your project
+depends on Mathlib, run `lake exe cache get` first, as you would for
+any build, so Mathlib is downloaded rather than compiled from source.
+If the build fails, LeanDoc stops with Lake's own errors. Fix them, or
+exclude the failing modules via `[modules] exclude` in `leandoc.toml`.
+
 ### Auditing the output
 
 `lake exe leandoc` running without error doesn't mean the result is

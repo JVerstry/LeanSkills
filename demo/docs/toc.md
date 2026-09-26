@@ -6,6 +6,7 @@ layout: default
 
 ## Definitions
 
+- [`MyLeanModule.MyLeanQuadrupled`]({% link reference/Demo/AnotherFile.md %}) — *Demo.AnotherFile*
 - [`MyLeanModule.MyLeanFunction`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
 - [`MyLeanModule.MyLeanStructure.fst`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
 - [`MyLeanModule.MyLeanStructure.snd`]({% link reference/Demo/MyLeanFile.md %}) — *Demo.MyLeanFile*
