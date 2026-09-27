@@ -207,7 +207,7 @@ to compare against in any of those cases.
 
 `[renderer] jekyll` (default `true`) controls whether generated pages
 target Jekyll — front matter (`layout: default`), internal links via
-Jekyll's `{% link %}` tag, and written `_config.yml`/`assets/style.css`/
+Jekyll's `{% raw %}{% link %}{% endraw %}` tag, and written `_config.yml`/`assets/style.css`/
 `_layouts/default.html` files (task T29) — or are plain, portable
 Markdown instead (ordinary relative links, no Jekyll-specific content,
 readable as-is outside Jekyll).
@@ -219,12 +219,9 @@ to `false` only if you don't want GitHub Pages/Jekyll for these docs at
 all (browsing in an IDE, serving from elsewhere, or an existing Jekyll
 setup you don't want LeanDoc's output mixed into).
 
-If `docs_dir` already has hand-written Markdown pages of your own
-(e.g. a landing page) and `jekyll = true`: LeanDoc's renderer only adds
-front matter to the pages *it* generates, never to existing
-hand-written ones. Give those pages `---\nlayout: default\n---\n`
-yourself, or they'll stay unprocessed "static files" next to your
-processed generated ones — a half-broken, inconsistent site.
+If `docs_dir` has hand-written pages of your own, see "Adding your own
+pages" below: LeanDoc never touches them, so they need their own front
+matter.
 
 ### Styling and customizing the CSS
 
@@ -300,7 +297,7 @@ project-wide, grouped by kind — Definitions, Theorems & Axioms,
 Structures & Inductives, Other — rather than by module, so "show me
 every theorem" doesn't mean reading through every module page by hand.
 Each entry links to its declaration's module page (not a specific
-in-page anchor — Jekyll's `{% link %}` only validates that the target
+in-page anchor — Jekyll's `{% raw %}{% link %}{% endraw %}` only validates that the target
 *file* exists, not a fragment within it, and there's no way to verify
 anchor slugification without a real Jekyll build, so this deliberately
 doesn't guess).
@@ -399,6 +396,74 @@ suggests matching declarations from `assets/search-index.json`
 use — real fuzzy/edit-distance matching wasn't judged worth the extra
 complexity at LeanDoc's typical project scale. No suggestions are shown
 if nothing matches, or if the search index can't be reached at all.
+
+### Adding your own pages
+
+You can add pages that aren't generated from your Lean source, such as
+a getting-started guide, a tutorial or a changelog (task T55). LeanDoc
+never touches a file it didn't write, so these pages are entirely
+yours. This manual is itself an example: it's a hand-written page in
+LeanDoc's own `docs/`, sitting next to the generated reference.
+
+**Where to put them.** Anywhere in `docs_dir` except the places
+LeanDoc writes:
+
+| Path | What LeanDoc does with it |
+|---|---|
+| `reference/` | Deleted and regenerated on every run — never put your own files here |
+| `toc.md`, `assets/search-index.json` | Overwritten on every run |
+| `index.md` | Only the part between the `leandoc:nav` markers is rewritten; the rest is yours |
+| `_config.yml`, `_layouts/`, `assets/*.js`, `assets/style.css`, `find.html`, `404.html` | Written once if missing, then left alone |
+
+A subfolder such as `docs_dir/guides/` keeps things tidy.
+
+**Start from the template.** LeanDoc ships a starter page,
+`templates/page.md`. Since your project `require`s LeanDoc, Lake has
+already downloaded it:
+
+```sh
+mkdir -p docs/guides
+cp .lake/packages/LeanDoc/templates/page.md docs/guides/getting-started.md
+```
+
+(It's also on
+[GitHub](https://github.com/JVerstry/LeanDoc/blob/main/templates/page.md).)
+Then change its `title` and rewrite its content. Keep the front matter
+block at the top, and keep `layout: default` in it. Without front
+matter, Jekyll serves the file as raw, unstyled Markdown.
+
+**Linking.** Link to generated pages and to your other pages with
+Jekyll's `link` tag. The path is relative to `docs_dir` and uses the
+`.md` source name, even though the published page ends in `.html`:
+
+{% raw %}
+```markdown
+[The MyProject.Basic module]({% link reference/MyProject/Basic.md %})
+[All modules]({% link reference/modules.md %})
+[Back home]({% link index.md %})
+```
+{% endraw %}
+
+A `link` tag pointing at a page that doesn't exist fails the whole site
+build. That catches broken links before they're published, but it also
+means a typo stops the site from updating until it's fixed.
+
+**Making the page reachable.** LeanDoc doesn't add your pages to the
+navigation list or to the search box: search covers Lean declarations
+only. Link each page from `index.md` yourself, *outside* the
+`leandoc:nav` markers so LeanDoc leaves the link alone. LeanDoc's own
+`index.md` does exactly this for this manual.
+
+**One pitfall: Liquid runs on the whole page.** {% raw %}Jekyll processes
+`{{ … }}` and `{% … %}` sequences everywhere in a page, including
+inside code blocks and inline code. To show such text literally, for
+example when documenting Jekyll itself, wrap it between
+`{% raw %}`{% endraw %} and `{{ "{% endraw %}" }}`.
+
+**Without Jekyll** (`[renderer] jekyll = false`): leave out the front
+matter and use ordinary Markdown links, relative to the page's own
+location, for example `[Basic](../reference/MyProject/Basic.md)` from
+a page in `guides/`.
 
 ### Optional: CI and pre-commit freshness checks
 

@@ -604,11 +604,18 @@ def main : IO Unit := do
   let orphanPath := renderScratchDocs / "reference" / "SomeOldModule.md"
   IO.FS.createDirAll (renderScratchDocs / "reference")
   IO.FS.writeFile orphanPath "stale content from a module that no longer exists\n"
+  -- Task T55: a hand-written page outside reference/ must survive.
+  let customPage := renderScratchDocs / "guides" / "getting-started.md"
+  let customContent := "---\nlayout: default\n---\n\n# My own guide\n"
+  IO.FS.createDirAll (renderScratchDocs / "guides")
+  IO.FS.writeFile customPage customContent
   render renderScratchJson renderScratchDocs true none {}
   s ← s.check "render wipes an orphaned reference/ page that no longer corresponds to any module"
     (!(← orphanPath.pathExists))
   s ← s.check "render still writes the real, current module pages"
     (← (renderScratchDocs / "reference" / "Demo" / "MyLeanFile.md").pathExists)
+  s ← s.check "render leaves a hand-written page outside reference/ untouched (T55)"
+    ((← IO.FS.readFile customPage) == customContent)
   IO.FS.removeDirAll renderScratchDir
 
   -- ## Project hygiene: required top-level files exist, and the
@@ -627,6 +634,24 @@ def main : IO Unit := do
   for file in #["README.md", "InstallationPrompt.txt", "docs/manual.md",
                 "QualityAuditPrompt.txt"] do
     s ← s.check s!"{file} exists" (← System.FilePath.pathExists file)
+
+  -- Task T55: the starter template for hand-written pages ships with
+  -- the front matter Jekyll needs to style it.
+  let templatePath : System.FilePath := "templates" / "page.md"
+  s ← s.check "templates/page.md exists" (← templatePath.pathExists)
+  if ← templatePath.pathExists then
+    s ← s.check "templates/page.md has layout: default front matter"
+      ((← IO.FS.readFile templatePath).startsWith "---\nlayout: default\n")
+
+  -- A `{% link %}` tag with no target fails the whole Jekyll build
+  -- ("Could not find document ''", checked against Jekyll's own
+  -- link.rb), and Liquid runs even inside code spans. So in LeanDoc's
+  -- own hand-written pages, every mention of it must be escaped.
+  for file in #["docs/index.md", "docs/manual.md"] do
+    let content ← IO.FS.readFile file
+    let bare := (content.splitOn "{% link %}").length - 1
+    let escaped := (content.splitOn "{% raw %}{% link %}{% endraw %}").length - 1
+    s ← s.check s!"{file} never has an unescaped, targetless link tag" (bare == escaped)
 
   let wipTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "wip"] }
   s ← s.check "wip/ has no files tracked by git"

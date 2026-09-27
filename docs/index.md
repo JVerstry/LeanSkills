@@ -51,9 +51,9 @@ of copying it through unprocessed (Jekyll only treats a file with
 front matter as a page at all, and only applies a layout's styling to
 a page whose front matter names one — task T29, confirmed against
 Jekyll's own docs); internal links use Jekyll's
-[`{% link %}` tag](https://jekyllrb.com/docs/liquid/tags/) rather than
+[`{% raw %}{% link %}{% endraw %}` tag](https://jekyllrb.com/docs/liquid/tags/) rather than
 plain Markdown links, since Jekyll renames converted pages `.md` →
-`.html` and `{% link %}` resolves that automatically (and fails the
+`.html` and `{% raw %}{% link %}{% endraw %}` resolves that automatically (and fails the
 build if a target doesn't exist). `assets/style.css` (task T29) is
 doc-gen4's own stylesheet, vendored unmodified — matching what
 Mathlib/cslib actually look like, rather than a GitHub Pages
