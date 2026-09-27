@@ -63,6 +63,7 @@ layout: default
 - [`buildImportedByMap`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`moduleToDocPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`linkPath`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`escapeLiquid`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderDecl`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`frontMatter`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`renderImportedBy`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

@@ -219,6 +219,11 @@ to `false` only if you don't want GitHub Pages/Jekyll for these docs at
 all (browsing in an IDE, serving from elsewhere, or an existing Jekyll
 setup you don't want LeanDoc's output mixed into).
 
+Jekyll processes Liquid template syntax on every page, so text copied
+from your Lean source (docstrings, names, types) is escaped: a
+docstring that mentions {% raw %}`{{ … }}` or `{% … %}`{% endraw %} is shown as
+written, instead of being run or failing the site build (task T56).
+
 If `docs_dir` has hand-written pages of your own, see "Adding your own
 pages" below: LeanDoc never touches them, so they need their own front
 matter.

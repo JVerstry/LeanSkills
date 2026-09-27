@@ -631,6 +631,23 @@ def linkPath (m : String) : String :=
   (m.splitOn ".").foldl (init := "") fun acc part =>
     if acc.isEmpty then part else s!"{acc}/{part}"
 
+/-- Makes text copied from Lean source safe to put in a Jekyll page
+(task T56). Jekyll runs Liquid over the whole page before Markdown,
+even inside code spans and code blocks, so a docstring mentioning
+`{% link %}` would fail the entire site build ("Could not find
+document ''") and one mentioning `{{ site.baseurl }}` would print a
+value instead of the text. Each `{{` and `{%` becomes a Liquid output
+expression printing it literally (`{{ "{{" }}`, `{{ "{%" }}`).
+
+Not a `raw`/`endraw` wrapper: the text could itself contain an
+`endraw` tag. Not `render_with_liquid: false` front matter either:
+that's Jekyll 4 only (GitHub Pages runs Jekyll 3), and generated pages
+need Liquid for their own `link` tags. The `{{` pass runs first
+because its output contains no `{%`, whereas the `{%` pass's output
+contains `{{`. Only for Jekyll output: plain Markdown has no Liquid. -/
+def escapeLiquid (s : String) : String :=
+  (s.replace "{{" "{{ \"{{\" }}").replace "{%" "{{ \"{%\" }}"
+
 /-- Renders one declaration as a Markdown section: a heading, the
 signature as a code block, the docstring (or an explicit "not
 documented" note — silently omitting undocumented declarations would
@@ -695,7 +712,7 @@ def renderImportedBy (moduleName : String) (jekyll : Bool)
   if importers.isEmpty then none else
   let items := importers.qsort (· < ·) |>.map fun m =>
     if jekyll then
-      "[" ++ m ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
+      "[" ++ escapeLiquid m ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
     else
       s!"[{m}]({linkPath m}.md)"
   some s!"**Imported by:** {String.intercalate ", " items.toList}\n"
@@ -712,11 +729,15 @@ def renderModulePage (moduleName : String) (decls : Array DeclMeta) (jekyll : Bo
     (importedByMap : Std.HashMap String (Array String)) : String :=
   let body := String.join
     ((decls.map (renderDecl · sourceBaseUrl instancesByClass)).toList.intersperse "\n")
+  -- Task T56: `renderDecl`'s output holds no Liquid of LeanDoc's own
+  -- (plain source URLs, no `link` tags), so escaping it whole is safe.
+  let body := if jekyll then escapeLiquid body else body
+  let heading := if jekyll then escapeLiquid moduleName else moduleName
   let fm := if jekyll then frontMatter else ""
   let importedByLine := match renderImportedBy moduleName jekyll importedByMap with
     | some line => s!"\n{line}"
     | none => ""
-  s!"{fm}# {moduleName}\n{importedByLine}\n{body}"
+  s!"{fm}# {heading}\n{importedByLine}\n{body}"
 
 /-- One node of the module tree (task T49): a namespace segment,
 its own module page if one exists exactly at this path (`some m` for
@@ -757,13 +778,14 @@ prefix with no module of its own (e.g. `Demo` when only
 partial def renderModuleTreeNode (label : String) (tree : ModuleTree) (jekyll : Bool) : String :=
   match tree with
   | .node children full =>
+    let shown := if jekyll then escapeLiquid label else label
     let selfText := match full with
       | some m =>
         if jekyll then
-          "[" ++ label ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
+          "[" ++ shown ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
         else
           s!"[{label}]({linkPath m}.md)"
-      | none => label
+      | none => shown
     if children.isEmpty then
       s!"<li>{selfText}</li>"
     else
@@ -871,8 +893,8 @@ def renderToc (metas : Array DeclMeta) (jekyll : Bool) : String :=
     return m
   let renderEntry (d : DeclMeta) : String :=
     if jekyll then
-      "- [`" ++ d.name ++ "`](" ++ "{% link reference/" ++ linkPath d.module ++ ".md %}" ++
-        ") — *" ++ d.module ++ "*"
+      "- [`" ++ escapeLiquid d.name ++ "`](" ++ "{% link reference/" ++ linkPath d.module ++
+        ".md %}" ++ ") — *" ++ escapeLiquid d.module ++ "*"
     else
       s!"- [`{d.name}`]({linkPath d.module}.md) — *{d.module}*"
   let sections := bucketOrder.filterMap fun b =>

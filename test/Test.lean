@@ -326,6 +326,27 @@ def main : IO Unit := do
   s ← s.check "renderDecl omits the source link when there's no range, even with a base URL"
     ((renderDecl undocumented (some sourceUrl) noInstances |>.splitOn "[source]").length == 1)
 
+  -- ## Unit-level: T56's Liquid escaping of Lean-sourced text
+
+  s ← s.check "escapeLiquid turns {{ and {% into literal-printing output expressions"
+    (escapeLiquid "a {{ x }} b {% link %} c" ==
+      "a {{ \"{{\" }} x }} b {{ \"{%\" }} link %} c")
+  s ← s.check "escapeLiquid leaves text without Liquid delimiters unchanged"
+    (escapeLiquid "Nat → Nat { x // x > 0 }" == "Nat → Nat { x // x > 0 }")
+  let liquidDecl : DeclMeta :=
+    { module := "M", name := "foo", kind := "def", type := "Nat"
+      docString := some "Emits `{% link %}` and `{{ site.baseurl }}`.", range := none }
+  let liquidPage := renderModulePage "M" #[liquidDecl] true none {} {}
+  s ← s.check "renderModulePage (jekyll) escapes Liquid in a docstring"
+    ((liquidPage.splitOn "{% link %}").length == 1 &&
+     (liquidPage.splitOn "{{ site.baseurl }}").length == 1 &&
+     (liquidPage.splitOn "{{ \"{%\" }} link %}").length > 1)
+  let plainLiquidPage := renderModulePage "M" #[liquidDecl] false none {} {}
+  s ← s.check "renderModulePage (no jekyll) leaves a docstring's Liquid-like text alone"
+    ((plainLiquidPage.splitOn "Emits `{% link %}` and `{{ site.baseurl }}`.").length > 1)
+  s ← s.check "renderToc (jekyll) escapes Liquid in a declaration name"
+    ((renderToc #[{ liquidDecl with name := "«{{x}}»" }] true |>.splitOn "«{{x}}»").length == 1)
+
   -- ## Unit-level: T48's typeclass instance listings
 
   let classDecl : DeclMeta :=
@@ -660,6 +681,25 @@ def main : IO Unit := do
     let bare := (content.splitOn "{% link %}").length - 1
     let escaped := (content.splitOn "{% raw %}{% link %}{% endraw %}").length - 1
     s ← s.check s!"{file} never has an unescaped, targetless link tag" (bare == escaped)
+
+  -- Task T56: the same check Jekyll's own `link` tag makes, over the
+  -- committed generated pages — every `{% link X %}` must name a file
+  -- that exists, or the whole site build fails. LeanDoc's own
+  -- `Core.lean` docstrings mention `{% link %}` (describing its Jekyll
+  -- output), so this catches a regression in escapeLiquid for real.
+  for docsRoot in #[("docs" : System.FilePath), "demo" / "docs"] do
+    let generated := #[docsRoot / "toc.md"] ++
+      ((← (docsRoot / "reference").walkDir).filter (·.extension == some "md"))
+    let mut bad : Array String := #[]
+    for page in generated do
+      for piece in ((← IO.FS.readFile page).splitOn "{% link ").drop 1 do
+        let target := (piece.splitOn " %}").headD ""
+        unless ← (docsRoot / target).pathExists do
+          bad := bad.push s!"{page}: {target}"
+    s ← s.check s!"every link tag in {docsRoot}'s generated pages points at an existing file"
+      bad.isEmpty
+    unless bad.isEmpty do
+      IO.eprintln s!"  broken link tags: {bad}"
 
   let wipTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "wip"] }
   s ← s.check "wip/ has no files tracked by git"
