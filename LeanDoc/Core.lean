@@ -490,9 +490,19 @@ def parseGithubOwnerRepo (remote : String) : Option String :=
     none
 
 /-- Attempts to build a GitHub "blob" URL prefix for jump-to-source
-links (task T46), e.g. `"https://github.com/owner/repo/blob/<commit>"`
-— `none` if `projectRoot` isn't a git repo, has no `origin` remote, or
+links (task T46), e.g. `"https://github.com/owner/repo/blob/HEAD"` —
+`none` if `projectRoot` isn't a git repo, has no `origin` remote, or
 that remote isn't recognizably GitHub (`parseGithubOwnerRepo`).
+
+`HEAD`, not a commit hash (task T57): GitHub resolves `blob/HEAD/…` to
+the repository's default branch. A commit hash made generated output
+self-referential — docs committed alongside a change are generated
+*before* that commit exists, so they could only ever embed the
+previous commit's hash, and any freshness check regenerating them
+later (CI, the pre-commit template) always saw a diff. The trade-off:
+a link shows the default branch's current file, not the exact version
+the docs were generated from, so line ranges drift if published docs
+lag behind the code — which a freshness check exists to prevent.
 Degrades silently, not with a warning: not every project is hosted on
 GitHub, and that's a completely normal, unremarkable state, not
 something to nag about the way a missing compliance header (T41) or a
@@ -513,15 +523,11 @@ def githubSourceBaseUrl (projectRoot : System.FilePath) : IO (Option String) := 
   let remote := remoteResult.stdout.trimAscii.toString
   let some ownerRepo := parseGithubOwnerRepo remote
     | return none
-  let commitResult ← IO.Process.output
-    { cmd := "git", args := #["rev-parse", "HEAD"], cwd := some projectRoot }
-  if commitResult.exitCode != 0 then return none
-  let commit := commitResult.stdout.trimAscii.toString
   let subdirResult ← IO.Process.output
     { cmd := "git", args := #["rev-parse", "--show-prefix"], cwd := some projectRoot }
   let rawSubdir := if subdirResult.exitCode == 0 then subdirResult.stdout.trimAscii.toString else ""
   let subdir := if rawSubdir.endsWith "/" then (rawSubdir.dropEnd 1).toString else rawSubdir
-  let base := s!"https://github.com/{ownerRepo}/blob/{commit}"
+  let base := s!"https://github.com/{ownerRepo}/blob/HEAD"
   return some (if subdir.isEmpty then base else s!"{base}/{subdir}")
 
 /-- Extracts `LEAN_PATH`'s value from `lake env`'s output (one

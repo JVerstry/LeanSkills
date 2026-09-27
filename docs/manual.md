@@ -278,8 +278,15 @@ T46), when two things are both available: the project is a git repo
 with a GitHub `origin` remote (SSH or HTTPS; other hosts and non-git
 projects are skipped gracefully, no link rendered rather than a wrong
 one), and the declaration's source range was captured during
-extraction. The link points at the exact commit `lake exe leandoc` ran
-against, not a branch — regenerate to pick up a new commit.
+extraction.
+
+Links point at your repository's default branch (`…/blob/HEAD/…`,
+which GitHub resolves to it), not at a specific commit (task T57). A
+commit hash can't work for docs committed alongside the code: they're
+generated before the commit exists, so a freshness check would always
+see a changed hash. As long as your committed docs are regenerated with
+every change, which the optional freshness checks below enforce, the
+line numbers match the default branch's code.
 
 ### Generated output
 

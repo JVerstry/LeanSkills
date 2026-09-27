@@ -42,6 +42,11 @@ def TestState.check (s : TestState) (label : String) (ok : Bool) : IO TestState 
     IO.eprintln s!"FAIL: {label}"
     pure { s with failed := s.failed + 1 }
 
+-- `main` is one long `do` block, and elaborating it nests one level per
+-- statement; at ~140 checks it exceeded the default `maxRecDepth` (512).
+-- Splitting it into per-section functions is the real fix (see T58 in
+-- wip/todo.md).
+set_option maxRecDepth 2048 in
 def main : IO Unit := do
   let demoRoot : System.FilePath := "demo"
   let demoModule : Name := `Demo.MyLeanFile
@@ -392,6 +397,11 @@ def main : IO Unit := do
   let realBaseUrl ← githubSourceBaseUrl "."
   s ← s.check "githubSourceBaseUrl finds a real base URL for LeanDoc's own repo"
     realBaseUrl.isSome
+  -- Task T57: pinned to `blob/HEAD` (the default branch), never a
+  -- commit hash — a hash made committed docs differ from what any later
+  -- regeneration produces, so freshness checks could never pass.
+  s ← s.check "githubSourceBaseUrl links the default branch (blob/HEAD), not a commit hash"
+    (realBaseUrl == some "https://github.com/JVerstry/LeanDoc/blob/HEAD")
 
   -- Regression: `demo/` is a *subdirectory* of LeanDoc's own repo, not
   -- a repo of its own — a real bug caught by generating demo/'s actual
@@ -401,9 +411,7 @@ def main : IO Unit := do
   -- in the real repo.
   let demoBaseUrl ← githubSourceBaseUrl demoRoot
   s ← s.check "githubSourceBaseUrl includes demo/'s own path prefix, not just the repo root's"
-    (match demoBaseUrl with
-      | some url => (url.splitOn "/demo").length > 1
-      | none => false)
+    (demoBaseUrl == some "https://github.com/JVerstry/LeanDoc/blob/HEAD/demo")
 
   -- And against a genuinely separate scratch git repo with no `origin`
   -- configured — deliberately *not* a plain non-git subdirectory:
