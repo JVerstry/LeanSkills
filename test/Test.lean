@@ -314,6 +314,59 @@ def assetChecks (c : Ctx) (s0 : TestState) : IO TestState := do
 
   pure s
 
+def namingChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let scratchDir := c.scratchDir
+
+  -- ## Unit-level: T41's naming-convention check (namingProblem). The
+  -- accepted names are real Mathlib/core ones, to keep the heuristic
+  -- honest about false positives.
+
+  for (role, name) in [("proof", "Nat.add_comm"), ("proof", "map_natCast"), ("proof", "isOpen_iff"),
+                       ("proof", "Nat.succ_le_of_lt'"), ("proof", "rfl"), ("proof", "IsOpen.union"),
+                       ("type", "Nat"), ("type", "MonoidHom"), ("type", "LE"), ("type", "Foo.Bar"),
+                       ("predicate", "IsOpen"), ("predicate", "le"), ("predicate", "Nat.Prime"),
+                       ("data", "List.foldl"), ("data", "toList"), ("data", "String.toNat?"),
+                       ("data", "mk"), ("data", "Array.mkEmpty"), ("data", "toLE")] do
+    s ← s.check s!"namingProblem accepts {name} as a {role}" (namingProblem role name).isNone
+  for (role, name) in [("proof", "Foo.MyTheorem"), ("proof", "add_Comm"), ("proof", "AddComm"),
+                       ("type", "myStruct"), ("type", "My_Type"),
+                       ("predicate", "is_open"),
+                       ("data", "MyFunction"), ("data", "to_list"), ("data", "Foo.Bar.Baz")] do
+    s ← s.check s!"namingProblem flags {name} as a {role}" (namingProblem role name).isSome
+  s ← s.check "namingProblem judges only the last component (the namespace is someone else's name)"
+    ((namingProblem "proof" "My_Namespace.add_comm").isNone &&
+     (namingProblem "data" "MyNamespace.toList").isNone)
+  s ← s.check "namingProblem skips a name starting with an underscore, or quoted"
+    ((namingProblem "data" "_Private").isNone && (namingProblem "data" "«My Name»").isNone)
+  s ← s.check "namingProblem ignores an unknown role" (namingProblem "other" "Whatever_x").isNone
+
+  -- ## namingViolations skips instances and declarations with no role
+
+  let base : DeclMeta :=
+    { module := "M", name := "Bad_Name", kind := "def", type := "Nat", docString := none, range := none }
+  s ← s.check "namingViolations flags a real violation"
+    ((namingViolations #[{ base with namingRole := some "data" }]).size == 1)
+  s ← s.check "namingViolations skips an instance (its name is generated)"
+    ((namingViolations #[{ base with namingRole := some "data", instanceOf := some "Inhabited" }]).isEmpty)
+  s ← s.check "namingViolations skips a declaration with no role (older metadata)"
+    ((namingViolations #[base]).isEmpty)
+
+  -- ## Fixture-level: the opt-in switch
+
+  s ← s.check "the naming check is off by default" (!(({} : LeanDocConfig).complianceNaming))
+  let tomlPath := scratchDir / "naming.toml"
+  IO.FS.writeFile tomlPath "[compliance]\nnaming = true\n"
+  let namingCfg ← loadConfig tomlPath
+  s ← s.check "loadConfig parses [compliance] naming" namingCfg.complianceNaming
+  s ← s.check "[compliance] naming is independent of the header check" (!namingCfg.complianceEnabled)
+  IO.FS.removeFile tomlPath
+  -- Smoke: warns on stderr, never fails, and is silent when off.
+  checkNamingConventions namingCfg #[{ base with namingRole := some "data" }]
+  checkNamingConventions {} #[{ base with namingRole := some "data" }]
+  s ← s.check "checkNamingConventions runs without crashing, on or off" true
+  pure s
+
 def layoutVersionChecks (s0 : TestState) : IO TestState := do
   let mut s := s0
   let shipped := LeanDoc.Assets.defaultLayoutHtml
@@ -782,6 +835,24 @@ def extractorChecks (c : Ctx) (s0 : TestState) : IO (TestState × Array DeclMeta
                theorem here, so it's not noise-filtered (see isNoise's honest doc comment)"
     (demoMetas.any fun d => d.name == "MyLeanModule.MyLeanProp.trivial" && d.kind == "theorem")
 
+  -- ## Fixture-level: T41's naming roles, computed from real types, and
+  -- the check run over demo/'s real declarations. `demoMetas` is
+  -- Demo.MyLeanFile, which deliberately contains two misnamed ones (an
+  -- upper-case function and an upper-case proof); Demo.AnotherFile has a
+  -- third, an upper-case function, seen in a real `lake exe leandoc demo`
+  -- run with the check on.
+  let roleOf (n : String) : Option String :=
+    (demoMetas.find? (·.name == n)).bind (·.namingRole)
+  s ← s.check "namingRole: a structure is a type" (roleOf "MyLeanModule.MyLeanStructure" == some "type")
+  s ← s.check "namingRole: a Prop structure is a predicate" (roleOf "MyLeanModule.MyLeanProp" == some "predicate")
+  s ← s.check "namingRole: a function is data" (roleOf "MyLeanModule.MyLeanFunction" == some "data")
+  s ← s.check "namingRole: a constructor is data" (roleOf "MyLeanModule.MyLeanStructure.mk" == some "data")
+  s ← s.check "namingRole: a theorem is a proof" (roleOf "MyLeanModule.MyLeanTheorem" == some "proof")
+  s ← s.check "namingRole: a Prop field's proof is a proof" (roleOf "MyLeanModule.MyLeanProp.trivial" == some "proof")
+  let flagged := (namingViolations demoMetas).map (·.1.name)
+  s ← s.check "the naming check flags demo/'s upper-case function and theorem, and nothing else"
+    (flagged.qsort (· < ·) == #["MyLeanModule.MyLeanFunction", "MyLeanModule.MyLeanTheorem"])
+
   pure (s, demoMetas)
 
 def renderChecks (c : Ctx) (demoMetas : Array DeclMeta) (s0 : TestState) : IO TestState := do
@@ -954,6 +1025,7 @@ def main : IO Unit := do
   let s ← sourceLinkChecks c s
   let s ← groupingChecks s
   let s ← configChecks c s
+  let s ← namingChecks c s
   let s ← versionChecks c s
   let s ← projectBuildChecks c s
   let (s, demoMetas) ← extractorChecks c s

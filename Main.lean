@@ -74,5 +74,7 @@ def main (args : List String) : IO Unit := do
   -- ever sees `docsDir`, not `projectRoot`, and this is a project-level
   -- fact, not a per-module one.
   let sourceBaseUrl ← githubSourceBaseUrl projectRoot
+  -- Task T41: opt-in naming-convention warnings, over everything extracted.
+  checkNamingConventions config allMetas
   let importedByMap := buildImportedByMap moduleImportsMap
   render outFile (projectRoot / config.docsDir) config.rendererJekyll sourceBaseUrl importedByMap

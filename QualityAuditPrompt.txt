@@ -82,10 +82,14 @@ later run must get the same key.
      default values to the user (e.g. off, matching LeanDoc's own
      default) and ask whether they want compliance checking as part of
      this audit before proceeding with that section.
-   - LeanDoc does **not** itself check naming conventions or whether a
-     docstring is well written — only that one exists. Don't look for a
-     LeanDoc flag for either; judging docstring quality is your job in
-     section 4.
+   - `[compliance] naming = true` makes LeanDoc itself warn about
+     declaration names that break Mathlib's naming convention for their
+     kind (a lenient heuristic, labelled "convention only"). If it's on,
+     cross-check that those warnings were addressed; if it's off, you
+     may still mention naming as a low-priority observation.
+   - LeanDoc does **not** itself check whether a docstring is well
+     written — only that one exists. Judging docstring quality is your
+     job in section 4.
 
 3. Freshness
    - Regenerate (`lake exe leandoc`; it first builds the project's

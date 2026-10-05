@@ -196,7 +196,10 @@ documented.
 — entirely **off by default**, since most projects aren't Mathlib and
 shouldn't be held to its conventions unless they explicitly ask.
 
-Today this covers one check: whether each documented file's header
+Two checks exist, each with its own switch: the copyright/license
+header check just below, and the naming-convention check after it.
+
+**Header check.** Whether each documented file's header
 mentions the `author`/`license` you configure. Set `enabled = true`
 and at least one of `author`/`license` to turn it on — leaving both
 empty, even with `enabled = true`, means there's nothing to check
@@ -209,19 +212,45 @@ near the top of the file (first ~1000 characters), not a strict parse
 of Mathlib's exact header grammar
 (`/- Copyright (c) YEAR Name. ... Authors: ... -/`).
 
-**Not built yet** — don't assume either exists: a naming-conventions
-check (Mathlib's `snake_case`/`UpperCamelCase` scheme) and a
-docstring-quality check (does a docstring read as plain-language
-explanation, not just a restated type signature). Neither can borrow
-from Mathlib's or Batteries' linters: there is no naming-convention
-linter in either, and `docBlame`/`docBlameThm` only check that a
-docstring *exists*, never what it says. So both would be written from
-scratch.
+**Naming check.** Set `naming = true` to get a **warning on stderr**,
+never a failure, for each documented declaration whose name breaks
+[Mathlib's naming guide](https://leanprover-community.github.io/contribute/naming.html)
+for what it is:
+
+- types, structures and classes are `UpperCamelCase`;
+- theorems and other proofs are `snake_case`, where a word that is
+  itself named in `UpperCamelCase` appears in `lowerCamelCase`
+  (`isOpen_iff`);
+- functions and other data are `lowerCamelCase`, except that a function
+  is named like its return value, so one returning a type is
+  `UpperCamelCase`.
+
+```toml
+[compliance]
+naming = true
+```
+
+It's a heuristic and is labelled "convention only" in its output: it
+can't see why a name is the way it is. So it's deliberately lenient:
+only the last component of a name is judged (the namespace names
+something else), a trailing `'`, `?` or `!` is ignored, a name starting
+with `_` or quoted with `«»` is skipped, instances are skipped (their
+names are generated), and a `Prop`-valued definition is only flagged for
+an underscore, because Mathlib itself writes both `IsOpen` and `le`. At
+most 25 are listed, then a count of the rest. It's independent of
+`enabled`: you can use either, both, or neither.
+
+**Not a LeanDoc check:** whether a docstring reads as plain-language
+explanation rather than a restated type signature. That needs judgement,
+so it lives in the `QualityAuditPrompt.txt` audit (see "Auditing the
+output"), not in LeanDoc. Neither check borrows from Mathlib's or
+Batteries' linters: there is no naming-convention linter in either, and
+`docBlame`/`docBlameThm` only check that a docstring *exists*.
 
 LeanDoc can be used either way: to generate documentation that
-conforms to Mathlib's conventions (`[compliance] enabled = true`,
-configured to match your project), or to generate documentation
-however you like with no conventions enforced at all (the default).
+conforms to Mathlib's conventions (`[compliance]`, configured to match
+your project), or to generate documentation however you like with no
+conventions enforced at all (the default).
 
 ### Version tracking
 

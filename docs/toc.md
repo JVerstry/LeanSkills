@@ -16,6 +16,7 @@ layout: default
 - [`LeanDocConfig.complianceEnabled`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.complianceAuthor`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.complianceLicense`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`LeanDocConfig.complianceNaming`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`LeanDocConfig.projectVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig.default`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instInhabitedLeanDocConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -39,12 +40,14 @@ layout: default
 - [`DeclMeta.docString`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.range`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`DeclMeta.instanceOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`DeclMeta.namingRole`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instToJsonDeclMeta.toJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instToJsonDeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instFromJsonDeclMeta.fromJson`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instFromJsonDeclMeta`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`kindString`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`instanceClassOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`namingRoleOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`declMetaOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`isNoise`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`leandocIgnoreAttr`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
@@ -52,6 +55,9 @@ layout: default
 - [`extractFile`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`hasCopyrightHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`checkComplianceHeader`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`namingProblem`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`namingViolations`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`checkNamingConventions`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`normalizeVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`checkVersionTag`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`parseGithubOwnerRepo`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*

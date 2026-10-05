@@ -36,6 +36,12 @@ jekyll = true
 enabled = false
 # author = "..."
 # license = "..."
+# Also off by default (task T41): warn (never fail) about declaration
+# names that break Mathlib's naming convention for their kind. Independent
+# of `enabled`. Left off here: this fixture deliberately contains a few
+# upper-case function and theorem names, which the test suite uses to
+# check the naming check against real declarations.
+# naming = false
 
 [project]
 # Unset by default (task T27) — this project's own release version.

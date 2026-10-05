@@ -94,8 +94,13 @@ updates as the interface stabilizes.
         to check without it). This checks for the literal word
         "Copyright" plus the configured author/license as plain text
         near the top of each file, not a strict parse of Mathlib's
-        exact header grammar. LeanDoc has no naming-convention or
-        docstring-quality check — don't tell the user it does.
+        exact header grammar. A second, independent switch,
+        `naming` (*recommended default:* off), makes LeanDoc warn,
+        never fail, about declaration names that break Mathlib's naming
+        convention for their kind — a lenient heuristic, labelled
+        "convention only". Only turn it on if the user asks. LeanDoc
+        has no docstring-quality check — don't tell the user it does
+        (the audit in `QualityAuditPrompt.txt` judges that).
      h. **Project version (`[project] version`).** Optional —
         the project's own release version (e.g. `"1.2.0"`), manually
         set, never auto-detected. *Recommended default:* leave unset
@@ -205,6 +210,8 @@ updates as the interface stabilizes.
                          # header
      # author = "<step 2g value>"    # only if enabled = true
      # license = "<step 2g value>"   # only if enabled = true
+     # naming = true                 # only if the user asked: warn (never
+                         # fail) about names breaking Mathlib's convention
 
      [project]
      # version = "<step 2h value>"   # warn (never fail) if this doesn't

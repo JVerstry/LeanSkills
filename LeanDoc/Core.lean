@@ -50,11 +50,11 @@ structure LeanDocConfig where
   rendererJekyll : Bool := true
   /-- Task T41: the overall opt-in/opt-out toggle for documentation-
   convention/compliance checks derived from Mathlib's own style
-  guidelines (currently just the copyright/license header check below
-  — naming-conventions and docstring-quality checks are designed but
-  not built yet, pending task T42). Off by default: most projects
-  aren't Mathlib and shouldn't be held to its conventions unless they
-  explicitly ask. -/
+  guidelines — the copyright/license header check below. (The naming
+  check has its own switch, `complianceNaming`; a docstring-quality
+  check lives in the audit prompt, not here.) Off by default: most
+  projects aren't Mathlib and shouldn't be held to its conventions
+  unless they explicitly ask. -/
   complianceEnabled : Bool := false
   /-- Task T41: the author name(s) `checkComplianceHeader` expects to
   find in each file's copyright header when `complianceEnabled` is
@@ -66,6 +66,11 @@ structure LeanDocConfig where
   find in each file's copyright header. Same empty-skips treatment as
   `complianceAuthor`. -/
   complianceLicense : String := ""
+  /-- Task T41: whether to warn about declarations whose names break
+  Mathlib's naming convention for their kind (`checkNamingConventions`).
+  Off by default, and independent of `complianceEnabled` (a project can
+  want one without the other). Warns on stderr, never fails. -/
+  complianceNaming : Bool := false
   /-- Task T27: the project's own release version, e.g. `"1.2.0"` —
   manually set, not auto-detected. Empty (the default) means "not
   tracked," and `checkVersionTag` skips its check entirely rather than
@@ -112,10 +117,11 @@ def loadConfig (path : System.FilePath) : IO LeanDocConfig := do
       let complianceEnabled ← compliance.tryDecodeD `enabled false
       let complianceAuthor ← compliance.tryDecodeD `author ""
       let complianceLicense ← compliance.tryDecodeD `license ""
+      let complianceNaming ← compliance.tryDecodeD `naming false
       let projectVersion ← project.tryDecodeD `version ""
       pure { jsonDir, docsDir, includeModules, exclude, rendererName, rendererJekyll,
-             complianceEnabled, complianceAuthor, complianceLicense, projectVersion
-             : LeanDocConfig }
+             complianceEnabled, complianceAuthor, complianceLicense, complianceNaming,
+             projectVersion : LeanDocConfig }
     pure cfg
 
 /-- Maps a module name to its source file, assuming the plain Lean
@@ -236,6 +242,14 @@ structure DeclMeta where
   conclusion's head isn't itself a class (shouldn't happen for a
   well-formed instance, but not asserted). See `instanceClassOf`. -/
   instanceOf : Option String := none
+  /-- What this declaration *is*, for the naming-convention check (task
+  T41): `"type"` (its type's conclusion is a `Sort` other than `Prop`: a
+  structure, class, inductive type, or a function returning a type),
+  `"predicate"` (it returns a `Prop`: a `Prop`-valued definition, class
+  field or relation), `"proof"` (its type is itself a `Prop`: a theorem),
+  or `"data"` (anything else, including constructors and ordinary
+  functions). See `namingRoleOf`. -/
+  namingRole : Option String := none
 deriving ToJson, FromJson
 
 /-- Human-readable declaration kind. `structure` vs `inductive` isn't
@@ -277,6 +291,27 @@ def instanceClassOf (env : Environment) (declName : Name) (type : Expr) :
   else
     pure none
 
+/-- What a declaration with this type *is*, for the naming-convention
+check (task T41): `"proof"` if the type is itself a `Prop` (the
+declaration is a term of a `Prop`, e.g. a theorem), `"predicate"` if it
+telescopes down to `Prop` itself (a `Prop`-valued definition, class field
+or relation), `"type"` if it telescopes down to any other `Sort` (a
+structure, class, inductive type, or a function returning a type, which
+Mathlib names like its return value), and `"data"` otherwise. A proof is
+tested first: a theorem's type is a `Prop`, never a `Sort`.
+
+`Prop`-valued things are kept apart from types because Mathlib itself is
+not uniform there: a predicate is `UpperCamelCase` (`IsOpen`), but a
+relation field like `LE.le` is lowercase, and a check can't tell them
+apart. So the `"predicate"` role is only judged on underscores. -/
+def namingRoleOf (type : Expr) : CoreM String := do
+  (show MetaM String from do
+    if ← Meta.isProp type then
+      pure "proof"
+    else
+      Meta.forallTelescopeReducing type fun _ concl =>
+        pure (if concl.isProp then "predicate" else if concl.isSort then "type" else "data")).run'
+
 /-- Extracts one declaration's metadata. Runs in `CoreM` because
 `Lean.isAutoDeclOrPrivate_Internal` (the noise filter, see `isNoise`
 below) and type pretty-printing both need it. -/
@@ -288,8 +323,9 @@ def declMetaOf (env : Environment) (moduleName : Name) (c : AsyncConstantInfo) :
     { startLine := r.range.pos.line, startColumn := r.range.pos.column
       endLine := r.range.endPos.line, endColumn := r.range.endPos.column }
   let instanceOf ← instanceClassOf env c.name c.toConstantVal.type
+  let namingRole := some (← namingRoleOf c.toConstantVal.type)
   pure { module := moduleName.toString, name := c.name.toString
-         kind := kindString env c.name c.kind, type, docString, range, instanceOf }
+         kind := kindString env c.name c.kind, type, docString, range, instanceOf, namingRole }
 
 /-- Whether `c` is Lean-generated scaffolding (recursors, `noConfusion`,
 `injEq`, `_sizeOf_*`, equation lemmas, ...) rather than something a human
@@ -439,6 +475,78 @@ def checkComplianceHeader (config : LeanDocConfig) (file : System.FilePath) : IO
     let source ← IO.FS.readFile file
     unless hasCopyrightHeader source config.complianceAuthor config.complianceLicense do
       IO.eprintln s!"LeanDoc: warning: {file} is missing the expected copyright/license header (see [compliance] in leandoc.toml)."
+
+/-- Why `name` breaks Mathlib's naming convention for a declaration of
+this `role` (see `namingRoleOf`), or `none` if it doesn't (task T41).
+The rules, from Mathlib's naming guide
+(leanprover-community.github.io/contribute/naming.html): types and
+`Prop`-valued predicates are `UpperCamelCase` (see the `"predicate"`
+role below for how leniently that is applied); terms of a `Prop`
+(proofs, theorems) are `snake_case`, where a word that is itself named
+in `UpperCamelCase` appears in `lowerCamelCase`; functions and other
+data are `lowerCamelCase`, and a function is named like its return value
+(so one returning a type is `UpperCamelCase` — that is the `"type"` role).
+
+Only the last component of the name is judged: the namespace components
+name something else. Deliberately lenient, since it can't see why a
+name is the way it is: a trailing `'`/`?`/`!` is ignored, a name that
+starts with `_` or is quoted with `«»` is skipped, and only ASCII letters
+are judged for case (an acronym is written by Mathlib as a group, so
+`LE` inside a name is not flagged either; only a *segment* of a proof
+name that *begins* upper-case is). A heuristic, labelled as such where
+it's reported. -/
+def namingProblem (role name : String) : Option String :=
+  let last := (name.splitOn ".").getLastD name
+  if last.isEmpty || last.startsWith "_" || last.any (· == '«') then none else
+  let base := (last.dropEndWhile fun c => c == '\'' || c == '?' || c == '!').toString
+  let startsUpper (s : String) : Bool := (s.toList.head?.map Char.isUpper).getD false
+  let startsLower (s : String) : Bool := (s.toList.head?.map Char.isLower).getD false
+  let hasUnderscore := base.any (· == '_')
+  match role with
+  | "proof" =>
+    if (base.splitOn "_").any startsUpper then
+      some "a proof or theorem is named in snake_case (a word that is itself a type or definition appears in lowerCamelCase there)"
+    else none
+  | "type" =>
+    if hasUnderscore || startsLower base then
+      some "a type, structure or class is named in UpperCamelCase"
+    else none
+  | "predicate" =>
+    -- Mathlib mixes `IsOpen` and `le`, so only an underscore is a clear miss.
+    if hasUnderscore then
+      some "a Prop-valued definition is named in camelCase, without underscores (UpperCamelCase for a predicate, lowerCamelCase for a relation)"
+    else none
+  | "data" =>
+    if hasUnderscore || startsUpper base then
+      some "a function or other data is named in lowerCamelCase"
+    else none
+  | _ => none
+
+/-- The documented declarations whose names break the convention for
+what they are (task T41), each with the reason. Instances are skipped
+(their names are generated). -/
+def namingViolations (metas : Array DeclMeta) : Array (DeclMeta × String) :=
+  metas.filterMap fun d =>
+    if d.instanceOf.isSome then none else
+    match d.namingRole with
+    | some role => (namingProblem role d.name).map (d, ·)
+    | none => none
+
+/-- Warns, never fails, about declarations whose names break Mathlib's
+naming convention (task T41). A no-op unless `[compliance] naming = true`.
+Prints at most `limit` of them, then how many more there were, so a large
+project doesn't drown the rest of the output. -/
+def checkNamingConventions (config : LeanDocConfig) (metas : Array DeclMeta)
+    (limit : Nat := 25) : IO Unit := do
+  if config.complianceNaming then
+    let bad := namingViolations metas
+    unless bad.isEmpty do
+      IO.eprintln s!"LeanDoc: warning: {bad.size} declaration name(s) break Mathlib's naming convention \
+        for their kind (convention only, a heuristic; see [compliance] naming in leandoc.toml):"
+      for (d, why) in bad.toList.take limit do
+        IO.eprintln s!"  `{d.name}` ({d.module}): {why}."
+      if bad.size > limit then
+        IO.eprintln s!"  … and {bad.size - limit} more."
 
 /-- Strips a single leading `v`/`V` (e.g. `"v1.2.0"` → `"1.2.0"`), so a
 git tag written either way compares equal to a plain `[project]
