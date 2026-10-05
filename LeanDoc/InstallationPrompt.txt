@@ -176,6 +176,13 @@ updates as the interface stabilizes.
      package name and repo URL are fixed now that `lakefile.toml`
      exists, but no release has been cut yet, so `rev` still has to be
      a branch/commit rather than a tag today.)
+   - Compare the project's `lean-toolchain` with LeanDoc's own
+     (`.lake/packages/LeanDoc/LeanDoc/lean-toolchain` once fetched).
+     They may differ, and LeanDoc is built with the project's toolchain
+     (a project on `v4.33.1` built LeanDoc's library fine against
+     LeanDoc's `v4.34.0` pin in a trial; a larger gap is untested). Tell
+     the user if they differ, and say a build error in LeanDoc itself is
+     most likely a toolchain mismatch.
    - Run `lake update` to fetch it.
 
 4. Ensure the `docs_dir` from step 2c exists at the repo root

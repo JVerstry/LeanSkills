@@ -73,6 +73,11 @@ If the user wants the trial:
   * LeanDoc's step 7 (the first generation) builds the whole project. Ask whether
     to run it in the clone or skip it, and recommend skipping it for a large
     project, since a build can take very long and take a lot of disk space.
+  * `lake update` (LeanDoc's step 3) in a clone that has no .lake folder also
+    downloads every other dependency, Mathlib included (several GB of git
+    history), and can fail or take very long. Tell the user, and offer to
+    copy the real project's `.lake/packages` folder into the clone first, to
+    skip that step and show only the lakefile change, or to go ahead and wait.
   * Do not commit or push anything in the clone either, unless the user asks.
 - At the end (step 6), show what the install changed in the clone (`git status`
   and `git diff` there), then ask what to do next: apply the same install to the
