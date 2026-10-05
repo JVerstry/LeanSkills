@@ -1,4 +1,4 @@
-name: Vendored stylesheet drift check
+name: LeanDoc vendored stylesheet drift check
 
 # Task T40: assets/style.css is vendored, unmodified, from doc-gen4
 # (task T29) - this doesn't run on every push/PR like ci.yml, since
@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compare assets/style.css against doc-gen4's upstream
+      - name: Compare LeanDoc/assets/style.css against doc-gen4's upstream
         run: |
           curl -s https://raw.githubusercontent.com/leanprover/doc-gen4/main/static/style.css -o /tmp/upstream-style.css
 
@@ -24,10 +24,10 @@ jobs:
           # before the first @import line) rather than a hardcoded
           # line count, so this stays correct if that comment is ever
           # edited.
-          awk '/^@import/{found=1} found' assets/style.css > /tmp/vendored-style.css
+          awk '/^@import/{found=1} found' LeanDoc/assets/style.css > /tmp/vendored-style.css
 
           if ! diff -q /tmp/vendored-style.css /tmp/upstream-style.css > /dev/null; then
-            echo "::error::assets/style.css has drifted from doc-gen4's upstream style.css."
+            echo "::error::LeanDoc/assets/style.css has drifted from doc-gen4's upstream style.css."
             echo "Review the diff below and decide whether to update the vendored copy (mark the change per Apache-2.0 if any local modifications are kept alongside the update)."
             diff /tmp/vendored-style.css /tmp/upstream-style.css || true
             exit 1

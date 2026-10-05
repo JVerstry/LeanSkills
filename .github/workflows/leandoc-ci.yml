@@ -1,10 +1,16 @@
-name: CI
+name: LeanDoc CI
 
 on:
   push:
     branches: [main]
+    paths: ['LeanDoc/**', '.github/workflows/leandoc-ci.yml']
   pull_request:
     branches: [main]
+    paths: ['LeanDoc/**', '.github/workflows/leandoc-ci.yml']
+
+defaults:
+  run:
+    working-directory: LeanDoc
 
 jobs:
   build:
@@ -21,9 +27,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            .lake
-            demo/.lake
-          key: lake-${{ runner.os }}-${{ hashFiles('lean-toolchain', 'lakefile.toml', 'lake-manifest.json', 'demo/lean-toolchain', 'demo/lakefile.toml', 'demo/lake-manifest.json') }}
+            LeanDoc/.lake
+            LeanDoc/demo/.lake
+          key: lake-${{ runner.os }}-${{ hashFiles('LeanDoc/lean-toolchain', 'LeanDoc/lakefile.toml', 'LeanDoc/lake-manifest.json', 'LeanDoc/demo/lean-toolchain', 'LeanDoc/demo/lakefile.toml', 'LeanDoc/demo/lake-manifest.json') }}
 
       - name: lake build
         run: lake build
