@@ -6,20 +6,20 @@ the *result*, not to trust it blindly just because the tool ran without
 error — LeanDoc can produce output that's technically valid and still
 low-quality, stale, or misconfigured.
 
-This is a **manual audit, inherently a stopgap** — a real CI-enforced
-freshness gate is what `InstallationPrompt.txt`'s optional CI/pre-commit
-templates are for (task T20/T34); this prompt is for a one-off or
-periodic check, not a substitute for that. Never hand-edit generated
-output to "fix" a finding — point at the Lean source, `leandoc.toml`,
-or (if it looks like a genuine LeanDoc bug) LeanDoc's own issue tracker
-instead.
+This is a **manual audit** — a real CI-enforced freshness gate is what
+`InstallationPrompt.txt`'s optional CI/pre-commit templates are for;
+this prompt is for a one-off or periodic check, not a substitute for
+that. Never hand-edit generated output to "fix" a finding — point at the
+Lean source, `leandoc.toml`, or (if it looks like a genuine LeanDoc bug)
+LeanDoc's own issue tracker (github.com/JVerstry/LeanDoc) instead.
 
-STATUS NOTE (remove once LeanDoc has a first tagged release): several
-checks below reference behavior that's real and tested as of this
-writing (2026-09-23) but from an interface that isn't frozen yet — if a
-check below doesn't match what you actually find, say so plainly and
+STATUS NOTE (remove once LeanDoc has a first tagged release): the checks
+below match LeanDoc as of 2026-10-05, but its interface isn't frozen
+yet. If a check doesn't match what you actually find, say so plainly and
 adapt rather than forcing the project's output to match a stale
-description.
+description. LeanDoc's usage manual (docs/manual.md in its repository,
+and in the project's `.lake/packages/LeanDoc/` once it's a dependency)
+describes each feature mentioned below.
 
 1. Confirm there's something to audit
    - Find `leandoc.toml` (or confirm its defaults apply) and the
@@ -30,31 +30,39 @@ description.
 2. Read `leandoc.toml`'s configuration before judging anything against
    it — don't assume defaults, and don't assume every flag exists
    - `[modules] exclude` — don't flag an excluded module's absence as
-     a coverage gap; it was deliberately left out.
-   - `[renderer] jekyll` — determines which checks in step 8 apply.
-   - `[compliance]` (task T41) — if `enabled = true`, treat its
-     `author`/`license` as the standard to check file headers against
-     in step 4 (LeanDoc's own `checkComplianceHeader` already warns on
-     this when the project's `lake exe leandoc` runs — cross-check
-     that those warnings were actually addressed, not just emitted and
-     ignored). **If `leandoc.toml` doesn't exist, or has no
+     a coverage gap; it was deliberately left out. Likewise, a
+     declaration tagged `@[leandoc_ignore]` in the Lean source is
+     absent from the docs on purpose.
+   - `[renderer] jekyll` — determines which checks in section 8 apply.
+   - `[compliance]` — if `enabled = true`, treat its `author`/`license`
+     as the standard to check file headers against in section 4
+     (LeanDoc already warns on this when `lake exe leandoc` runs —
+     cross-check that those warnings were actually addressed, not just
+     emitted and ignored). **If `leandoc.toml` doesn't exist, or has no
      `[compliance]` section:** don't silently assume either "fully
-     compliant" or "no compliance checks wanted" — propose sensible
+     compliant" or "no compliance checking wanted" — propose sensible
      default values to the user (e.g. off, matching LeanDoc's own
      default) and ask whether they want compliance checking as part of
      this audit before proceeding with that section.
-   - Naming-conventions and docstring-"plain English quality" flags
-     are designed but **not built yet** (`wip/todo.md` tasks T41/T42)
-     — don't check for them, and don't tell the user they exist.
+   - LeanDoc does **not** itself check naming conventions or whether a
+     docstring is well written — only that one exists. Don't look for a
+     LeanDoc flag for either; judging docstring quality is your job in
+     section 4.
 
 3. Freshness
-   - Regenerate (`lake exe leandoc`, plus `lake exe leandoc <path>` for
-     any other configured projects) and diff against what's committed,
-     the same way the optional CI/pre-commit templates do — check
-     `docs_dir/reference`, `docs_dir/toc.md`, and `docs_dir/index.md`
+   - Regenerate (`lake exe leandoc`; it first builds the project's
+     modules with Lake, so the project must compile — if that fails,
+     report the build error, not a docs problem; plus `lake exe leandoc
+     <path>` for any other configured projects) and diff against what's
+     committed, the same way the optional CI/pre-commit templates do.
+     Check `docs_dir/reference`, `docs_dir/toc.md`, `docs_dir/assets/
+     search-index.json` (Jekyll output only), and `docs_dir/index.md`
      (only the `<!-- leandoc:nav:start -->`/`<!-- leandoc:nav:end -->`
      region of the latter should ever change; if more of it changed,
-     something wrote to it that shouldn't have).
+     something wrote to it that shouldn't have). A clean tree after
+     regenerating is the expected result: generated source links point
+     at `blob/HEAD`, not at a commit, precisely so that they don't
+     change with every commit.
    - Also applies *within* a docstring: if it shows a code example,
      does that example still reflect the current API, or has the
      signature moved on without the example being updated? This needs
@@ -68,75 +76,115 @@ description.
      mathematical meaning of the definition... allowed to lie slightly
      about the actual implementation"
      (leanprover-community.github.io/contribute/doc.html). Report
-     specific gaps (declaration + module), not just a count.
-   - If `[compliance]` is enabled (step 2), also check the file-header
-     requirement was actually satisfied, not just that LeanDoc's own
-     warning was seen and ignored.
+     specific gaps (declaration + module), not just a count. An
+     undocumented declaration renders as `*(not documented)*` on its
+     page, so these are easy to find.
+   - If `[compliance]` is enabled (section 2), also check the
+     file-header requirement was actually satisfied, not just that
+     LeanDoc's own warning was seen and ignored.
    - If the project depends on Batteries or Mathlib, its own `#lint`
      command (`docBlame`/`docBlameThm` — Batteries; `tacticDocs` —
-     Mathlib only) is a real, complementary presence-only check worth
+     Mathlib only) is a complementary presence-only check worth
      recommending the user also run — LeanDoc's renderer already
-     performs the equivalent check itself (an undocumented declaration
-     renders as `*(not documented)*`, plainly visible on its page), so
-     this is a second opinion, not something this audit needs to
-     reimplement.
+     performs the equivalent check itself, so this is a second
+     opinion, not something this audit needs to reimplement. Note the
+     difference: `@[nolint docBlame]` only silences that *lint*; it
+     does not hide a declaration from LeanDoc's docs. Only
+     `@[leandoc_ignore]` does that.
 
 5. Generated-declaration noise
    - Spot-check that Lean's own scaffolding (`.rec`, `.casesOn`,
      `.noConfusion`, equation lemmas, `_sizeOf_*`, ...) isn't leaking
-     into rendered pages — a real LeanDoc bug if found, not a nitpick
-     (see `wip/todo.md` task T7). Also worth checking, since it was
-     found but not yet fixed as of this writing (task T42): instances,
-     Prop-projection `def`s, and `parenthesizer`/`formatter`/
-     `delaborator`-suffixed auxiliary declarations currently *do* still
-     show up (LeanDoc's noise filter doesn't exempt them the way
-     Batteries' own linters do) — don't report these as a *bug* unless
-     `wip/todo.md` task T41's exemption-logic improvement has since
-     landed; check its status before flagging this as new.
+     into rendered pages — a real LeanDoc bug if found, not a nitpick.
+     The same goes for `parenthesizer`/`formatter`/`delaborator`/`quot`
+     auxiliary declarations, which LeanDoc also filters out. It also
+     drops the field accessors of a `Prop`-valued structure when Lean
+     elaborates them as definitions; when Lean elaborates one as a
+     theorem it stays, and that's expected, not a leak.
+   - **Instances are shown on purpose** (an `instance` is part of a
+     project's interface, and a lint exemption isn't a reason to hide
+     it). Don't report a visible instance as noise.
 
 6. Structure and navigation
    - `docs_dir/index.md` should exist and link to `reference/modules.md`
-     and `toc.md` (task T18 — check the nav block, not just that the
-     files individually exist).
+     and `toc.md` — check the nav block, not just that the files
+     individually exist.
    - `docs_dir/reference/` holds one page per module plus
-     `modules.md`; `docs_dir/toc.md` groups every documented
-     declaration by kind (Definitions / Theorems & Axioms /
-     Structures & Inductives / Other). If a project has enough
-     declarations that a flat list stops being navigable, `toc.md` is
-     what should be serving as the basic index — confirm it's
-     reasonably organized, not just present.
+     `modules.md` (a nested, collapsible tree by namespace in Jekyll
+     output, a flat list otherwise). A module's page opens with an
+     "Imported by" line when another documented module imports it.
+     `docs_dir/toc.md` groups every documented declaration by kind
+     (Definitions / Theorems & Axioms / Structures & Inductives /
+     Other). If a project has enough declarations that a flat list
+     stops being navigable, `toc.md` and the search box are what
+     should be serving as the index — confirm they're reasonably
+     organised, not just present.
+   - A class's page should list its registered instances under
+     "Instances", and each declaration should have a `[source]` link
+     (to `https://github.com/<owner>/<repo>/blob/HEAD/...`) when the
+     project has a GitHub `origin` remote. No link is expected for a
+     non-GitHub or non-git project — that's not a defect.
+   - Jekyll output only: `docs_dir/assets/search-index.json` should be
+     valid JSON with one entry per documented declaration (spot-check a
+     few against the pages), and `docs_dir/find.html` and
+     `docs_dir/404.html` should exist.
    - Confirm the generated declaration reference isn't presented as if
-     it were a curated public API — it isn't (task T25): it's every
-     included declaration, minus noise filtering. If a project's guide
-     content implies otherwise, that's worth flagging.
+     it were a curated public API — it isn't: it's every included
+     declaration, minus noise filtering. If a project's guide content
+     implies otherwise, that's worth flagging.
 
 7. Narrative vs. raw reference dump
    - Does the site have *any* conceptual/connective content (a
-     hand-written `index.md` intro, a `manual.md`-equivalent, a guide
-     page), or is it 100% auto-generated declaration listing with
-     nothing explaining how the pieces fit together? Does the landing
-     page actively route a first-time reader toward guide content
-     before they hit a wall of possibly-undocumented declarations?
+     hand-written `index.md` intro, a guide page), or is it 100%
+     auto-generated declaration listing with nothing explaining how the
+     pieces fit together? Does the landing page actively route a
+     first-time reader toward guide content before they hit a wall of
+     possibly-undocumented declarations? If not, point the user at
+     "Adding your own pages" in LeanDoc's manual and the starter
+     template `templates/page.md` in LeanDoc's repository (also at
+     `.lake/packages/LeanDoc/templates/page.md` in the project).
+   - Hand-written pages must live outside `docs_dir/reference/` (which
+     is deleted and regenerated on every run) — flag any that don't.
 
 8. GitHub Pages / Jekyll compatibility (only if `[renderer] jekyll =
    true`, the default — skip this section entirely if `false`)
    - Every generated page's front matter must include `layout:
-     default` (task T29) — front matter alone isn't enough for Jekyll
-     to actually apply LeanDoc's stylesheet to a page; confirmed
-     against Jekyll's own documented behavior, not assumed. Spot-check
-     a few generated pages, not just one.
-   - `docs_dir/assets/style.css` and `docs_dir/_layouts/default.html`
-     should exist (LeanDoc writes both once, task T29 — vendored from
-     doc-gen4, matching what Mathlib/cslib actually look like). If the
-     project intentionally customized either after the first
-     generation, don't flag the customization itself as a problem —
-     confirm it's still valid CSS/a valid Jekyll layout, nothing more.
-   - Internal links use Jekyll's `{% link %}` tag, which is supposed
-     to fail the *actual* Jekyll build if a target doesn't exist —
-     this audit can't run a real Jekyll build to verify that (no local
-     Jekyll toolchain is assumed to be available), so treat this as an
-     honest gap: recommend the user confirm via an actual GitHub Pages
-     deploy if this matters to them, don't claim to have verified it.
+     default` — front matter alone isn't enough for Jekyll to apply
+     LeanDoc's stylesheet to a page. Spot-check a few generated pages,
+     not just one. Hand-written pages need the same front matter.
+   - `docs_dir/_layouts/default.html`, `docs_dir/assets/style.css` and
+     the scripts `color-scheme.js`, `search.js` and `mathjax-config.js`
+     under `docs_dir/assets/` should exist. LeanDoc writes each of
+     these once and never overwrites them, so a project may have
+     customised any of them — don't flag a customisation itself, only
+     confirm it's still valid CSS/JS/a valid Jekyll layout.
+   - **Old layout check.** Because those files are written only once,
+     a project that adopted LeanDoc early may keep a `_layouts/
+     default.html` that predates features added later. Check that the
+     layout still references `/assets/color-scheme.js`,
+     `/assets/search.js` and `/assets/mathjax-config.js`, and has the
+     `#search` box. If it doesn't, report it as a project-side gap: the
+     site is missing the search box, the light/dark switcher and/or
+     LaTeX rendering. The remedy is manual: compare the project's
+     layout with LeanDoc's current one (`assets/layouts/default.html`
+     in LeanDoc's repository, or under `.lake/packages/LeanDoc/`) and
+     merge the missing lines in — don't overwrite the file blindly,
+     since the project may have customised it.
+   - **Link check.** Jekyll's `link` tag fails the *whole site build*
+     if its target doesn't exist, and this audit can't run Jekyll. But
+     you can apply the same rule yourself: for every `link` tag in the
+     generated pages, `index.md` and any hand-written pages, confirm
+     the path it names exists under `docs_dir`. Report each miss with
+     its page — each one would break the site.
+   - Text copied from Lean source (docstrings, names, types) has any
+     `{{`/`{%` escaped, so it can't be run as a template. If you find
+     a page where such text appears unescaped, or a docstring's
+     `{{ ... }}` was evaluated into something else, that's a LeanDoc
+     bug.
+   - You still can't verify an actual Jekyll/GitHub Pages build
+     (no local Jekyll toolchain is assumed): recommend the user confirm
+     via a real GitHub Pages deploy if this matters to them, and don't
+     claim to have verified it.
    - Do relative links still work when served from `/docs` on `main`
      (GitHub Pages' typical setup)? Spot-check, don't assume.
 
@@ -146,21 +194,22 @@ description.
      unusual docstring content (embedded code blocks, special
      characters in declaration names).
 
-10. Known, currently-unrendered gaps — note these rather than treat
-    them as failures, since there's nothing in current output to check
-    against yet:
-    - **Source links**: `DeclMeta.range` (task T7) captures each
-      declaration's source location, but nothing in the renderer
-      surfaces it as a link back to source today. Not a bug to report
-      here — a known, tracked limitation.
-    - **Version stamping**: generated output doesn't record which Lean
-      toolchain it was built against. Same treatment.
+10. By design, not defects — mention these only if the user asks:
+    - Generated output doesn't record which LeanDoc version or Lean
+      toolchain it was built with: no version stamp is shown to
+      readers. LeanDoc only warns the developer at generation time if
+      `[project] version` in `leandoc.toml` doesn't match the latest
+      git tag.
+    - Source links follow the repository's default branch, not a
+      specific commit, so a link can drift if the published docs lag
+      behind the code. Keeping the docs fresh (section 3) prevents it.
 
 11. Report findings by category (using the numbered sections above),
     most actionable first. Distinguish clearly between:
     - A LeanDoc bug (noise leaking through, a broken link LeanDoc
-      itself generated)
+      itself generated, unescaped template syntax)
     - A project-side gap (missing docstrings, no guide content, a
-      missing compliance header)
-    - A known, already-tracked limitation (section 10) — mention for
-      completeness, don't present as new
+      missing compliance header, an old layout, a hand-written page
+      with a broken link)
+    - A by-design behaviour (section 10) — mention for completeness,
+      don't present as a defect

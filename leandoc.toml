@@ -1,7 +1,6 @@
 
-# LeanDoc documenting itself (task T13 — dogfooding). See
-# demo/leandoc.toml for the schema reference, and InstallationPrompt.txt
-# / wip/todo.md task T8 for the rationale.
+# LeanDoc documenting itself (dogfooding). See demo/leandoc.toml for the
+# schema reference, and InstallationPrompt.txt for the rationale.
 
 [output]
 json_dir = ".leandoc/"
@@ -12,7 +11,7 @@ docs_dir = "docs/"
 # `Test` (task T24's test/Test.lean, srcDir = "test") is excluded for
 # two reasons: it's internal tooling, not public API worth documenting
 # either way, and T21's whole-package scanning doesn't understand
-# per-target `srcDir` yet (a real, known limitation — see wip/todo.md).
+# per-target `srcDir` yet (a real, known limitation).
 # `LeanDoc.Assets` (task T29) is generated plumbing (embedded static
 # asset content) — internal, not public API, same reasoning as `Test`.
 exclude = ["Test", "LeanDoc.Assets"]

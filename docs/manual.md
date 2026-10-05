@@ -162,14 +162,14 @@ near the top of the file (first ~1000 characters), not a strict parse
 of Mathlib's exact header grammar
 (`/- Copyright (c) YEAR Name. ... Authors: ... -/`).
 
-**Not built yet**, even though they're part of the same planned
-feature area (`wip/todo.md` tasks T41/T42) — don't assume either
-exists: a naming-conventions check (Mathlib's `snake_case`/
-`UpperCamelCase` scheme) and a docstring-quality check (does a
-docstring read as plain-language explanation, not just a restated type
-signature). Both are pending an investigation into whether Mathlib's
-own linters (`docBlame`, `docBlameThm`, `tacticDocs`) can be reused
-rather than reimplemented from scratch.
+**Not built yet** — don't assume either exists: a naming-conventions
+check (Mathlib's `snake_case`/`UpperCamelCase` scheme) and a
+docstring-quality check (does a docstring read as plain-language
+explanation, not just a restated type signature). Neither can borrow
+from Mathlib's or Batteries' linters: there is no naming-convention
+linter in either, and `docBlame`/`docBlameThm` only check that a
+docstring *exists*, never what it says. So both would be written from
+scratch.
 
 LeanDoc can be used either way: to generate documentation that
 conforms to Mathlib's conventions (`[compliance] enabled = true`,
@@ -511,6 +511,5 @@ T35).
 You work on LeanDoc's own source, not a project that merely depends on
 it. See `README.md`'s "Users vs. developers of LeanDoc" section for the
 full breakdown of what that involves (`test/`, `.githooks/pre-commit`,
-`lake exe leandoc-test`) — not repeated here to avoid maintaining the
-same content in two places (see `wip/todo.md` task T30 for why a
-duplicate page was judged not worth it before).
+`lake exe leandoc-test`) — not repeated here, to avoid maintaining the
+same content in two places.

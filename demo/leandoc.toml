@@ -1,7 +1,7 @@
 
 # LeanDoc configuration for this project. See LeanDoc's own
-# InstallationPrompt.txt / wip/todo.md (task T8) for the schema
-# rationale. All fields shown here are also the defaults.
+# InstallationPrompt.txt for the schema rationale. All fields shown here
+# are also the defaults.
 #
 # `[modules] include` is deliberately left empty here (task T21): with
 # no explicit list, LeanDoc scans this project's own lakefile.toml
