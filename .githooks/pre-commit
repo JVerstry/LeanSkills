@@ -15,6 +15,17 @@
 # is never committed — this is the standard way to ship a hook via a
 # tracked file instead).
 
+# Works wherever LeanDoc sits: as a repository of its own, or as a
+# subfolder of a larger one (then enable it with
+#   git config core.hooksPath <that folder>/.githooks
+# from the repository root). It always runs from LeanDoc's own folder,
+# and in a larger repository only when the commit touches that folder.
+
 set -e
+cd "$(dirname "$0")/.."
+if [ -n "$(git rev-parse --show-prefix)" ] && git diff --cached --quiet -- .; then
+  echo "LeanDoc pre-commit: no staged changes in $(git rev-parse --show-prefix), skipping the test suite."
+  exit 0
+fi
 echo "LeanDoc pre-commit: running test suite (lake exe leandoc-test)..."
 lake exe leandoc-test

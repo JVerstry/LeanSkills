@@ -1,4 +1,4 @@
-LeanDoc audit version: 2
+LeanDoc audit version: 3
 
 You are an AI coding assistant auditing documentation that LeanDoc has
 already generated for a Lean/Lake project. The user has handed you this
@@ -13,14 +13,14 @@ This is a **manual audit** — a real CI-enforced freshness gate is what
 this prompt is for a one-off or periodic check, not a substitute for
 that. Never hand-edit generated output to "fix" a finding — point at the
 Lean source, `leandoc.toml`, or (if it looks like a genuine LeanDoc bug)
-LeanDoc's own issue tracker (github.com/JVerstry/LeanDoc) instead.
+LeanDoc's own issue tracker (github.com/JVerstry/LeanSkills) instead.
 
 STATUS NOTE (remove once LeanDoc has a first tagged release): the checks
 below match LeanDoc as of 2026-10-05, but its interface isn't frozen
 yet. If a check doesn't match what you actually find, say so plainly and
 adapt rather than forcing the project's output to match a stale
 description. LeanDoc's usage manual (docs/manual.md in its repository,
-and in the project's `.lake/packages/LeanDoc/` once it's a dependency)
+and in the project's `.lake/packages/LeanDoc/LeanDoc/` once it's a dependency)
 describes each feature mentioned below.
 
 RUN MODES. Unless told otherwise this is a **full run**: everything
@@ -246,7 +246,7 @@ later run must get the same key.
      possibly-undocumented declarations? If not, point the user at
      "Adding your own pages" in LeanDoc's manual and the starter
      template `templates/page.md` in LeanDoc's repository (also at
-     `.lake/packages/LeanDoc/templates/page.md` in the project).
+     `.lake/packages/LeanDoc/LeanDoc/templates/page.md` in the project).
    - Hand-written pages must live outside `docs_dir/reference/` (which
      is deleted and regenerated on every run) — flag any that don't.
 
@@ -275,7 +275,7 @@ later run must get the same key.
      gap: the site may be missing the search box, the light/dark
      switcher and/or LaTeX rendering. The remedy is manual: compare the project's
      layout with LeanDoc's current one (`assets/layouts/default.html`
-     in LeanDoc's repository, or under `.lake/packages/LeanDoc/`) and
+     in LeanDoc's repository, or under `.lake/packages/LeanDoc/LeanDoc/`) and
      merge the missing lines in — don't overwrite the file blindly,
      since the project may have customised it.
    - **Link check.** Jekyll's `link` tag fails the *whole site build*

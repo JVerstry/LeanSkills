@@ -6,7 +6,7 @@ layout: default
 
 How to actually use LeanDoc, day to day. For the short pitch and
 architecture summary, see
-[`README.md`](https://github.com/JVerstry/LeanDoc/blob/main/README.md);
+[`README.md`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/README.md);
 for the extractor/renderer pipeline write-up, see
 [`index.md`]({% link index.md %}). This page is usage documentation —
 what to configure and why, not how LeanDoc is built internally.
@@ -19,7 +19,7 @@ You depend on LeanDoc to document *your own* project.
 
 LeanDoc has no packaged installer yet (no tagged release — see the
 STATUS NOTE at the top of `InstallationPrompt.txt`). Hand
-[`InstallationPrompt.txt`](https://github.com/JVerstry/LeanDoc/blob/main/InstallationPrompt.txt)
+[`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/InstallationPrompt.txt)
 to your own AI coding assistant; it walks through adding the
 dependency, reviewing configuration choices with you, and running the
 first generation.
@@ -53,7 +53,7 @@ exclude the failing modules via `[modules] exclude` in `leandoc.toml`.
 `lake exe leandoc` running without error doesn't mean the result is
 actually good documentation — it can be technically valid and still
 stale, low-quality, or misconfigured. Hand
-[`QualityAuditPrompt.txt`](https://github.com/JVerstry/LeanDoc/blob/main/QualityAuditPrompt.txt)
+[`QualityAuditPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/QualityAuditPrompt.txt)
 to your AI coding assistant after generating docs to
 sanity-check the result: freshness, docstring coverage and quality,
 generated-noise leaks, navigation/structure, Jekyll/GitHub Pages
@@ -360,7 +360,7 @@ LeanDoc will not overwrite the file, because you may have customised
 it. The fix is a manual merge:
 
 1. Open LeanDoc's current layout, `assets/layouts/default.html`, in
-   LeanDoc's repository, or under `.lake/packages/LeanDoc/` in your
+   LeanDoc's repository, or under `.lake/packages/LeanDoc/LeanDoc/` in your
    project.
 2. Compare it with `docs_dir/_layouts/default.html` and copy across what
    yours is missing (the extra `script` lines and the search box),
@@ -551,11 +551,11 @@ already downloaded it:
 
 ```sh
 mkdir -p docs/guides
-cp .lake/packages/LeanDoc/templates/page.md docs/guides/getting-started.md
+cp .lake/packages/LeanDoc/LeanDoc/templates/page.md docs/guides/getting-started.md
 ```
 
 (It's also on
-[GitHub](https://github.com/JVerstry/LeanDoc/blob/main/templates/page.md).)
+[GitHub](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/templates/page.md).)
 Then change its `title` and rewrite its content. Keep the front matter
 block at the top, and keep `layout: default` in it. Without front
 matter, Jekyll serves the file as raw, unstyled Markdown.
@@ -635,10 +635,10 @@ visible in your history. Only the first line of the message counts, and
 words that merely start with those letters ("Wipe the cache") don't.
 
 The script is `scripts/quality-check.sh` in LeanDoc, so under
-`.lake/packages/LeanDoc/` in your project. You can run it by hand:
+`.lake/packages/LeanDoc/LeanDoc/` in your project. You can run it by hand:
 
 ```sh
-sh .lake/packages/LeanDoc/scripts/quality-check.sh --docs-dir docs
+sh .lake/packages/LeanDoc/LeanDoc/scripts/quality-check.sh --docs-dir docs
 ```
 
 As a hook it needs the `commit-msg` stage, since that's the first moment
@@ -650,7 +650,7 @@ never set up automatically.
 Installing LeanDoc as a dependency brings its whole git repository
 along — including `demo/`, `test/`, and `.githooks/`, LeanDoc's own
 development fixtures and tooling. These end up physically present on
-disk under `.lake/packages/LeanDoc/` (unavoidable; Lake has no
+disk under `.lake/packages/LeanDoc/LeanDoc/` (unavoidable; Lake has no
 mechanism to exclude a subdirectory from a git dependency checkout),
 but none of it is ever built or run as part of your project — `lake
 build`/`lake exe leandoc` only build LeanDoc's own `leandoc`/

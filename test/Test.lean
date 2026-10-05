@@ -691,8 +691,12 @@ def sourceLinkChecks (c : Ctx) (s0 : TestState) : IO TestState := do
   -- Task T57: pinned to `blob/HEAD` (the default branch), never a
   -- commit hash — a hash made committed docs differ from what any later
   -- regeneration produces, so freshness checks could never pass.
+  -- Location-independent: LeanDoc may be a repository of its own or a
+  -- subfolder of a larger one (then the base URL ends in that folder).
   s ← s.check "githubSourceBaseUrl links the default branch (blob/HEAD), not a commit hash"
-    (realBaseUrl == some "https://github.com/JVerstry/LeanDoc/blob/HEAD")
+    (match realBaseUrl with
+     | some u => u.startsWith "https://github.com/" && (u.splitOn "/blob/HEAD").length > 1
+     | none => false)
 
   -- Regression: `demo/` is a *subdirectory* of LeanDoc's own repo, not
   -- a repo of its own — a real bug caught by generating demo/'s actual
@@ -702,7 +706,7 @@ def sourceLinkChecks (c : Ctx) (s0 : TestState) : IO TestState := do
   -- in the real repo.
   let demoBaseUrl ← githubSourceBaseUrl demoRoot
   s ← s.check "githubSourceBaseUrl includes demo/'s own path prefix, not just the repo root's"
-    (demoBaseUrl == some "https://github.com/JVerstry/LeanDoc/blob/HEAD/demo")
+    (demoBaseUrl == realBaseUrl.map (· ++ "/demo"))
 
   -- And against a genuinely separate scratch git repo with no `origin`
   -- configured — deliberately *not* a plain non-git subdirectory:
@@ -1026,8 +1030,8 @@ def hygieneChecks (s0 : TestState) : IO TestState := do
     s ← s.check "skill/SKILL.md saves scheduled reports under .leandoc-audit/"
       ((skill.splitOn ".leandoc-audit/").length > 1)
     s ← s.check "skill/SKILL.md fetches from LeanDoc's own repository"
-      ((skill.splitOn "raw.githubusercontent.com/JVerstry/LeanDoc/main/QualityAuditPrompt.txt").length > 1 &&
-       (skill.splitOn "raw.githubusercontent.com/JVerstry/LeanDoc/main/skill/SKILL.md").length > 1)
+      ((skill.splitOn "raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/QualityAuditPrompt.txt").length > 1 &&
+       (skill.splitOn "raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/skill/SKILL.md").length > 1)
   let audit ← IO.FS.readFile "QualityAuditPrompt.txt"
   let auditFirst := (audit.splitOn "\n").headD ""
   s ← s.check "QualityAuditPrompt.txt starts with 'LeanDoc audit version: <number>'"

@@ -23,7 +23,7 @@ trigger a surprising amount of rebuilding even when no code actually
 changed. On a large project that isn't organized to limit this, build
 times can suffer badly — including, potentially, from routine LeanDoc
 usage. If you run into this, consider auditing your project with
-[LeanPerformance](https://github.com/JVerstry/LeanPerformance), which
+[LeanPerformance](https://github.com/JVerstry/LeanSkills/tree/main/LeanPerformance), which
 will suggest ways to address it.
 
 ## The short version
@@ -74,7 +74,7 @@ which one a given piece of documentation or setup step is for:
   `lake exe test` for their own unrelated test runner would silently
   invoke LeanDoc's instead, crashing confusingly),
   `.githooks/pre-commit`, which runs that suite before every commit —
-  opt in once with `git config core.hooksPath .githooks` (not
+  opt in once with `git config core.hooksPath .githooks` (from LeanSkills' root: `LeanDoc/.githooks`) (not
   automatic; `.git/hooks/` itself is never committed, so shipping a
   hook via a tracked file and asking developers to point Git at it is
   the standard way to distribute one at all) — and `demo/`, a
@@ -87,7 +87,7 @@ which one a given piece of documentation or setup step is for:
   in exchange for catching a regression locally instead of only in CI
   after a push.
   - `demo/`, `test/`, and `.githooks/` do still end up physically on
-    disk in an installing user's `.lake/packages/LeanDoc/` — confirmed
+    disk in an installing user's `.lake/packages/LeanDoc/LeanDoc/` — confirmed
     empirically (task T35, 2026-09-22, testing a real `git`-based
     `require` against a local clone): Lake fetches the *whole* LeanDoc
     repo via `git clone`, and there's no Lake mechanism to exclude a

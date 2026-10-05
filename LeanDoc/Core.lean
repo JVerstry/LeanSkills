@@ -1257,7 +1257,7 @@ def layoutWarning (layoutPath : String) (projectLayout shippedLayout : String) :
   some s!"{layoutPath} is older than the layout this version of LeanDoc ships \
     ({found}, current is version {shipped}).{lacks} LeanDoc never overwrites it, \
     since you may have customised it: compare it with `assets/layouts/default.html` \
-    in LeanDoc (under `.lake/packages/LeanDoc/` in your project) and merge the \
+    in LeanDoc (under `.lake/packages/LeanDoc/LeanDoc/` in your project) and merge the \
     differences in, keeping its `leandoc-layout-version` line — see \"Upgrading\" \
     in the manual."
 

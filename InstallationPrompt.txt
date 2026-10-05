@@ -118,8 +118,14 @@ updates as the interface stabilizes.
 
        [[require]]
        name = "LeanDoc"
-       git = "https://github.com/JVerstry/LeanDoc"
+       git = "https://github.com/JVerstry/LeanSkills"
+       subDir = "LeanDoc"
        rev = "<step 2a value>"
+
+     (`subDir` matters: LeanDoc lives in the `LeanDoc` folder of the
+     LeanSkills repository, which Lake clones whole into
+     `.lake/packages/LeanDoc/`, so LeanDoc's own files end up in
+     `.lake/packages/LeanDoc/LeanDoc/`.)
 
      (TODO: confirm this once LeanDoc has a tagged release — the
      package name and repo URL are fixed now that `lakefile.toml`
@@ -175,7 +181,7 @@ updates as the interface stabilizes.
    - If the user wants to add pages of their own (a guide, a tutorial,
      a changelog), point them at "Adding your own pages" in LeanDoc's
      manual (`docs/manual.md` in LeanDoc's repository, also at
-     `.lake/packages/LeanDoc/docs/manual.md` after step 3) and the
+     `.lake/packages/LeanDoc/LeanDoc/docs/manual.md` after step 3) and the
      starter page `templates/page.md` there. Such pages go anywhere in
      `docs_dir` except `reference/`, which LeanDoc deletes and
      regenerates on every run.
@@ -296,17 +302,18 @@ updates as the interface stabilizes.
      exactly one word: `local` or `remote`, as the user chose. Then
      copy these two files into it, exactly as they are (do not edit,
      summarize or reformat them), from the LeanDoc dependency that step
-     3 just fetched — `.lake/packages/LeanDoc/`, or the `packagesDir`
+     3 just fetched — `.lake/packages/LeanDoc/LeanDoc/`, or the `packagesDir`
      that `lake-manifest.json` names instead (for a path dependency,
-     the directory named by the LeanDoc entry's `dir` field):
+     the directory named by the LeanDoc entry's `dir` field; for a git
+     dependency, the entry's `subDir` below the package folder):
      - `skill/SKILL.md`, saved as `SKILL.md`
      - `QualityAuditPrompt.txt`, saved as `audit.txt`
      This works offline and matches the LeanDoc version the project
      pinned. Only if those files are missing from the dependency, try
      downloading them from
-     https://raw.githubusercontent.com/JVerstry/LeanDoc/main/skill/SKILL.md
+     https://raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/skill/SKILL.md
      and
-     https://raw.githubusercontent.com/JVerstry/LeanDoc/main/QualityAuditPrompt.txt
+     https://raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/QualityAuditPrompt.txt
      (this needs the repository to be publicly readable). If neither
      works, create nothing, tell the user, and suggest pasting the
      contents of `QualityAuditPrompt.txt` as a prompt instead.
@@ -325,7 +332,7 @@ updates as the interface stabilizes.
    - Suggest auditing the result once the docs are committed, to
      sanity-check it: with `/leandoc` if the skill was installed,
      otherwise by handing the assistant `QualityAuditPrompt.txt` (in
-     LeanDoc's repository, also at `.lake/packages/LeanDoc/
+     LeanDoc's repository, also at `.lake/packages/LeanDoc/LeanDoc/
      QualityAuditPrompt.txt`).
    - If the skill was installed, tell the user: the exact folder and the
      three files in it (`SKILL.md`, `audit.txt`, `mode.txt`) and which
@@ -413,7 +420,7 @@ updates as the interface stabilizes.
      leandoc` does a full elaboration, which can be genuinely slow on a
      large project (see this file's `README.md` note on docstring-edit
      rebuild cost, and consider recommending
-     [LeanPerformance](https://github.com/JVerstry/LeanPerformance) if
+     [LeanPerformance](https://github.com/JVerstry/LeanSkills/tree/main/LeanPerformance) if
      the user is worried about this) — running it before *every*
      commit is a real, ongoing cost, not a one-time setup cost, unlike
      LeanDoc's own `.githooks/pre-commit` (which only runs the fast
@@ -454,7 +461,7 @@ updates as the interface stabilizes.
      `QualityAuditPrompt.txt`. It reads the committed docs and is fast:
      it does not regenerate anything. Only set it up if the user asks.
      It lives in LeanDoc's own script, so there is nothing to copy:
-     `.lake/packages/LeanDoc/scripts/quality-check.sh` (or the
+     `.lake/packages/LeanDoc/LeanDoc/scripts/quality-check.sh` (or the
      `packagesDir`/path-dependency directory, as in step 8).
 
      It is **strict**: a finding fails the commit or CI run. To commit
@@ -472,7 +479,7 @@ updates as the interface stabilizes.
 
      ```sh
      #!/bin/sh
-     exec sh .lake/packages/LeanDoc/scripts/quality-check.sh \
+     exec sh .lake/packages/LeanDoc/LeanDoc/scripts/quality-check.sh \
        --docs-dir <docs_dir> --message-file "$1"
      ```
 
@@ -482,7 +489,7 @@ updates as the interface stabilizes.
      ```yaml
      - name: Documentation quality checks
        run: |
-         sh .lake/packages/LeanDoc/scripts/quality-check.sh --docs-dir <docs_dir> \
+         sh .lake/packages/LeanDoc/LeanDoc/scripts/quality-check.sh --docs-dir <docs_dir> \
            --message "$(git log -1 --format=%B ${{ github.event.pull_request.head.sha || github.sha }})"
      ```
 

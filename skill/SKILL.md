@@ -3,7 +3,7 @@ name: leandoc
 description: Audit the documentation LeanDoc generated for a Lean project and report prioritized findings, and optionally fix them one approved change at a time. Use when the user types /leandoc (or /leandoc dry, /leandoc fix, /leandoc schedule, /leandoc papercuts, /leandoc update, /leandoc mode, /leandoc uninstall) or asks to audit, check or sanity-check the generated LeanDoc documentation.
 ---
 
-LeanDoc skill version: 2
+LeanDoc skill version: 3
 
 # /leandoc — audit the documentation LeanDoc generated
 
@@ -18,12 +18,13 @@ Where the audit text can come from:
 
 - `audit.txt` in this folder (the local copy).
 - The published audit, at the only network locations this skill uses:
-  - https://raw.githubusercontent.com/JVerstry/LeanDoc/main/QualityAuditPrompt.txt
-  - https://raw.githubusercontent.com/JVerstry/LeanDoc/main/skill/SKILL.md
+  - https://raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/QualityAuditPrompt.txt
+  - https://raw.githubusercontent.com/JVerstry/LeanSkills/main/LeanDoc/skill/SKILL.md
 - The copy inside the project's pinned LeanDoc dependency: `QualityAuditPrompt.txt` and
-  `skill/SKILL.md` under the LeanDoc package folder, which is `.lake/packages/LeanDoc/`
+  `skill/SKILL.md` under the LeanDoc package folder, which is `.lake/packages/LeanDoc/LeanDoc/`
   unless `lake-manifest.json` names another `packagesDir` (for a path dependency, the
-  directory the LeanDoc entry's `dir` field names). This is the one copy that always
+  directory the LeanDoc entry's `dir` field names). A git dependency's `subDir` field
+  is a folder below the package folder, which is where LeanDoc's files are. This is the one copy that always
   matches the LeanDoc version the project actually uses.
 
 The audit describes one LeanDoc version's output. The local copy was taken when the skill
