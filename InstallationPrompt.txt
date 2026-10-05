@@ -59,12 +59,16 @@ If the user wants the trial:
 
 - The project must be a git repository; if it is not, say so and offer a plain
   copy of its source files (without .lake) instead.
-- Clone it to a temporary folder outside the project, for example
-  `<temp>/<project>-leanskills-trial`, with `git clone <project path> <folder>`.
-  This copies the committed state only, including local commits that were never
-  pushed, but not uncommitted changes and not .lake (so a build in the clone
-  starts from scratch; for a project that depends on Mathlib it needs
-  `lake exe cache get` first).
+- Clone it to a folder outside the project with `git clone <project path> <folder>`.
+  Choose a SHORT path, for example `C:\Temp\<project>-trial` (a sibling of the
+  project, or the drive's temp folder at its root), not a deep one such as the
+  assistant's own scratch folder or `%TEMP%` inside a user profile. On Windows,
+  paths over 260 characters fail, and Mathlib's build files sit deep under
+  `.lake/packages/mathlib/.lake/build/...`: with a long clone path,
+  `lake exe cache get` fails with "The system cannot find the path specified (os
+  error 3)" while decompressing, even though the files are cached locally.
+  The clone has the committed state only, including local commits that were
+  never pushed, but not uncommitted changes and not .lake.
 - Run every remaining step inside the clone, as if it were the project, with
   these differences:
   * Skills are installed project-level, in the clone, whatever the user would
@@ -75,11 +79,24 @@ If the user wants the trial:
   * LeanDoc's step 7 (the first generation) builds the whole project. Ask whether
     to run it in the clone or skip it, and recommend skipping it for a large
     project, since a build can take very long and take a lot of disk space.
-  * `lake update` (LeanDoc's step 3) in a clone that has no .lake folder also
-    downloads every other dependency, Mathlib included (several GB of git
-    history), and can fail or take very long. Tell the user, and offer to
-    copy the real project's `.lake/packages` folder into the clone first, to
-    skip that step and show only the lakefile change, or to go ahead and wait.
+  * The clone has no `.lake`, so anything that builds or runs `lake update` would
+    download every dependency, Mathlib included (several GB of git history, plus
+    the precompiled cache), and `/leanperf` and LeanDoc's first generation need
+    that build. Before step 5, if the real project has a `.lake/packages` folder,
+    offer to reuse it. Say its size first (for a project that depends on Mathlib,
+    several GB: Clefts' is about 7 GB) and check there is enough free disk space.
+    Preferred: copy `.lake/packages` into the clone's `.lake/packages`, keeping file
+    times (on Windows, `robocopy <project>\.lake\packages <clone>\.lake\packages
+    /E /MT:16`, which took about 2 minutes for Clefts; exit codes 0 to 3 are
+    success; elsewhere `cp -a`). The copy keeps Lake's build outputs
+    as they were, so Lake treats them as up to date and downloads nothing (checked
+    on Clefts: a build of a Mathlib module afterwards rewrote no .olean file).
+    Never use a link or junction to the real project's folder, because LeanDoc's
+    step 3 would then write the LeanDoc package into the real project's `.lake`.
+    Alternative, if the user does not want a 7 GB copy: `lake exe cache get`, which
+    unpacks from the local Mathlib cache (`~/.cache/mathlib`) and downloads only
+    what is missing, but needs the mathlib package folder to exist in the clone and
+    a short clone path (above). Otherwise skip the steps that need a build, or wait.
   * Do not commit or push anything in the clone either, unless the user asks.
 - At the end (step 6), show what the install changed in the clone (`git status`
   and `git diff` there), then ask what to do next: apply the same install to the

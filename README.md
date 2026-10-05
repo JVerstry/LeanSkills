@@ -78,6 +78,14 @@ generation of LeanDoc's documentation builds the whole project, so for a large
 project (for example one that depends on Mathlib) the installer recommends
 skipping it in the trial. Choose "Try it first on a throwaway clone" when it asks.
 
+Two practical points for a project that depends on Mathlib. The clone has no
+`.lake`, so the installer offers to copy your project's `.lake/packages` folder
+into it (about 7 GB and 2 minutes for a Mathlib project), which keeps Lake's
+build outputs so nothing is downloaded or rebuilt. And on Windows the clone
+must be in a short path, such as `C:\Temp\<project>-trial`: Mathlib's build
+files are nested so deeply that a clone under a long path breaks the cache
+unpacking with "The system cannot find the path specified".
+
 Each tool's part of the installer also works alone:
 [LeanPerformance/InstallationPrompt.txt](LeanPerformance/InstallationPrompt.txt) and
 [LeanDoc/InstallationPrompt.txt](LeanDoc/InstallationPrompt.txt).
