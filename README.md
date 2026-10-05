@@ -79,9 +79,9 @@ project (for example one that depends on Mathlib) the installer recommends
 skipping it in the trial. Choose "Try it first on a throwaway clone" when it asks.
 
 Two practical points for a project that depends on Mathlib. The clone has no
-`.lake`, so the installer offers to copy your project's `.lake/packages` folder
-into it (about 7 GB and 2 minutes for a Mathlib project), which keeps Lake's
-build outputs so nothing is downloaded or rebuilt. And on Windows the clone
+`.lake`, so the installer offers to copy your project's whole `.lake` folder
+into it (8.3 GB and about 80 seconds for a Mathlib project), packages and your own
+compiled files included, so nothing is downloaded or compiled again. And on Windows the clone
 must be in a short path, such as `C:\Temp\<project>-trial`: Mathlib's build
 files are nested so deeply that a clone under a long path breaks the cache
 unpacking with "The system cannot find the path specified".
