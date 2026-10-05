@@ -1,10 +1,12 @@
+LeanDoc audit version: 1
+
 You are an AI coding assistant auditing documentation that LeanDoc has
-already generated for a Lean/Lake project. The user has pasted you this
-file after running `lake exe leandoc` (directly, or via
-`InstallationPrompt.txt`'s install flow). Your job is to sanity-check
-the *result*, not to trust it blindly just because the tool ran without
-error — LeanDoc can produce output that's technically valid and still
-low-quality, stale, or misconfigured.
+already generated for a Lean/Lake project. The user has handed you this
+file (pasted, or through the `/leandoc` skill) after running `lake exe
+leandoc` (directly, or via `InstallationPrompt.txt`'s install flow).
+Your job is to sanity-check the *result*, not to trust it blindly just
+because the tool ran without error — LeanDoc can produce output that's
+technically valid and still low-quality, stale, or misconfigured.
 
 This is a **manual audit** — a real CI-enforced freshness gate is what
 `InstallationPrompt.txt`'s optional CI/pre-commit templates are for;
@@ -20,6 +22,42 @@ adapt rather than forcing the project's output to match a stale
 description. LeanDoc's usage manual (docs/manual.md in its repository,
 and in the project's `.lake/packages/LeanDoc/` once it's a dependency)
 describes each feature mentioned below.
+
+RUN MODES. Unless told otherwise this is a **full run**: everything
+below, including regenerating the docs. If the user or the skill says
+this is a **dry run**, follow these rules instead:
+   - Read files only. Do not run `lake`, `lean`, `lake exe leandoc`, or
+     anything else that builds, elaborates or writes. Read-only git
+     commands (`git status`, `git diff`, `git log`) are fine.
+   - Skip the regeneration and diff in section 3 and say freshness was
+     not checked. Do every other check by reading the committed docs
+     and the project's files, including whether a docstring's code
+     example still matches the current signature.
+   - Mark every finding "unverified (dry run)". A dry run produces
+     leads, not conclusions. Checks that need a real Jekyll build or
+     browser (sections 8 and 9: how a page renders, whether links work
+     once served) can only ever be leads: report them as such, and say
+     that a renderer is what would confirm them.
+   - End the report with the checks a full run would add, starting with
+     regenerating and diffing the docs, and name the findings most
+     worth confirming that way.
+In both modes, never modify the project's files: report first. If the
+run is non-interactive (for example scheduled), don't ask the user
+anything: where this prompt says to ask, assume the safe default and
+say what you assumed.
+
+FINDING KEYS. Give every finding a stable key so reports from different
+runs can be compared: `<section>/<kind>/<where>`, with the section
+number from below, `<kind>` from this list only (`stale`,
+`undocumented`, `quality`, `noise`, `structure`, `narrative`,
+`broken-link`, `old-layout`, `escaping`, `rendering`, `config`,
+`compliance`), and `<where>`: the declaration's or module's name for
+anything about Lean source or its docstrings, otherwise the file's path
+relative to the project root. Examples: `3/stale/docs/reference/Foo.md`,
+`4/undocumented/Foo.Bar` (one key per module for coverage gaps, listing
+the declarations and their count), `8/broken-link/docs/guide.md`,
+`8/old-layout/docs/_layouts/default.html`. The same problem found on a
+later run must get the same key.
 
 1. Confirm there's something to audit
    - Find `leandoc.toml` (or confirm its defaults apply) and the
@@ -78,7 +116,11 @@ describes each feature mentioned below.
      (leanprover-community.github.io/contribute/doc.html). Report
      specific gaps (declaration + module), not just a count. An
      undocumented declaration renders as `*(not documented)*` on its
-     page, so these are easy to find.
+     page, so these are easy to find. Auto-generated structure
+     constructors (`.mk`) are low priority: mention them in one line
+     per module rather than as findings of their own.
+   - Keep the report proportionate: list the findings, and summarise
+     everything that checked out in a few short lines.
    - If `[compliance]` is enabled (section 2), also check the
      file-header requirement was actually satisfied, not just that
      LeanDoc's own warning was seen and ignored.
@@ -205,11 +247,25 @@ describes each feature mentioned below.
       behind the code. Keeping the docs fresh (section 3) prevents it.
 
 11. Report findings by category (using the numbered sections above),
-    most actionable first. Distinguish clearly between:
-    - A LeanDoc bug (noise leaking through, a broken link LeanDoc
-      itself generated, unescaped template syntax)
-    - A project-side gap (missing docstrings, no guide content, a
-      missing compliance header, an old layout, a hand-written page
-      with a broken link)
-    - A by-design behaviour (section 10) — mention for completeness,
-      don't present as a defect
+    most actionable first.
+    - Start the report with: the audit version (first line of this
+      file) and, if you were told, where it came from (local copy or
+      repository); the run mode (full or dry); and the LeanDoc revision
+      the project uses: the `rev` of the LeanDoc entry in
+      `lake-manifest.json`, or, for a path dependency (which has none),
+      "path dependency at <dir>", or "unknown" if you can't tell. This
+      audit was written against LeanDoc as of the date in the STATUS
+      NOTE; if the project's revision is clearly older or newer than
+      that, say the report may be wrong in places.
+    - Write each finding as one entry: its key, its category (below),
+      whether it's **verified** (you confirmed it against the project's
+      actual output, or by running the check) or **unverified**, then a
+      sentence on what it is and what to do about it.
+    - Distinguish clearly between these categories:
+      - A LeanDoc bug (noise leaking through, a broken link LeanDoc
+        itself generated, unescaped template syntax)
+      - A project-side gap (missing docstrings, no guide content, a
+        missing compliance header, an old layout, a hand-written page
+        with a broken link)
+      - A by-design behaviour (section 10) — mention for completeness,
+        don't present as a defect

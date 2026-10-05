@@ -54,7 +54,7 @@ exclude the failing modules via `[modules] exclude` in `leandoc.toml`.
 actually good documentation — it can be technically valid and still
 stale, low-quality, or misconfigured. Hand
 [`QualityAuditPrompt.txt`](https://github.com/JVerstry/LeanDoc/blob/main/QualityAuditPrompt.txt)
-(task T17) to your AI coding assistant after generating docs to
+to your AI coding assistant after generating docs to
 sanity-check the result: freshness, docstring coverage and quality,
 generated-noise leaks, navigation/structure, Jekyll/GitHub Pages
 compatibility (if applicable), and more — it reads your `leandoc.toml`
@@ -63,6 +63,53 @@ assuming a fixed one-size-fits-all standard. This is a manual, one-off
 or periodic check, not a substitute for the CI/pre-commit freshness
 checks described in "Optional: CI and pre-commit freshness checks"
 below — those two are about *drift*, this is about *quality*.
+
+The prompt works with any assistant that can read your files and run
+commands. A report lists each finding with a stable key, its category
+(a LeanDoc bug, a gap in your project, or by design), and whether it
+was verified against your actual output.
+
+#### The `/leandoc` skill (Claude Code)
+
+If you use Claude Code, `InstallationPrompt.txt` can install a small
+skill so that you can run the audit with `/leandoc` instead of handing
+over the prompt each time (step 8 of that file; to add it to a project
+that already uses LeanDoc, hand the file to your assistant and ask for
+that step only). It writes three text files into a skill folder, either
+for all your projects (`~/.claude/skills/leandoc/`) or for this one
+(`.claude/skills/leandoc/`, which you can commit so collaborators get it
+too). Nothing in your Lean project changes.
+
+- `/leandoc` runs the full audit, which regenerates the docs and builds
+  your project.
+- `/leandoc dry` is the light version: it only reads files, builds and
+  regenerates nothing, and marks every finding unverified. Treat its
+  findings as leads to confirm with a full run.
+- `/leandoc schedule` sets up a recurring dry check (weekly by default)
+  using your assistant's own scheduler, saving reports in a
+  `.leandoc-audit/` folder, which it adds to your `.gitignore` after you
+  confirm. Each run compares itself with the previous report and tells
+  you only what is new, gone or changed, or "No change". It writes
+  nothing outside `.leandoc-audit/`. `/leandoc schedule off` removes it.
+- `/leandoc papercuts <path>` connects a papercuts log (a text file of
+  tooling friction, one line per entry). After a full audit the skill
+  proposes lines only for verified findings that are general lessons,
+  and appends them once you confirm. `/leandoc papercuts off`
+  disconnects it.
+- `/leandoc update` refreshes the skill and its copy of the audit, shows
+  what changed, and asks before overwriting. If LeanDoc's repository
+  can't be fetched (for example while it is private), it offers the
+  copy inside your pinned LeanDoc dependency instead.
+- `/leandoc mode local|remote` chooses where the audit text comes from.
+  `local` uses the saved copy (offline, reproducible); `remote` fetches
+  the latest from LeanDoc's repository on every run and falls back to
+  the copy. The audit describes one LeanDoc version's output, so the
+  latest one can describe a newer LeanDoc than your project uses; each
+  report says which audit it used and which LeanDoc revision your
+  project pins.
+- `/leandoc uninstall` removes the skill after confirmation (or delete
+  its folder yourself). Neither updating nor removing it touches your
+  Lean project.
 
 ### Configuration (`leandoc.toml`)
 

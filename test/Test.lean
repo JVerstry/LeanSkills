@@ -779,6 +779,42 @@ def hygieneChecks (s0 : TestState) : IO TestState := do
     s ← s.check "templates/page.md has layout: default front matter"
       ((← IO.FS.readFile templatePath).startsWith "---\nlayout: default\n")
 
+  -- The `/leandoc` audit skill (skill/SKILL.md), the audit prompt it
+  -- runs, and the install prompt step that copies both. These are
+  -- prompts, not code, so the checks are structural: they catch a file
+  -- going missing or the three pieces drifting apart (a renamed
+  -- subcommand, a lost version line, a changed folder name).
+  let skillPath : System.FilePath := "skill" / "SKILL.md"
+  s ← s.check "skill/SKILL.md exists" (← skillPath.pathExists)
+  if ← skillPath.pathExists then
+    let skill ← IO.FS.readFile skillPath
+    let skillLines := skill.splitOn "\n"
+    s ← s.check "skill/SKILL.md has front matter naming the skill 'leandoc'"
+      (skillLines.take 2 == ["---", "name: leandoc"] &&
+       (skillLines.getD 2 "").startsWith "description: " && skillLines.getD 3 "" == "---")
+    s ← s.check "skill/SKILL.md states its version"
+      ((skill.splitOn "LeanDoc skill version: ").length > 1)
+    for sub in #["/leandoc dry", "/leandoc schedule", "/leandoc papercuts", "/leandoc update",
+                 "/leandoc mode", "/leandoc uninstall"] do
+      s ← s.check s!"skill/SKILL.md documents {sub}" ((skill.splitOn sub).length > 1)
+    s ← s.check "skill/SKILL.md saves scheduled reports under .leandoc-audit/"
+      ((skill.splitOn ".leandoc-audit/").length > 1)
+    s ← s.check "skill/SKILL.md fetches from LeanDoc's own repository"
+      ((skill.splitOn "raw.githubusercontent.com/JVerstry/LeanDoc/main/QualityAuditPrompt.txt").length > 1 &&
+       (skill.splitOn "raw.githubusercontent.com/JVerstry/LeanDoc/main/skill/SKILL.md").length > 1)
+  let audit ← IO.FS.readFile "QualityAuditPrompt.txt"
+  let auditFirst := (audit.splitOn "\n").headD ""
+  s ← s.check "QualityAuditPrompt.txt starts with 'LeanDoc audit version: <number>'"
+    (auditFirst.startsWith "LeanDoc audit version: " &&
+     ((auditFirst.drop "LeanDoc audit version: ".length).toString.toNat?).isSome)
+  s ← s.check "QualityAuditPrompt.txt defines dry-run rules and finding keys"
+    ((audit.splitOn "dry run").length > 1 && (audit.splitOn "FINDING KEYS").length > 1)
+  let installPrompt ← IO.FS.readFile "InstallationPrompt.txt"
+  s ← s.check "InstallationPrompt.txt copies the skill and the audit from the dependency"
+    ((installPrompt.splitOn "skill/SKILL.md").length > 1 &&
+     (installPrompt.splitOn ".lake/packages/LeanDoc/").length > 1 &&
+     (installPrompt.splitOn "audit.txt").length > 1 && (installPrompt.splitOn "mode.txt").length > 1)
+
   -- A `{% link %}` tag with no target fails the whole Jekyll build
   -- ("Could not find document ''", checked against Jekyll's own
   -- link.rb), and Liquid runs even inside code spans. So in LeanDoc's
