@@ -50,7 +50,7 @@ It asks which tool to install, LeanPerformance, LeanDoc or both, then creates a
 small skill for LeanPerformance (four text files, plus an optional fifth if you
 connect a papercuts log, no software) so that you can run the audit afterwards
 with `/leanperf`. Choose "LeanPerformance only" if that is all you want. The
-installer can first rehearse the whole installation on a throwaway clone of your
+installer can first rehearse the whole installation on a throwaway branch or clone of your
 project, described in the [root README](../README.md). The
 LeanPerformance part of the installer is
 [`InstallationPrompt.txt`](InstallationPrompt.txt) in this folder, which also

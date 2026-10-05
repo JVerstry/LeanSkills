@@ -64,27 +64,35 @@ what you have and explains how to use `/leanperf` and `/leandoc`. Its commands:
 | `/leanskills report` | Prepares the text of a GitHub issue; it never posts it |
 | `/leanskills uninstall [tool]` | Removes the skills after one confirmation; your project is left alone |
 
-### Try it on a throwaway clone first
+### Try it first, on a throwaway branch or clone
 
 The installation edits your project's files. LeanDoc, for example, adds a
 dependency to your `lakefile.toml`, updates `lake-manifest.json`, and writes
-`leandoc.toml` and `.gitignore` lines. The installer therefore offers to
-rehearse on a copy before it touches anything: it clones your project, in its
-committed state and including unpushed commits, to a temporary folder outside it, runs the whole
-installation there with project-level skills, and shows you what changed. Your
-real project is untouched until you choose to apply the same installation to it.
-You can also keep the clone to inspect it, or have it deleted. The first
-generation of LeanDoc's documentation builds the whole project, so for a large
-project (for example one that depends on Mathlib) the installer recommends
-skipping it in the trial. Choose "Try it first on a throwaway clone" when it asks.
+`leandoc.toml` and `.gitignore` lines. The installer therefore offers to rehearse
+before it touches anything for good, in one of two ways:
 
-Two practical points for a project that depends on Mathlib. The clone has no
-`.lake`, so the installer offers to copy your project's whole `.lake` folder
-into it (8.3 GB and about 80 seconds for a Mathlib project), packages and your own
-compiled files included, so nothing is downloaded or compiled again. And on Windows the clone
-must be in a short path, such as `C:\Temp\<project>-trial`: Mathlib's build
-files are nested so deeply that a clone under a long path breaks the cache
-unpacking with "The system cannot find the path specified".
+- **A throwaway branch** (recommended when your working tree is clean and nobody
+  else is working in the folder). The installation runs on a new branch of your
+  own project: nothing to copy, no extra disk, and your compiled files in `.lake`
+  are already there. It protects less, because it switches the folder, `lake update`
+  writes the LeanDoc package into your `.lake`, and the skill folders and
+  `leandoc.toml` are not tracked by git. The installer tells you the branch and
+  commit to return to, and discarding the trial lists exactly what it will remove
+  and asks first.
+- **A throwaway clone**, in a short path such as `C:\Temp\<project>-trial`
+  (recommended when your tree has uncommitted changes, or something else is working
+  in the folder). The clone has the committed state, including unpushed commits, and
+  your project is not touched. For a project that depends on Mathlib the installer
+  offers to copy your whole `.lake` folder into it (8.3 GB and about 80 seconds for a
+  Mathlib project), packages and your own compiled files included, so nothing is
+  downloaded or compiled again. On Windows the short path matters: Mathlib's build
+  files are nested so deeply that a clone under a long path breaks the cache
+  unpacking with "The system cannot find the path specified".
+
+In either case the skills are installed for the project only, the first generation
+of LeanDoc's documentation (which builds the whole project) can be skipped, and for
+a trial `/leanperf dry` is the cheap way to try the audit. Choose the trial when the
+installer asks.
 
 Each tool's part of the installer also works alone:
 [LeanPerformance/InstallationPrompt.txt](LeanPerformance/InstallationPrompt.txt) and

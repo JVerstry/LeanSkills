@@ -44,7 +44,7 @@ If the user picks LeanDoc and step 1 found no Lake project, stop that part and
 tell them, as LeanDoc's own installer would.
 
 ======================================================================
-3. Offer a trial run on a throwaway clone
+3. Offer a trial run first
 ======================================================================
 
 The install edits the user's files (for LeanDoc: lakefile, lake-manifest.json,
@@ -52,60 +52,101 @@ leandoc.toml, .gitignore), so offer to rehearse it first. Ask, and wait for the
 answer:
 
 - Install directly in this project.
-- Try it first on a throwaway clone (recommended for a large or important
-  project): the same install runs on a copy, and the real project is not touched.
+- Try it first (recommended for a large or important project), on a throwaway
+  branch or on a throwaway clone.
 
-If the user wants the trial:
+If the user wants a trial, ask which, with the recommendation worked out like
+this (check `git status --porcelain` first, and ask whether another session or
+editor is working in the project folder right now):
 
-- The project must be a git repository; if it is not, say so and offer a plain
-  copy of its source files (without .lake) instead.
-- Clone it to a folder outside the project with `git clone <project path> <folder>`.
-  Choose a SHORT path, for example `C:\Temp\<project>-trial` (a sibling of the
-  project, or the drive's temp folder at its root), not a deep one such as the
-  assistant's own scratch folder or `%TEMP%` inside a user profile. On Windows,
-  paths over 260 characters fail, and Mathlib's build files sit deep under
-  `.lake/packages/mathlib/.lake/build/...`: with a long clone path,
-  `lake exe cache get` fails with "The system cannot find the path specified (os
-  error 3)" while decompressing, even though the files are cached locally.
-  The clone has the committed state only, including local commits that were
-  never pushed, but not uncommitted changes and not .lake.
-- Run every remaining step inside the clone, as if it were the project, with
-  these differences:
-  * Skills are installed project-level, in the clone, whatever the user would
-    choose for the real install. User-level skills would be written to the
-    user's own skills folder and survive the trial, so do not use them in a
-    trial. Tell the user that to try a skill in the clone, they open a new
-    session with the clone as the working directory.
-  * LeanDoc's step 7 (the first generation) builds the whole project. Ask whether
-    to run it in the clone or skip it, and recommend skipping it for a large
-    project, since a build can take very long and take a lot of disk space.
-  * The clone has no `.lake`, so anything that builds or runs `lake update` would
-    download every dependency, Mathlib included, and compile the whole project
-    from scratch, which can take hours. Before step 5, if the real project has a
-    `.lake` folder, offer to copy all of it into the clone: the packages (which
-    hold Mathlib's compiled files) and the project's own `build` folder (which
-    holds the compiled files of the project itself). Say its size first (for a
-    project that depends on Mathlib, several GB: Clefts' is 8.3 GB) and check there
-    is enough free disk space. Copy with file times kept (on Windows, from PowerShell:
-    `robocopy <project>\.lake <clone>\.lake /E /MT:16`, 82 seconds for Clefts; exit
-    codes 0 to 7 are success; elsewhere `cp -a`; not from Git Bash, which rewrites
-    the switches). Lake then treats the copied outputs as up to date. Checked on
-    Clefts: `lake build` completed in under 2 minutes (2,773 jobs, all of them
-    checks) and rewrote none of the 852 project and 8,311 Mathlib .olean files, also
-    after LeanDoc's lakefile edit and `lake update LeanDoc`. Never use a link or
-    junction to the real project's folder, because LeanDoc's step 3 would then write
-    the LeanDoc package into the real project's `.lake`. Notes: `lake update` on a
-    Mathlib project still takes several minutes, because Mathlib's post-update hook
-    re-checks the cache (downloading nothing); and the audit's own measurements
-    (`/leanperf` full run) still run the builds it profiles, so for a trial prefer
-    `/leanperf dry`. Without the copy, the alternative is `lake exe cache get`
-    (needs the mathlib folder and a short clone path), or to skip the steps that
-    need a build.
-  * Do not commit or push anything in the clone either, unless the user asks.
-- At the end (step 6), show what the install changed in the clone (`git status`
-  and `git diff` there), then ask what to do next: apply the same install to the
-  real project, keep the clone for inspection, or delete it. Never delete the
-  clone, and never touch the real project, without that answer.
+- Throwaway branch (recommended when the working tree is clean and nobody else is
+  working in the folder): a new branch in this same project. It copies nothing and
+  needs no extra disk, and the project's compiled files in `.lake` are already
+  there. It protects less: it needs a clean tree, it switches the folder for
+  everyone working in it, `lake update` (LeanDoc's step 3) writes the LeanDoc
+  package into the project's own `.lake`, and the files the install creates but
+  git does not track (the skill folders, leandoc.toml) stay in the folder until
+  cleaned up.
+- Throwaway clone (recommended when the tree has uncommitted changes, when another
+  session is working in the folder, or when the user wants the project untouched):
+  the install runs on a copy. It costs disk space and a copy of `.lake`.
+
+The project must be a git repository for either; if it is not, say so and offer a
+plain copy of its source files (without .lake) as the clone.
+
+Rules for both kinds of trial:
+
+- Skills are installed project-level, whatever the user would choose for the real
+  install. User-level skills would be written to the user's own skills folder and
+  survive the trial, so do not use them in a trial. To try a skill, the user opens a
+  new session with the trial folder as the working directory.
+- LeanDoc's step 7 (the first generation) builds the whole project. Ask whether to
+  run it in the trial or skip it, and recommend skipping it for a large project,
+  since a build can take very long and take a lot of disk space. Likewise, the
+  audit's own measurements (a full `/leanperf` run) run the builds it profiles, so
+  for a trial prefer `/leanperf dry`.
+- `lake update` on a project that depends on Mathlib takes several minutes, because
+  Mathlib's post-update hook re-checks the cache (downloading nothing if it is
+  already local). Warn the user before running it.
+- Do not commit or push anything unless the user asks, and then only on the trial
+  branch or in the clone.
+
+A. Trial on a throwaway branch
+
+1. Require a clean working tree. If it is not clean, offer the clone instead (or the
+   user may commit or stash first); never stash or discard anything yourself.
+2. Record, and tell the user at once so they can find their way back: the current
+   branch (`git rev-parse --abbrev-ref HEAD`) and commit (`git rev-parse HEAD`).
+3. Create and switch to a new branch, `leanskills-trial` (choose another name if it
+   exists). Run every remaining step on it.
+4. At the end (step 6), show `git status` and `git diff`, then ask what to do next:
+   keep the branch for the user to review, merge or delete themselves, or discard the
+   trial. To discard, first list exactly what you will do and ask for confirmation,
+   then: `git checkout -- .` (the tracked files the install edited: lakefile,
+   lake-manifest.json, .gitignore), `git checkout <recorded branch>`,
+   `git branch -D leanskills-trial`, and delete only what the trial created and git
+   does not track, each named in the list: the skill folders (`.claude/skills/leanperf`,
+   `leandoc`, `leanskills`) that were not there before, `leandoc.toml`, the `docs`
+   folder if the trial created it, `.leandoc/`, `.leanperf/`, and the LeanDoc package
+   folder in `.lake/packages/`. Never run `git clean -fdx` or delete anything that is
+   not on the list. The project's compiled files in `.lake` are not affected by the
+   install (measured: none rewritten).
+
+B. Trial on a throwaway clone
+
+1. Clone the project to a folder outside it with `git clone <project path> <folder>`.
+   Choose a SHORT path, for example `C:\Temp\<project>-trial` (a sibling of the
+   project, or the drive's temp folder at its root), not a deep one such as the
+   assistant's own scratch folder or `%TEMP%` inside a user profile. On Windows,
+   paths over 260 characters fail, and Mathlib's build files sit deep under
+   `.lake/packages/mathlib/.lake/build/...`: with a long clone path,
+   `lake exe cache get` fails with "The system cannot find the path specified (os
+   error 3)" while decompressing, even though the files are cached locally. The
+   clone has the committed state only, including local commits that were never
+   pushed, but not uncommitted changes and not .lake.
+2. The clone has no `.lake`, so anything that builds or runs `lake update` would
+   download every dependency, Mathlib included, and compile the whole project from
+   scratch, which can take hours. Before step 5, if the real project has a `.lake`
+   folder, offer to copy all of it into the clone: the packages (which hold
+   Mathlib's compiled files) and the project's own `build` folder (which holds the
+   compiled files of the project itself). Say its size first (for a project that
+   depends on Mathlib, several GB: Clefts' is 8.3 GB) and check there is enough free
+   disk space. Copy with file times kept (on Windows, from PowerShell:
+   `robocopy <project>\.lake <clone>\.lake /E /MT:16`, 82 seconds for Clefts; exit
+   codes 0 to 7 are success; elsewhere `cp -a`; not from Git Bash, which rewrites
+   the switches). Lake then treats the copied outputs as up to date. Checked on
+   Clefts: `lake build` completed in under 2 minutes (2,773 jobs, all of them
+   checks) and rewrote none of the 852 project and 8,311 Mathlib .olean files, also
+   after LeanDoc's lakefile edit and `lake update LeanDoc`. Never use a link or
+   junction to the real project's folder, because LeanDoc's step 3 would then write
+   the LeanDoc package into the real project's `.lake`. Without the copy, the
+   alternative is `lake exe cache get` (needs the mathlib folder and a short clone
+   path), or to skip the steps that need a build.
+3. Run every remaining step inside the clone, as if it were the project.
+4. At the end (step 6), show what the install changed in the clone (`git status`
+   and `git diff` there), then ask what to do next: apply the same install to the
+   real project, keep the clone for inspection, or delete it. Never delete the
+   clone, and never touch the real project, without that answer.
 
 ======================================================================
 4. Ask the shared questions once
@@ -175,8 +216,8 @@ Do not commit anything on the user's behalf without asking first.
 ======================================================================
 
 Give one combined report. If this was a trial run, say so at the top, give the
-clone's folder, show the changes there, and ask the question from step 3 about
-what to do next:
+trial branch (with the branch and commit to return to) or the clone's folder, show
+the changes, and ask the question from step 3 about what to do next:
 
 - for each tool: installed, skipped or failed, with the reason when it did not
   work;
