@@ -99,6 +99,10 @@ layout: default
 - [`ensureJekyllConfig`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureStyleAsset`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureDefaultLayout`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`layoutStampOf`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`layoutExpectedRefs`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`layoutWarning`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
+- [`checkLayoutVersion`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`ensureColorSchemeScript`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 - [`render`]({% link reference/LeanDoc/Core.md %}) — *LeanDoc.Core*
 

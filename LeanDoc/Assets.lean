@@ -855,7 +855,14 @@ a:hover {
 "
 
 /-- Embedded from `assets/layouts/default.html`. -/
-def defaultLayoutHtml : String := "<!-- LeanDoc's own minimal Jekyll layout (task T29, 2026-09-23).
+def defaultLayoutHtml : String := "<!-- leandoc-layout-version: 1
+     (Bumped whenever this template changes. LeanDoc writes this file
+     once and never overwrites it, so a project that installed an older
+     LeanDoc keeps an older copy; `lake exe leandoc` compares this
+     number with the one in the project's copy and warns if it is
+     older. If you customise your copy, keep this line.)
+
+     LeanDoc's own minimal Jekyll layout (task T29, 2026-09-23).
      Needed because Jekyll only applies a layout's styling to a page
      when that page's front matter has `layout: <name>` — a plain
      `theme:`/`remote_theme:` in _config.yml is not, by itself,

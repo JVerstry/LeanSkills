@@ -1110,6 +1110,59 @@ def ensureDefaultLayout (docsDir : System.FilePath) : IO Unit := do
       IO.FS.createDirAll dir
     IO.FS.writeFile path LeanDoc.Assets.defaultLayoutHtml
 
+/-- The template version stamped in a layout file (task T61): the number
+after `leandoc-layout-version:`, `none` if there's no such stamp (a layout
+written by a LeanDoc older than the stamp, or a customised copy that
+dropped the line). -/
+def layoutStampOf (content : String) : Option Nat :=
+  match content.splitOn "leandoc-layout-version:" with
+  | _ :: rest :: _ =>
+    ((rest.dropWhile (· == ' ')).takeWhile Char.isDigit).toString.toNat?
+  | _ => none
+
+/-- The three scripts a current layout references (task T61), as the
+`href`/`src` paths its markup uses. A project layout missing one of them
+silently lacks the feature it provides. -/
+def layoutExpectedRefs : List (String × String) :=
+  [ ("/assets/search.js", "the search box")
+  , ("/assets/color-scheme.js", "the light/dark theme switcher")
+  , ("/assets/mathjax-config.js", "LaTeX rendering") ]
+
+/-- The warning for a project's layout that is older than the one this
+LeanDoc ships (task T61), or `none` if it's current or newer. Pure, so
+it can be tested without touching the file system. Names the features
+the old copy visibly lacks (by looking for the scripts a current layout
+loads), and the fix: LeanDoc never overwrites the file, because the
+project may have customised it, so the update is a manual merge. -/
+def layoutWarning (layoutPath : String) (projectLayout shippedLayout : String) :
+    Option String :=
+  let shipped := (layoutStampOf shippedLayout).getD 0
+  let ours := layoutStampOf projectLayout
+  if (ours.getD 0) >= shipped then none else
+  let found := match ours with
+    | some n => s!"version {n}"
+    | none => "no version stamp"
+  let missing := (layoutExpectedRefs.filter fun (ref, _) =>
+    (projectLayout.splitOn ref).length == 1).map (·.2)
+  let lacks := if missing.isEmpty then "" else
+    s!" It looks like it lacks {String.intercalate ", " missing}."
+  some s!"{layoutPath} is older than the layout this version of LeanDoc ships \
+    ({found}, current is version {shipped}).{lacks} LeanDoc never overwrites it, \
+    since you may have customised it: compare it with `assets/layouts/default.html` \
+    in LeanDoc (under `.lake/packages/LeanDoc/` in your project) and merge the \
+    differences in, keeping its `leandoc-layout-version` line — see \"Upgrading\" \
+    in the manual."
+
+/-- Warns, never fails, when the project's `_layouts/default.html` is older
+than the shipped one (task T61). Runs after `ensureDefaultLayout`, so a
+layout LeanDoc just wrote is current by construction. -/
+def checkLayoutVersion (docsDir : System.FilePath) : IO Unit := do
+  let path := docsDir / "_layouts" / "default.html"
+  if ← path.pathExists then
+    let project ← IO.FS.readFile path
+    if let some msg := layoutWarning path.toString project LeanDoc.Assets.defaultLayoutHtml then
+      IO.eprintln s!"LeanDoc: warning: {msg}"
+
 /-- Ensures `docsDir/assets/color-scheme.js` exists, writing the
 light/dark/system theme switcher script (task T45 — see
 `assets/color-scheme.js`, `LeanDoc.Assets.colorSchemeJs`) if it's
@@ -1184,6 +1237,7 @@ def render (jsonPath docsDir : System.FilePath) (jekyll : Bool)
     ensureMathjaxConfig docsDir
     ensureFindPage docsDir
     ensureNotFoundPage docsDir
+    checkLayoutVersion docsDir
   let instancesByClass := groupInstancesByClass metas
   let mut moduleNames : Array String := #[]
   for (moduleName, decls) in groupDeclsByModule metas do

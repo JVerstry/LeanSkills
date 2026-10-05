@@ -314,6 +314,66 @@ def assetChecks (c : Ctx) (s0 : TestState) : IO TestState := do
 
   pure s
 
+def layoutVersionChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let shipped := LeanDoc.Assets.defaultLayoutHtml
+
+  -- ## Unit-level: T61's layout version stamp
+
+  s ← s.check "layoutStampOf reads the stamp" (layoutStampOf "<!-- leandoc-layout-version: 7\n -->" == some 7)
+  s ← s.check "layoutStampOf is none without a stamp" (layoutStampOf "<html></html>" == none)
+  s ← s.check "the shipped layout carries a stamp" (layoutStampOf shipped).isSome
+
+  -- If this fails, assets/layouts/default.html changed: bump its
+  -- `leandoc-layout-version` stamp (and regenerate Assets.lean), then update
+  -- both pinned numbers below. LeanDoc never overwrites a project's layout,
+  -- so the stamp is the only way an older copy gets noticed.
+  let pinnedStamp : Nat := 1
+  let pinnedHash : UInt64 := 9217214827997882634
+  let actualHash := hash shipped
+  s ← s.check "the layout template and its version stamp changed together"
+    ((layoutStampOf shipped) == some pinnedStamp && actualHash == pinnedHash)
+  unless (layoutStampOf shipped) == some pinnedStamp && actualHash == pinnedHash do
+    IO.eprintln s!"  layout stamp = {layoutStampOf shipped}, template hash = {actualHash}"
+
+  -- ## Unit-level: T61's warning
+
+  s ← s.check "layoutWarning is silent for the layout LeanDoc ships" (layoutWarning "p" shipped shipped).isNone
+  s ← s.check "layoutWarning is silent for a newer layout"
+    (layoutWarning "p" "<!-- leandoc-layout-version: 99 -->" shipped).isNone
+  let oldLayout := "<html><link href=\"/assets/style.css\"></html>"
+  s ← s.check "layoutWarning warns about a layout with no stamp"
+    (match layoutWarning "docs/_layouts/default.html" oldLayout shipped with
+      | some m => (m.splitOn "older").length > 1 && (m.splitOn "no version stamp").length > 1 &&
+          (m.splitOn "docs/_layouts/default.html").length > 1
+      | none => false)
+  s ← s.check "layoutWarning names the features an old layout lacks"
+    (match layoutWarning "p" oldLayout shipped with
+      | some m => (m.splitOn "the search box").length > 1 && (m.splitOn "LaTeX rendering").length > 1 &&
+          (m.splitOn "theme switcher").length > 1
+      | none => false)
+  s ← s.check "layoutWarning only names what is actually missing"
+    (match layoutWarning "p" "<!-- leandoc-layout-version: 0 -->/assets/search.js" shipped with
+      | some m => (m.splitOn "version 0").length > 1 && (m.splitOn "the search box").length == 1 &&
+          (m.splitOn "LaTeX rendering").length > 1
+      | none => false)
+  s ← s.check "layoutWarning points at the manual and the template"
+    (match layoutWarning "p" oldLayout shipped with
+      | some m => (m.splitOn "Upgrading").length > 1 && (m.splitOn "assets/layouts/default.html").length > 1
+      | none => false)
+
+  -- ## Fixture-level: checkLayoutVersion never fails and never overwrites
+
+  let dir : System.FilePath := ".leandoc" / "test-scratch" / "layout-version"
+  if ← dir.pathExists then IO.FS.removeDirAll dir
+  IO.FS.createDirAll (dir / "_layouts")
+  IO.FS.writeFile (dir / "_layouts" / "default.html") oldLayout
+  checkLayoutVersion dir
+  s ← s.check "checkLayoutVersion leaves an outdated layout untouched"
+    ((← IO.FS.readFile (dir / "_layouts" / "default.html")) == oldLayout)
+  IO.FS.removeDirAll dir
+  pure s
+
 def searchIndexChecks (s0 : TestState) : IO TestState := do
   let mut s := s0
 
@@ -885,6 +945,7 @@ def main : IO Unit := do
   let s ← tocChecks s
   let s ← rootIndexChecks c s
   let s ← assetChecks c s
+  let s ← layoutVersionChecks s
   let s ← searchIndexChecks s
   let s ← declRenderChecks s
   let s ← liquidChecks s

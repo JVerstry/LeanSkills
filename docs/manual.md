@@ -306,6 +306,40 @@ changes. There's no `leandoc.toml` option for "pick a different
 palette" — if you want something other than the vendored default, edit
 the CSS itself after the first generation.
 
+### Upgrading LeanDoc
+
+Because those files are written once, upgrading LeanDoc doesn't update
+them: a project that installed an older LeanDoc keeps its old
+`_layouts/default.html`. New scripts a newer LeanDoc ships are written
+if they're missing, but an old layout never loads them, so the site
+quietly lacks the search box, the light/dark switcher or LaTeX
+rendering.
+
+To make that visible, the layout carries a `leandoc-layout-version`
+number in its opening comment, raised whenever LeanDoc changes the
+layout. `lake exe leandoc` compares it with your copy's and prints a
+**warning** (never an error) when yours is older, or has no number,
+naming the features it appears to lack.
+
+LeanDoc will not overwrite the file, because you may have customised
+it. The fix is a manual merge:
+
+1. Open LeanDoc's current layout, `assets/layouts/default.html`, in
+   LeanDoc's repository, or under `.lake/packages/LeanDoc/` in your
+   project.
+2. Compare it with `docs_dir/_layouts/default.html` and copy across what
+   yours is missing (the extra `script` lines and the search box),
+   keeping your own changes.
+3. Keep its `leandoc-layout-version` line, updated to the current
+   number. The warning stops.
+
+If you never customised the layout, the simplest route is to delete
+`docs_dir/_layouts/default.html` and run `lake exe leandoc`: it writes
+the current one. (The other write-once files, such as `style.css`, carry
+no number; compare them by hand when you want a newer version.)
+
+The `QualityAuditPrompt.txt` audit checks the same thing.
+
 ### Searching the generated site
 
 Jekyll output (see "Jekyll" above) includes a search box at the top of

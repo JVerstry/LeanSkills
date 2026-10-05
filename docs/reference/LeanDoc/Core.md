@@ -1698,6 +1698,66 @@ an existing file, same write-once treatment as `ensureStyleAsset`.
 
 [source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1102-L1111)
 
+### `layoutStampOf`
+
+*def*
+
+```lean
+layoutStampOf : String → Option Nat
+```
+
+The template version stamped in a layout file (task T61): the number
+after `leandoc-layout-version:`, `none` if there's no such stamp (a layout
+written by a LeanDoc older than the stamp, or a customised copy that
+dropped the line). 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1113-L1121)
+
+### `layoutExpectedRefs`
+
+*def*
+
+```lean
+layoutExpectedRefs : List (String × String)
+```
+
+The three scripts a current layout references (task T61), as the
+`href`/`src` paths its markup uses. A project layout missing one of them
+silently lacks the feature it provides. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1123-L1129)
+
+### `layoutWarning`
+
+*def*
+
+```lean
+layoutWarning : String → String → String → Option String
+```
+
+The warning for a project's layout that is older than the one this
+LeanDoc ships (task T61), or `none` if it's current or newer. Pure, so
+it can be tested without touching the file system. Names the features
+the old copy visibly lacks (by looking for the scripts a current layout
+loads), and the fix: LeanDoc never overwrites the file, because the
+project may have customised it, so the update is a manual merge. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1131-L1154)
+
+### `checkLayoutVersion`
+
+*def*
+
+```lean
+checkLayoutVersion : System.FilePath → IO Unit
+```
+
+Warns, never fails, when the project's `_layouts/default.html` is older
+than the shipped one (task T61). Runs after `ensureDefaultLayout`, so a
+layout LeanDoc just wrote is current by construction. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1156-L1164)
+
 ### `ensureColorSchemeScript`
 
 *def*
@@ -1712,7 +1772,7 @@ light/dark/system theme switcher script (task T45 — see
 missing. Never overwrites an existing file, same write-once treatment
 as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1113-L1123)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1166-L1176)
 
 ### `render`
 
@@ -1762,4 +1822,4 @@ For Jekyll output, also writes `docs_dir/assets/search-index.json`
 "only meaningful for Jekyll" writes together keeps them visually
 separate from the always-on Markdown writes above. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1125-L1204)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1178-L1258)

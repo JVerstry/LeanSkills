@@ -202,12 +202,16 @@ later run must get the same key.
      confirm it's still valid CSS/JS/a valid Jekyll layout.
    - **Old layout check.** Because those files are written only once,
      a project that adopted LeanDoc early may keep a `_layouts/
-     default.html` that predates features added later. Check that the
+     default.html` that predates features added later. The layout
+     carries a `leandoc-layout-version: N` stamp in its opening comment
+     (and `lake exe leandoc` warns about an older one on every run):
+     compare it with the stamp in LeanDoc's current layout, and treat a
+     missing or lower number as an old layout. Also check that the
      layout still references `/assets/color-scheme.js`,
      `/assets/search.js` and `/assets/mathjax-config.js`, and has the
-     `#search` box. If it doesn't, report it as a project-side gap: the
-     site is missing the search box, the light/dark switcher and/or
-     LaTeX rendering. The remedy is manual: compare the project's
+     `#search` box. If it's old or doesn't, report it as a project-side
+     gap: the site may be missing the search box, the light/dark
+     switcher and/or LaTeX rendering. The remedy is manual: compare the project's
      layout with LeanDoc's current one (`assets/layouts/default.html`
      in LeanDoc's repository, or under `.lake/packages/LeanDoc/`) and
      merge the missing lines in — don't overwrite the file blindly,
