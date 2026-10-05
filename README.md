@@ -78,8 +78,9 @@ which one a given piece of documentation or setup step is for:
   automatic; `.git/hooks/` itself is never committed, so shipping a
   hook via a tracked file and asking developers to point Git at it is
   the standard way to distribute one at all) — and `demo/`, a
-  standalone Lake project (its own `lean-toolchain`/`lakefile.toml`/
-  `leandoc.toml`) used purely as `test/`'s fixture: real source
+  separate Lake project (its own `lean-toolchain`/`lakefile.toml`/
+  `leandoc.toml`, requiring LeanDoc as a path dependency, like a real
+  adopting project) used purely as `test/`'s fixture: real source
   `lake exe leandoc` is run against to verify the extractor/renderer,
   not anything an installing user's own project needs or touches.
   This costs real time per commit (a full `lake exe leandoc-test` run)
@@ -99,3 +100,15 @@ which one a given piece of documentation or setup step is for:
     same "inert files present, never executed" situation as any other
     Lean/Lake git dependency that happens to ship its own examples or
     tests in its repo.
+
+## Contributing
+
+Contributing (submitting changes to LeanDoc's code, prompts or
+documentation) is limited to this project's contributors.
+
+Anyone can open or report an issue, though. If you hit a problem with
+LeanDoc or have a suggestion, please file an issue.
+
+By contributing to this project, you agree that your contribution is
+automatically licensed under this project's license (see
+[`LICENSE`](LICENSE)), with no separate agreement required.
