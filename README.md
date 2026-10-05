@@ -1,13 +1,55 @@
 # LeanSkills
 
-A set of practical AI skills for Lean projects.
+A set of practical AI skills for Lean projects. Each tool is a prompt, or a small
+skill built from prompts, that you hand to an AI assistant working inside your own
+Lean project. There is one installer for all of them.
 
-## Skills
+## The tools
 
-| Skill | What it does | Docs |
-|-------|--------------|------|
-| **LeanPerformance** | A free audit prompt, also installable as the `/leanperf` skill, that finds what slows down your Lean build and checks structure and style against Mathlib or CSLib conventions. | [LeanPerformance/MANUAL.md](LeanPerformance/MANUAL.md) |
-| **LeanDoc** | A free tool that generates documentation for Lean 4 projects using Lean itself, optionally following Mathlib's documentation conventions. Installed by handing a prompt to your AI assistant, with an optional `/leandoc` skill. | [LeanDoc/README.md](LeanDoc/README.md) |
+### LeanPerformance
+
+Lean and Lake build times can balloon in ways that aren't obvious from reading the
+code: a cosmetic doc-comment edit can trigger a multi-minute rebuild cascade, a proof
+split for "parallelism" can end up slower, a default tactic can silently dominate a
+file's compile time. LeanPerformance is an audit that measures where your project's
+build time goes and reports a prioritized, plain-language list of concrete fixes. It
+also checks your code's structure and style against Mathlib or CSLib conventions, and
+can apply low-risk recommendations one measured batch at a time. In Claude Code it
+installs as the `/leanperf` skill.
+
+Manual: [LeanPerformance/MANUAL.md](LeanPerformance/MANUAL.md)
+
+### LeanDoc
+
+A free tool that generates documentation for Lean 4 projects using Lean itself, by
+fully elaborating them through Lean's own frontend. It writes plain Markdown that
+GitHub Pages can serve, optionally following Mathlib's documentation conventions. It
+is added to your Lake project as a dependency, and comes with an audit prompt, and in
+Claude Code an optional `/leandoc` skill, that checks the generated documentation.
+
+Manual: [LeanDoc/docs/manual.md](LeanDoc/docs/manual.md), with a short overview in
+[LeanDoc/README.md](LeanDoc/README.md)
+
+## Installation
+
+There is no package to install. Hand [`InstallationPrompt.txt`](InstallationPrompt.txt)
+to your AI assistant, running inside your Lean project, for example by giving it this
+address:
+
+```
+https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt
+```
+
+The installer asks which tool you want, LeanPerformance, LeanDoc or both. It asks once
+for what the two skills share: whether to install them for all your projects or only
+the current one, and whether they run from local copies of the audit texts or fetch
+the latest on every run. Then it carries out each tool's own steps. LeanDoc's steps
+include reviewing its configuration with you. The details of each are in the tool's
+manual, in its installation section.
+
+Each tool's part of the installer also works alone:
+[LeanPerformance/InstallationPrompt.txt](LeanPerformance/InstallationPrompt.txt) and
+[LeanDoc/InstallationPrompt.txt](LeanDoc/InstallationPrompt.txt).
 
 ## Contributing
 

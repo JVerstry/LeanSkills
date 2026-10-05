@@ -18,9 +18,16 @@ You depend on LeanDoc to document *your own* project.
 ### Installing
 
 LeanDoc has no packaged installer yet (no tagged release — see the
-STATUS NOTE at the top of `InstallationPrompt.txt`). Hand
-[`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/InstallationPrompt.txt)
-to your own AI coding assistant; it walks through adding the
+STATUS NOTE at the top of `InstallationPrompt.txt`). It is installed by the
+LeanSkills installer: hand
+[`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/InstallationPrompt.txt)
+at the root of the LeanSkills repository (raw file:
+`https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt`)
+to your own AI coding assistant. It asks which tool you want, LeanDoc,
+LeanPerformance or both, asks once about the skills' scope and audit source,
+then follows LeanDoc's own installer part
+([`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/InstallationPrompt.txt)
+in this folder, which also works on its own): it walks through adding the
 dependency, reviewing configuration choices with you, and running the
 first generation.
 
@@ -71,11 +78,12 @@ was verified against your actual output.
 
 #### The `/leandoc` skill (Claude Code)
 
-If you use Claude Code, `InstallationPrompt.txt` can install a small
+If you use Claude Code, the installer can install a small
 skill so that you can run the audit with `/leandoc` instead of handing
-over the prompt each time (step 8 of that file; to add it to a project
-that already uses LeanDoc, hand the file to your assistant and ask for
-that step only). It writes three text files into a skill folder, either
+over the prompt each time (the LeanSkills installer asks whether you want
+it; it is step 8 of LeanDoc's own `InstallationPrompt.txt`; to add it to a
+project that already uses LeanDoc, hand either file to your assistant and
+ask for the skill only). It writes three text files into a skill folder, either
 for all your projects (`~/.claude/skills/leandoc/`) or for this one
 (`.claude/skills/leandoc/`, which you can commit so collaborators get it
 too). Nothing in your Lean project changes.

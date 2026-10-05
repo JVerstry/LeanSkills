@@ -8,11 +8,13 @@ enforced at all — the default.
 
 ## Installation
 
-LeanDoc doesn't have a packaged installer. Hand
-[`InstallationPrompt.txt`](InstallationPrompt.txt) to your own AI coding
-assistant (Claude or otherwise) — it walks through adding LeanDoc as a
+LeanDoc doesn't have a packaged installer. Hand the LeanSkills installer,
+[`InstallationPrompt.txt`](../InstallationPrompt.txt) at the root of this
+repository, to your own AI coding assistant (Claude or otherwise) and
+choose LeanDoc (or both tools) — it walks through adding LeanDoc as a
 Lake dependency, setting up `docs/` and `leandoc.toml`, and running the
-initial generation. See [`docs/manual.md`](docs/manual.md) for the full
+initial generation. [`InstallationPrompt.txt`](InstallationPrompt.txt) in
+this folder is LeanDoc's part of that installer and also works alone. See [`docs/manual.md`](docs/manual.md) for the full
 usage manual (configuration, inclusion/exclusion, Jekyll, auditing the
 output with [`QualityAuditPrompt.txt`](QualityAuditPrompt.txt) — or, in
 Claude Code, with the optional `/leandoc` skill the install prompt can

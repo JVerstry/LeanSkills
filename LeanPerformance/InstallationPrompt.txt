@@ -4,6 +4,15 @@ tidy it. Follow these steps. This installs four small text files into a skill
 folder — no software, no dependency, and nothing in the Lean project's build is
 changed.
 
+HOW THIS FILE IS USED: it is the LeanPerformance part of the LeanSkills
+installer (InstallationPrompt.txt at the root of the LeanSkills repository), and
+it also works alone. If you were sent here from that installer, the user has
+already chosen the scope (user-level or project-level) and the audit source
+(local or remote): use those answers, skip the questions in step 2, and leave out
+the closing summary of step 4 except for the lines specific to /leanperf (the
+installer writes one combined report). If you were handed this file directly,
+follow every step as written.
+
 ======================================================================
 1. Check your assistant supports skills
 ======================================================================

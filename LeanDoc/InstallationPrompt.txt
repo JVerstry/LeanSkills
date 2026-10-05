@@ -3,6 +3,15 @@ documentation generator for Lean 4 projects) to their existing Lean/Lake
 project. The user has pasted you this file as their installation prompt.
 Follow these steps, adapting paths/names to what you find in their repo.
 
+HOW THIS FILE IS USED: it is the LeanDoc part of the LeanSkills installer
+(InstallationPrompt.txt at the root of the LeanSkills repository), and it also
+works alone. If you were sent here from that installer, the user has already
+chosen whether to install the optional /leandoc skill and, if so, its scope
+(user-level or project-level) and audit source (local or remote): use those
+answers and skip the questions in step 8. Everything else, including the
+parameter review in step 2, still applies. If you were handed this file directly,
+follow every step as written.
+
 This installs LeanDoc as a *user* of it — do not set up anything from
 LeanDoc's own *development* tooling (its `test/` suite, its
 `.githooks/pre-commit` test-on-commit hook, `git config core.hooksPath

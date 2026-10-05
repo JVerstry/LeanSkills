@@ -42,17 +42,23 @@ assistant which profile to use, `mathlib` (the default) or `cslib`.
 
 ### Option 2: install it as a skill
 
-To avoid pasting the prompt every time, hand
-[`InstallationPrompt.txt`](InstallationPrompt.txt) to your AI assistant. It
-creates a small skill (four text files, plus an optional fifth if you connect a
-papercuts log, no software) so that you can run the audit afterwards with
-`/leanperf`.
+To avoid pasting the prompt every time, hand the LeanSkills installer,
+[`InstallationPrompt.txt`](../InstallationPrompt.txt) at the root of this
+repository, to your AI assistant (the raw file is at
+`https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt`).
+It asks which tool to install, LeanPerformance, LeanDoc or both, then creates a
+small skill for LeanPerformance (four text files, plus an optional fifth if you
+connect a papercuts log, no software) so that you can run the audit afterwards
+with `/leanperf`. Choose "LeanPerformance only" if that is all you want. The
+LeanPerformance part of the installer is
+[`InstallationPrompt.txt`](InstallationPrompt.txt) in this folder, which also
+works on its own.
 
 Running `/leanperf` on its own performs the full audit: it builds and profiles
 your project to measure where the time goes, then reports prioritized fixes. The
 other modes below are variations on it.
 
-The assistant asks you two questions first:
+The installer asks you two questions, once, for every skill it installs:
 
 - **Scope**: install for all your projects, or only for the current one.
 - **Audit source**: where the skill gets the audit text when it runs.
