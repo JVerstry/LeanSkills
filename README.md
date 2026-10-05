@@ -68,7 +68,7 @@ what you have and explains how to use `/leanperf` and `/leandoc`. Its commands:
 |---|---|
 | `/leanskills status` | What is installed, where, which versions, and whether newer ones are published |
 | `/leanskills update` | Updates both tools and itself after one confirmation |
-| `/leanskills install [tool]` | Runs the installer, including the throwaway-clone trial |
+| `/leanskills install [tool]` | Runs the installer, including the throwaway branch or clone trial |
 | `/leanskills doctor` | Read-only health check: files, versions, Lake project, toolchain compatibility, reachability |
 | `/leanskills tour` | A guided first run on your project, one confirmed step at a time |
 | `/leanskills mode`, `papercuts` | One local/remote setting and one papercuts log for both skills |
