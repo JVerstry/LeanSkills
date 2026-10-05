@@ -1,11 +1,6 @@
-# LeanPerformance
+# LeanPerformance manual
 
 A free audit prompt to accelerate Lean code build time.
-
-> **Moving:** LeanPerformance is being merged into
-> [LeanSkills](https://github.com/JVerstry/LeanSkills), where development will
-> continue. This repository stays online, and skills already installed keep
-> working, because they fetch their audit text from the files here.
 
 ## Purpose
 
@@ -65,7 +60,7 @@ The assistant asks you two questions first:
 For the audit source, *local* means the skill runs from copies of the audit texts
 saved in its own folder. It works offline and gives reproducible results.
 
-*Remote* means the skill fetches the latest audit texts from this repository on
+*Remote* means the skill fetches the latest audit texts from the LeanSkills repository on
 every run. It is always current but needs network access, and it falls back to
 the local copies if the fetch fails.
 
@@ -154,7 +149,7 @@ confirm. Dry runs and scheduled runs never write to the log.
 ### Updating and removing the skill
 
 Run `/leanperf update` to refresh the local copies of the audit texts, and the
-skill itself, from this repository. It shows what changed and asks for your
+skill itself, from the LeanSkills repository. It shows what changed and asks for your
 confirmation before overwriting anything.
 
 To remove the skill, run `/leanperf uninstall`, which also asks for confirmation.
@@ -163,15 +158,3 @@ user-level install, or `.claude/skills/leanperf/` in your project for a
 project-level one.
 
 Neither updating nor removing the skill touches anything in your Lean project.
-
-## Contributing
-
-Contributing (submitting changes to the audit prompt) is limited to this
-project's contributors.
-
-Anyone can open or report an issue, though. If you hit a problem with the prompt
-or have a suggestion, please file an issue.
-
-By contributing to this project, you agree that your contribution is
-automatically licensed under this project's license (see [LICENSE](LICENSE)),
-with no separate agreement required.
