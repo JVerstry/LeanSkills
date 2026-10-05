@@ -1,0 +1,51 @@
+
+# LeanDoc configuration for this project. See LeanDoc's own
+# InstallationPrompt.txt for the schema rationale. All fields shown here
+# are also the defaults.
+#
+# `[modules] include` is deliberately left empty here (task T21): with
+# no explicit list, LeanDoc scans this project's own lakefile.toml
+# (the `[[lean_lib]] name = "Demo", globs = ["Demo.+"]` entry) to
+# discover `Demo.MyLeanFile` on its own, rather than being told about
+# it by hand — this is the whole-package-scanning test case.
+
+[output]
+# Intermediate metadata JSON — build-artifact territory, gitignored.
+json_dir = ".leandoc/"
+# Final rendered docs — defaults to `docs/` so GitHub Pages can serve
+# it straight from `main` with zero extra config.
+docs_dir = "docs/"
+
+[modules]
+# include = [...]   # left empty on purpose — see note above
+# exclude = [...]
+
+[renderer]
+# Reserved for T9's future renderer choice — Markdown is the only one
+# that exists, so this isn't acted on yet.
+name = "markdown"
+# Whether generated pages target Jekyll: front matter, {% link %}
+# internal links, a written _config.yml (task T22/T28) — vs. plain
+# portable Markdown with ordinary relative links (task T31).
+jekyll = true
+
+[compliance]
+# Off by default (task T41) — Mathlib-derived copyright/license header
+# checking. Warns, never fails the build. author/license only matter
+# when enabled = true; both default to empty (nothing to check).
+enabled = false
+# author = "..."
+# license = "..."
+# Also off by default (task T41): warn (never fail) about declaration
+# names that break Mathlib's naming convention for their kind. Independent
+# of `enabled`. Left off here: this fixture deliberately contains a few
+# upper-case function and theorem names, which the test suite uses to
+# check the naming check against real declarations.
+# naming = false
+
+[project]
+# Unset by default (task T27) — this project's own release version.
+# If set, warns (never fails) at generation time when it doesn't match
+# the latest git tag. Purely a build-time developer warning, never
+# rendered anywhere a reader of the generated docs would see it.
+# version = "1.0.0"

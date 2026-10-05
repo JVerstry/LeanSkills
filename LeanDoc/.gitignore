@@ -1,0 +1,19 @@
+# cache and other artifacts produced by Lean's Lake build tool
+.lake/
+
+# LeanDoc's intermediate metadata JSON (regenerated on every run;
+# rendered output in docs/ is committed, this build artifact is not)
+.leandoc/
+
+# Working-notes task tracker — local scratch, never meant to be
+# versioned; purged from history 2026-09-21.
+wip/
+
+# Personal Claude Code config — local scratch, never meant to be
+# versioned (task T32/T33, 2026-09-22); purged from history same day,
+# same treatment as wip/ above.
+CLAUDE.md
+
+# Personal priority list for picking the next tasks — local, same
+# treatment as wip/ above.
+priority-list.md

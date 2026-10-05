@@ -1,0 +1,31 @@
+#!/bin/sh
+# LeanDoc development pre-commit hook (task T24's follow-up).
+#
+# Runs the test suite before allowing a commit, so a regression is
+# caught locally instead of only surfacing in CI (T11) after a push.
+#
+# This is LeanDoc-*development* tooling only — see the "Users vs.
+# developers of LeanDoc" section in README.md. It is never
+# installed for a project that installs LeanDoc as a dependency;
+# InstallationPrompt.txt does not reference this file or set it up.
+#
+# Not installed automatically: a LeanDoc developer opts in once with
+#   git config core.hooksPath .githooks
+# (git does not auto-discover hooks outside .git/hooks/, which itself
+# is never committed — this is the standard way to ship a hook via a
+# tracked file instead).
+
+# Works wherever LeanDoc sits: as a repository of its own, or as a
+# subfolder of a larger one (then enable it with
+#   git config core.hooksPath <that folder>/.githooks
+# from the repository root). It always runs from LeanDoc's own folder,
+# and in a larger repository only when the commit touches that folder.
+
+set -e
+cd "$(dirname "$0")/.."
+if [ -n "$(git rev-parse --show-prefix)" ] && git diff --cached --quiet -- .; then
+  echo "LeanDoc pre-commit: no staged changes in $(git rev-parse --show-prefix), skipping the test suite."
+  exit 0
+fi
+echo "LeanDoc pre-commit: running test suite (lake exe leandoc-test)..."
+lake exe leandoc-test

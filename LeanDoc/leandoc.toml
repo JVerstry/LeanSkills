@@ -1,0 +1,20 @@
+
+# LeanDoc documenting itself (dogfooding). See demo/leandoc.toml for the
+# schema reference, and InstallationPrompt.txt for the rationale.
+
+[output]
+json_dir = ".leandoc/"
+docs_dir = "docs/"
+
+[modules]
+# include = [...]   # left empty to test T21's lean_exe discovery path
+# `Test` (task T24's test/Test.lean, srcDir = "test") is excluded for
+# two reasons: it's internal tooling, not public API worth documenting
+# either way, and T21's whole-package scanning doesn't understand
+# per-target `srcDir` yet (a real, known limitation).
+# `LeanDoc.Assets` (task T29) is generated plumbing (embedded static
+# asset content) — internal, not public API, same reasoning as `Test`.
+exclude = ["Test", "LeanDoc.Assets"]
+
+[renderer]
+name = "markdown"

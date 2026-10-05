@@ -1,0 +1,67 @@
+<!-- leandoc-layout-version: 1
+     (Bumped whenever this template changes. LeanDoc writes this file
+     once and never overwrites it, so a project that installed an older
+     LeanDoc keeps an older copy; `lake exe leandoc` compares this
+     number with the one in the project's copy and warns if it is
+     older. If you customise your copy, keep this line.)
+
+     LeanDoc's own minimal Jekyll layout (task T29, 2026-09-23).
+     Needed because Jekyll only applies a layout's styling to a page
+     when that page's front matter has `layout: <name>` — a plain
+     `theme:`/`remote_theme:` in _config.yml is not, by itself,
+     enough (confirmed against jekyllrb.com's own docs). LeanDoc's
+     generated front matter now sets `layout: default`, so this file
+     is what actually gets used.
+
+     The #settings block + color-scheme.js (task T45) is adapted from
+     doc-gen4's own light/dark/system theme switcher, simplified since
+     LeanDoc has no separate nav-in-an-iframe document to coordinate
+     with — see assets/color-scheme.js's own header comment.
+
+     The #search block + search.js (task T47) is original, not adapted
+     from doc-gen4 -- see assets/search.js's own header comment for why.
+     LEANDOC_BASEURL is set here (not hardcoded in search.js) because
+     only the layout goes through Liquid processing; search-index.json
+     itself has no front matter, so it can't resolve
+     {{ site.baseurl }} on its own.
+
+     mathjax-config.js (task T51) must load *before* MathJax's own
+     script, which reads window.MathJax at startup -- plain <script>,
+     not type="module", to guarantee that ordering (module scripts are
+     deferred and don't reliably run before a later plain <script>). -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title | default: site.title | default: "LeanDoc" }}</title>
+  <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+  <script>window.LEANDOC_BASEURL = "{{ site.baseurl | default: '' }}";</script>
+  <script type="module" src="{{ '/assets/color-scheme.js' | relative_url }}"></script>
+  <script type="module" src="{{ '/assets/search.js' | relative_url }}"></script>
+  <script src="{{ '/assets/mathjax-config.js' | relative_url }}"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    #search { margin: 1em 0; }
+    #search-results { list-style: none; padding: 0; margin: 0.5em 0 0; }
+    #search-results li { padding: 0.15em 0; }
+    .search-result-meta { opacity: 0.7; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <div id="settings" hidden>
+    <form id="color-theme-switcher">
+      <label for="color-theme-dark"><input type="radio" name="color_theme" id="color-theme-dark" value="dark" autocomplete="off">dark</label>
+      <label for="color-theme-system" title="Match system theme settings"><input type="radio" name="color_theme" id="color-theme-system" value="system" autocomplete="off">system</label>
+      <label for="color-theme-light"><input type="radio" name="color_theme" id="color-theme-light" value="light" autocomplete="off">light</label>
+    </form>
+  </div>
+  <div id="search">
+    <input type="search" id="search-input" placeholder="Search declarations…" autocomplete="off">
+    <ul id="search-results"></ul>
+  </div>
+  <main>
+    {{ content }}
+  </main>
+</body>
+</html>
