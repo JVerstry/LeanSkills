@@ -3,7 +3,7 @@ name: leanskills
 description: Explain and manage the LeanSkills tools (/leanperf, /leandoc) installed for a Lean project. Use when the user types /leanskills (or /leanskills status, update, doctor, install, tour, report, mode, papercuts, uninstall) or asks how to use LeanSkills, LeanPerformance or LeanDoc, or what is installed.
 ---
 
-LeanSkills skill version: 1
+LeanSkills skill version: 2
 
 # /leanskills — the entry point to the LeanSkills tools
 
@@ -96,7 +96,7 @@ structure versions), for `leandoc` the first line of `audit.txt`, each `mode.txt
 
 Fetch `InstallationPrompt.txt` (first source above) and follow it. If the user named a tool, treat
 the installer's step 2 as answered; it still asks the other questions (including the offer to try
-it on a throwaway clone first). If the fetch fails, say so in one sentence and stop.
+it on a throwaway branch or clone first). If the fetch fails, say so in one sentence and stop.
 
 ## `/leanskills doctor` — check the installation is healthy
 
