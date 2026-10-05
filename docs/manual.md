@@ -601,7 +601,45 @@ auto-installed because a full `lake exe leandoc` run before *every*
 commit is a real, ongoing per-commit cost on a large project, not a
 one-time setup cost.
 
-### What ends up in your repo
+### Optional: quality checks on commit or CI
+
+Separate from the freshness checks above (which catch docs that are
+*out of date*), LeanDoc ships a small script that catches problems in
+the docs *as they are*, for use in a commit hook or in CI. It runs only
+the mechanical checks that need no judgement, on the committed docs:
+
+- every Jekyll `link` tag names a file that exists (a missing target
+  fails the whole Jekyll build, and nothing else would tell you before
+  you publish);
+- `_layouts/default.html` isn't older than the one your LeanDoc ships
+  (see "Upgrading LeanDoc");
+- no Lean-generated scaffolding (`.rec`, `.casesOn`, `.noConfusion`, ...)
+  leaked into `docs_dir/reference`.
+
+Judgement checks, such as whether a docstring is any good, stay with the
+audit (see "Auditing the output"). The script reads files only: it
+regenerates nothing and modifies nothing, so it's fast.
+
+It is **strict**: a finding fails the commit or the CI run. To commit
+work in progress anyway, start the commit message with `WIP` (or
+`WIP: ...`, or `[WIP] ...`, in any case). The findings are then still
+printed in full, but as warnings, and the commit goes through. Unlike
+`git commit --no-verify`, this skips nothing else, and the marker stays
+visible in your history. Only the first line of the message counts, and
+words that merely start with those letters ("Wipe the cache") don't.
+
+The script is `scripts/quality-check.sh` in LeanDoc, so under
+`.lake/packages/LeanDoc/` in your project. You can run it by hand:
+
+```sh
+sh .lake/packages/LeanDoc/scripts/quality-check.sh --docs-dir docs
+```
+
+As a hook it needs the `commit-msg` stage, since that's the first moment
+the message exists. `InstallationPrompt.txt` has a ready-made
+`.githooks/commit-msg` and a CI step (which passes the checked commit's
+message to the script, so the same WIP marker applies), both opt-in and
+never set up automatically.
 
 Installing LeanDoc as a dependency brings its whole git repository
 along — including `demo/`, `test/`, and `.githooks/`, LeanDoc's own

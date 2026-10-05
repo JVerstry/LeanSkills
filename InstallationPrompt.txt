@@ -440,6 +440,56 @@ updates as the interface stabilizes.
      fresh clone wouldn't have it) and not made automatic — the user
      has to run that `git config` line themselves, same as LeanDoc's
      own developers do.
+   - **Mention, but do not set up, an opt-in documentation quality
+     check** that can run on every commit and in CI. It is separate from
+     the freshness checks above (those catch docs that are out of date;
+     this catches problems in the docs as they are) and runs only the
+     *mechanical* checks that need no judgement: every Jekyll `link` tag
+     names a file that exists (a missing target fails the whole site
+     build), `_layouts/default.html` isn't older than the one this
+     LeanDoc ships, and no Lean-generated scaffolding (`.rec`,
+     `.casesOn`, `.noConfusion`, ...) leaked into `<docs_dir>/reference`.
+     Judgement checks such as docstring quality are left to
+     `QualityAuditPrompt.txt`. It reads the committed docs and is fast:
+     it does not regenerate anything. Only set it up if the user asks.
+     It lives in LeanDoc's own script, so there is nothing to copy:
+     `.lake/packages/LeanDoc/scripts/quality-check.sh` (or the
+     `packagesDir`/path-dependency directory, as in step 8).
+
+     It is **strict**: a finding fails the commit or CI run. To commit
+     work in progress anyway, the user starts the commit message with
+     `WIP` (also `WIP: ...` or `[WIP] ...`, any case): the findings are
+     then still printed in full, but as warnings, and the commit goes
+     through. Unlike `git commit --no-verify`, this skips nothing else
+     (the test run and the freshness check still happen), and the marker
+     stays visible in the history.
+
+     A commit hook cannot see the message until the `commit-msg` stage,
+     so use that hook, as a tracked file with the same opt-in activation
+     as above (`.githooks/commit-msg`; `git config core.hooksPath
+     .githooks`):
+
+     ```sh
+     #!/bin/sh
+     exec sh .lake/packages/LeanDoc/scripts/quality-check.sh \
+       --docs-dir <docs_dir> --message-file "$1"
+     ```
+
+     For CI, add a step after the project builds, giving the script the
+     message of the commit being checked so the same WIP marker applies:
+
+     ```yaml
+     - name: Documentation quality checks
+       run: |
+         sh .lake/packages/LeanDoc/scripts/quality-check.sh --docs-dir <docs_dir> \
+           --message "$(git log -1 --format=%B ${{ github.event.pull_request.head.sha || github.sha }})"
+     ```
+
+     Substitute `<docs_dir>` as above. For a pull request the head
+     commit must be fetched (`fetch-depth: 2` or more on the checkout
+     step). Merge commits made by `git merge` have no WIP marker, so
+     they are checked strictly. The script is plain POSIX `sh` and works
+     with the `sh` that Git for Windows provides.
 
 If any step fails because LeanDoc's actual interface differs from what's
 described here (this file may be stale relative to a newer LeanDoc

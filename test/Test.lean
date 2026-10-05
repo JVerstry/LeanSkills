@@ -314,6 +314,95 @@ def assetChecks (c : Ctx) (s0 : TestState) : IO TestState := do
 
   pure s
 
+def qualityHookChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
+  -- ## T43's opt-in quality check: scripts/quality-check.sh. Structure
+  -- first (always runs), then behaviour (needs an `sh`).
+
+  let scriptPath := "scripts/quality-check.sh"
+  s ← s.check "scripts/quality-check.sh exists" (← System.FilePath.pathExists scriptPath)
+  let script ← IO.FS.readFile scriptPath
+  s ← s.check "quality-check.sh is a POSIX sh script" (script.startsWith "#!/bin/sh")
+  s ← s.check "quality-check.sh takes --message-file, --message and --docs-dir"
+    ((script.splitOn "--message-file").length > 1 && (script.splitOn "--message)").length > 1 &&
+     (script.splitOn "--docs-dir").length > 1)
+  let install ← IO.FS.readFile "InstallationPrompt.txt"
+  s ← s.check "InstallationPrompt.txt documents the commit-msg hook, the script and the WIP marker"
+    ((install.splitOn "quality-check.sh").length > 1 && (install.splitOn "commit-msg").length > 1 &&
+     (install.splitOn "WIP").length > 1)
+
+  let hasSh ← try
+      let r ← IO.Process.output { cmd := "sh", args := #["-c", "true"] }
+      pure (r.exitCode == 0)
+    catch _ => pure false
+  unless hasSh do
+    IO.println "LeanDoc tests: note: no `sh` on PATH, skipping the quality-check.sh behaviour checks"
+    return s
+
+  -- Forward slashes throughout: `sh` treats a backslash as an escape.
+  let rootStr := (c.scratchDir.toString.replace "\\" "/") ++ "/quality"
+  let docsStr := rootStr ++ "/docs"
+  let root : System.FilePath := rootStr
+  let docs : System.FilePath := docsStr
+  if ← root.pathExists then IO.FS.removeDirAll root
+  IO.FS.createDirAll (docs / "_layouts")
+  IO.FS.createDirAll (docs / "reference")
+  let layoutFile := docs / "_layouts" / "default.html"
+  IO.FS.writeFile layoutFile LeanDoc.Assets.defaultLayoutHtml
+  IO.FS.writeFile (docs / "toc.md") "# Toc\n"
+  IO.FS.writeFile (docs / "reference" / "A.md") "# A\n\n[toc]({% link toc.md %})\n"
+  let run (extra : Array String) : IO (UInt32 × String × String) := do
+    let r ← IO.Process.output
+      { cmd := "sh", args := #[scriptPath, "--docs-dir", docsStr] ++ extra }
+    pure (r.exitCode, r.stdout, r.stderr)
+  let has (hay needle : String) : Bool := (hay.splitOn needle).length > 1
+
+  let (code, out, _) ← run #[]
+  s ← s.check "quality-check: clean docs have no findings and exit 0" (code == 0 && has out "no findings")
+
+  -- A missing link target (the one that fails a whole Jekyll build).
+  let broken := docs / "reference" / "B.md"
+  IO.FS.writeFile broken "# B\n\n[x]({% link reference/Nope.md %})\n"
+  let (code, _, err) ← run #[]
+  s ← s.check "quality-check: a missing link target fails (strict)" (code == 1 && has err "link target missing")
+  -- ...and the WIP override downgrades it, findings still printed.
+  for marker in ["WIP", "WIP: half done", "[WIP] half done", "wip add search"] do
+    let (code, _, err) ← run #["--message", marker]
+    s ← s.check s!"quality-check: the message '{marker}' downgrades findings to warnings"
+      (code == 0 && has err "warning: link target missing" && has err "warnings only")
+  for notMarker in ["Wipe the cache", "Implement T43", "WIPE"] do
+    let (code, _, _) ← run #["--message", notMarker]
+    s ← s.check s!"quality-check: the message '{notMarker}' is not a WIP marker" (code == 1)
+  IO.FS.writeFile (root / "msg.txt") "Fix things\n\nWIP in the body only\n"
+  let (code, _, _) ← run #["--message-file", rootStr ++ "/msg.txt"]
+  s ← s.check "quality-check: a WIP marker counts only on the first line of the message file" (code == 1)
+  IO.FS.writeFile (root / "msg.txt") "WIP: stuff\n\nlonger body\n"
+  let (code, _, _) ← run #["--message-file", rootStr ++ "/msg.txt"]
+  s ← s.check "quality-check: --message-file reads a WIP first line" (code == 0)
+
+  -- An example inside {% raw %} is shown literally, not run by Jekyll.
+  IO.FS.writeFile broken "# B\n\n{% raw %}[x]({% link reference/Example.md %}){% endraw %}\n"
+  let (code, _, _) ← run #[]
+  s ← s.check "quality-check: a link tag inside raw is not checked" (code == 0)
+  IO.FS.removeFile broken
+
+  -- An outdated layout, and scaffolding that leaked into the reference.
+  IO.FS.writeFile layoutFile "<html></html>"
+  let (code, _, err) ← run #[]
+  s ← s.check "quality-check: an outdated layout fails" (code == 1 && has err "outdated layout")
+  IO.FS.writeFile layoutFile LeanDoc.Assets.defaultLayoutHtml
+  let leaky := docs / "reference" / "C.md"
+  IO.FS.writeFile leaky "# C\n\n### `Foo.casesOn`\n"
+  let (code, _, err) ← run #[]
+  s ← s.check "quality-check: leaked scaffolding fails" (code == 1 && has err "scaffolding leaked")
+  IO.FS.removeFile leaky
+
+  let r ← IO.Process.output { cmd := "sh", args := #[scriptPath, "--docs-dir", rootStr ++ "/nothing-here"] }
+  s ← s.check "quality-check: a docs directory that doesn't exist is an error (exit 2)" (r.exitCode == 2)
+  IO.FS.removeDirAll root
+  pure s
+
 def namingChecks (c : Ctx) (s0 : TestState) : IO TestState := do
   let mut s := s0
   let scratchDir := c.scratchDir
@@ -1030,6 +1119,7 @@ def main : IO Unit := do
   let s ← projectBuildChecks c s
   let (s, demoMetas) ← extractorChecks c s
   let s ← renderChecks c demoMetas s
+  let s ← qualityHookChecks c s
   let s ← hygieneChecks s
 
   IO.println s!"LeanDoc tests: {s.passed} passed, {s.failed} failed"
