@@ -22,6 +22,13 @@ project's size warrants). Three tiers:
   still exist, and `wip/`/`CLAUDE.md` stay untracked by git — not code
   checks, but regressions with no other automated guard.
 
+Each group of checks is its own function taking and returning the
+`TestState`, and `main` runs them in order. Keep it that way: one long
+`do` block nests one level per statement and, at ~140 checks, exceeded
+Lean's default recursion limit. The few values several groups share
+(the `demo/` project, its build result and search path, a scratch
+directory) travel in `Ctx`.
+
 Several checks below exist specifically because a past bug slipped
 through without one: `loadConfig`'s trailing-slash trim (T8),
 `groupDeclsByModule`'s grouping (T9), the noise filter's declaration
@@ -42,24 +49,20 @@ def TestState.check (s : TestState) (label : String) (ok : Bool) : IO TestState 
     IO.eprintln s!"FAIL: {label}"
     pure { s with failed := s.failed + 1 }
 
--- `main` is one long `do` block, and elaborating it nests one level per
--- statement; at ~140 checks it exceeded the default `maxRecDepth` (512).
--- Splitting it into per-section functions is the real fix (see T58 in
--- wip/todo.md).
-set_option maxRecDepth 2048 in
-def main : IO Unit := do
-  let demoRoot : System.FilePath := "demo"
-  let demoModule : Name := `Demo.MyLeanFile
-  -- Needed for the fixture-level tests, which call `extractFile` for
-  -- real — same setup `Main.lean`'s `main` does before `runFrontend`,
-  -- including task T54's build step and demo/'s own search path, so
-  -- `Demo.AnotherFile`'s import of `Demo.MyLeanFile` resolves.
-  let demoBuilt ← buildProjectModules demoRoot #["Demo.MyLeanFile", "Demo.AnotherFile"]
-  let demoSearchPath ← projectSearchPath demoRoot
-  Lean.initSearchPath (← Lean.findSysroot) demoSearchPath
-  unsafe enableInitializersExecution
+/-- Values shared by several test sections: the `demo/` fixture project, the
+result of building it and its search path (set up once in `main`), and a
+scratch directory for throwaway file I/O. -/
+structure Ctx where
+  demoRoot : System.FilePath
+  demoModule : Name
+  demoBuilt : Bool
+  demoSearchPath : System.SearchPath
+  scratchDir : System.FilePath
 
-  let mut s : TestState := {}
+def pathChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let demoModule := c.demoModule
 
   -- ## Unit-level: path/name conversions
 
@@ -72,6 +75,11 @@ def main : IO Unit := do
   s ← s.check "moduleToDocPath builds the expected path"
     (moduleToDocPath "Demo.MyLeanFile" ==
       (("." : System.FilePath) / "Demo" / "MyLeanFile").addExtension "md")
+
+  pure s
+
+def modulesPageChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
 
   -- ## Regression: T9's Windows path-separator link bug.
   -- `renderModulesPage` must emit forward-slash links unconditionally,
@@ -95,6 +103,11 @@ def main : IO Unit := do
     ((plainModulesPage.splitOn "(Demo/MyLeanFile.md)").length > 1)
   s ← s.check "renderModulesPage (no jekyll) emits no Liquid syntax"
     (!plainModulesPage.any (· == '%'))
+
+  pure s
+
+def moduleTreeChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
 
   -- ## Unit-level: T49's nested module tree
 
@@ -121,6 +134,11 @@ def main : IO Unit := do
   s ← s.check "renderModuleTree never emits a backslash"
     (!(treeHtml.any (· == '\\')))
 
+  pure s
+
+def tocChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
   -- ## Unit-level: T18's table of contents (kindBucket, renderToc)
 
   s ← s.check "kindBucket: def" (kindBucket "def" == "Definitions")
@@ -146,12 +164,16 @@ def main : IO Unit := do
   s ← s.check "renderToc links an entry to its module page"
     ((toc.splitOn "{% link reference/M.md %}").length > 2)
 
+  pure s
+
+def rootIndexChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let scratchDir := c.scratchDir
+
   -- ## Fixture-level: T18's root-index nav management (ensureRootIndex)
   -- Uses a scratch directory under `.leandoc/` (already gitignored) —
   -- not a real project, just a throwaway spot for file I/O checks.
 
-  let scratchDir : System.FilePath := ".leandoc" / "test-scratch"
-  IO.FS.createDirAll scratchDir
   let scratchIndex := scratchDir / "index.md"
 
   -- Case 1: no file yet — creates one with the nav block.
@@ -182,6 +204,12 @@ def main : IO Unit := do
     (untouched == noMarkers)
 
   IO.FS.removeFile scratchIndex
+
+  pure s
+
+def assetChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let scratchDir := c.scratchDir
 
   -- ## Fixture-level: T29's vendored stylesheet/layout assets
   -- (ensureStyleAsset, ensureDefaultLayout) — same scratch directory,
@@ -278,6 +306,11 @@ def main : IO Unit := do
   IO.FS.removeFile scratchFindPage
   IO.FS.removeFile scratchNotFoundPage
 
+  pure s
+
+def searchIndexChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
   -- ## Unit-level: renderSearchIndex (task T47)
 
   let searchMetas : Array DeclMeta :=
@@ -298,6 +331,11 @@ def main : IO Unit := do
     (parsedEntries.any fun e => e.name == "Demo.foo" && e.kind == "def" && e.module == "Demo.MyLeanFile")
   s ← s.check "renderSearchIndex builds a reference/<path>.html link"
     (parsedEntries.any fun e => e.name == "Demo.foo" && e.link == "reference/Demo/MyLeanFile.html")
+
+  pure s
+
+def declRenderChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
 
   -- ## Unit-level: rendering content
 
@@ -326,6 +364,11 @@ def main : IO Unit := do
   s ← s.check "renderDecl omits the source link when there's no range, even with a base URL"
     ((renderDecl undocumented (some sourceUrl) noInstances |>.splitOn "[source]").length == 1)
 
+  pure s
+
+def liquidChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
   -- ## Unit-level: T56's Liquid escaping of Lean-sourced text
 
   s ← s.check "escapeLiquid turns {{ and {% into literal-printing output expressions"
@@ -347,6 +390,11 @@ def main : IO Unit := do
   s ← s.check "renderToc (jekyll) escapes Liquid in a declaration name"
     ((renderToc #[{ liquidDecl with name := "«{{x}}»" }] true |>.splitOn "«{{x}}»").length == 1)
 
+  pure s
+
+def instanceListingChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
   -- ## Unit-level: T48's typeclass instance listings
 
   let classDecl : DeclMeta :=
@@ -362,6 +410,13 @@ def main : IO Unit := do
     ((renderDecl classDecl none instancesByClass |>.splitOn "instFooInhabited").length > 1)
   s ← s.check "renderDecl on a declaration with no instances shows no Instances section"
     ((renderDecl instanceDecl none instancesByClass |>.splitOn "**Instances:**").length == 1)
+
+  pure s
+
+def importedByChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let demoModule := c.demoModule
 
   -- ## Unit-level: T50's "imported by"
 
@@ -403,6 +458,13 @@ def main : IO Unit := do
     [ ("Demo.MyLeanFile", realImports), ("Demo.AnotherFile", anotherImports) ])
   s ← s.check "buildImportedByMap on demo/'s real modules: MyLeanFile is imported by AnotherFile"
     ((realImportedBy.getD "Demo.MyLeanFile" #[]) == #["Demo.AnotherFile"])
+
+  pure s
+
+def sourceLinkChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let scratchDir := c.scratchDir
 
   s ← s.check "parseGithubOwnerRepo handles an HTTPS remote with .git"
     (parseGithubOwnerRepo "https://github.com/JVerstry/LeanDoc.git" == some "JVerstry/LeanDoc")
@@ -450,6 +512,11 @@ def main : IO Unit := do
     noRemoteBaseUrl.isNone
   IO.FS.removeDirAll noRemoteDir
 
+  pure s
+
+def groupingChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
+
   -- ## Unit-level: grouping
 
   let metas : Array DeclMeta :=
@@ -474,6 +541,13 @@ def main : IO Unit := do
   s ← s.check "kindString: quot" (kindString emptyEnv `x .quot == "quotient")
   s ← s.check "kindString: ctor" (kindString emptyEnv `x .ctor == "constructor")
   s ← s.check "kindString: recursor" (kindString emptyEnv `x .recursor == "recursor")
+
+  pure s
+
+def configChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let scratchDir := c.scratchDir
 
   -- ## Fixture-level: leandoc.toml parsing (T8's trailing-slash trim)
 
@@ -522,6 +596,13 @@ def main : IO Unit := do
   checkComplianceHeader (cfg : LeanDocConfig) (demoRoot / "Demo" / "MyLeanFile.lean")
   s ← s.check "checkComplianceHeader runs without crashing, enabled or not" true
 
+  pure s
+
+def versionChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let scratchDir := c.scratchDir
+
   -- ## Unit-level: T27's version-tag normalization
 
   s ← s.check "normalizeVersion strips a leading v" (normalizeVersion "v1.0.0" == "1.0.0")
@@ -562,6 +643,14 @@ def main : IO Unit := do
 
   IO.FS.removeDirAll versionScratchDir
 
+  pure s
+
+def projectBuildChecks (c : Ctx) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let demoBuilt := c.demoBuilt
+  let demoSearchPath := c.demoSearchPath
+
   -- ## Fixture-level: whole-package scanning (T21) against demo/'s
   -- real lakefile.toml
 
@@ -592,6 +681,13 @@ def main : IO Unit := do
   s ← s.check "extractFile documents a module that imports a sibling module (T54)"
     (anotherMetas.any fun d => d.name == "MyLeanModule.MyLeanQuadrupled")
 
+  pure s
+
+def extractorChecks (c : Ctx) (s0 : TestState) : IO (TestState × Array DeclMeta) := do
+  let mut s := s0
+  let demoRoot := c.demoRoot
+  let demoModule := c.demoModule
+
   -- ## Fixture-level: the real extractor against demo/ (T7's
   -- noise-filtering count, pinned instead of re-checked by hand)
 
@@ -620,6 +716,12 @@ def main : IO Unit := do
                theorem here, so it's not noise-filtered (see isNoise's honest doc comment)"
     (demoMetas.any fun d => d.name == "MyLeanModule.MyLeanProp.trivial" && d.kind == "theorem")
 
+  pure (s, demoMetas)
+
+def renderChecks (c : Ctx) (demoMetas : Array DeclMeta) (s0 : TestState) : IO TestState := do
+  let mut s := s0
+  let scratchDir := c.scratchDir
+
   -- ## Fixture-level: T38's orphan cleanup — `render` must wipe
   -- `reference/` fresh each run, not just write/overwrite, or a
   -- renamed/removed module's old page lingers forever.
@@ -646,6 +748,11 @@ def main : IO Unit := do
   s ← s.check "render leaves a hand-written page outside reference/ untouched (T55)"
     ((← IO.FS.readFile customPage) == customContent)
   IO.FS.removeDirAll renderScratchDir
+
+  pure s
+
+def hygieneChecks (s0 : TestState) : IO TestState := do
+  let mut s := s0
 
   -- ## Project hygiene: required top-level files exist, and the
   -- working-notes tracker / personal Claude Code config stay out of
@@ -708,6 +815,47 @@ def main : IO Unit := do
   let claudeTracked ← IO.Process.output { cmd := "git", args := #["ls-files", "CLAUDE.md"] }
   s ← s.check "CLAUDE.md has no files tracked by git"
     (claudeTracked.exitCode == 0 && claudeTracked.stdout.trimAscii.isEmpty)
+
+  pure s
+
+def main : IO Unit := do
+  let demoRoot : System.FilePath := "demo"
+  let demoModule : Name := `Demo.MyLeanFile
+  -- Needed for the fixture-level tests, which call `extractFile` for
+  -- real — same setup `Main.lean`'s `main` does before `runFrontend`,
+  -- including task T54's build step and demo/'s own search path, so
+  -- `Demo.AnotherFile`'s import of `Demo.MyLeanFile` resolves.
+  let demoBuilt ← buildProjectModules demoRoot #["Demo.MyLeanFile", "Demo.AnotherFile"]
+  let demoSearchPath ← projectSearchPath demoRoot
+  Lean.initSearchPath (← Lean.findSysroot) demoSearchPath
+  unsafe enableInitializersExecution
+
+  -- Throwaway spot for file I/O checks, under `.leandoc/` (already
+  -- gitignored) — not a real project.
+  let scratchDir : System.FilePath := ".leandoc" / "test-scratch"
+  IO.FS.createDirAll scratchDir
+  let c : Ctx := { demoRoot, demoModule, demoBuilt, demoSearchPath, scratchDir }
+
+  let s : TestState := {}
+  let s ← pathChecks c s
+  let s ← modulesPageChecks s
+  let s ← moduleTreeChecks s
+  let s ← tocChecks s
+  let s ← rootIndexChecks c s
+  let s ← assetChecks c s
+  let s ← searchIndexChecks s
+  let s ← declRenderChecks s
+  let s ← liquidChecks s
+  let s ← instanceListingChecks s
+  let s ← importedByChecks c s
+  let s ← sourceLinkChecks c s
+  let s ← groupingChecks s
+  let s ← configChecks c s
+  let s ← versionChecks c s
+  let s ← projectBuildChecks c s
+  let (s, demoMetas) ← extractorChecks c s
+  let s ← renderChecks c demoMetas s
+  let s ← hygieneChecks s
 
   IO.println s!"LeanDoc tests: {s.passed} passed, {s.failed} failed"
   if s.failed > 0 then
