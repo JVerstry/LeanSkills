@@ -32,13 +32,24 @@ Manual: [LeanDoc/docs/manual.md](LeanDoc/docs/manual.md), with a short overview 
 
 ## Installation
 
-There is no package to install. Hand [`InstallationPrompt.txt`](InstallationPrompt.txt)
-to your AI assistant, running inside your Lean project, for example by giving it this
-address:
+There is no package to install, and no command to run yourself. The installer is a
+prompt, [`InstallationPrompt.txt`](InstallationPrompt.txt), that you hand to an AI
+assistant working inside your Lean project. With Claude Code, for example, open a
+terminal in your project's folder, start it, and give it the address of the prompt:
 
 ```
-https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt
+cd path/to/your/lean/project
+claude
 ```
+
+then type:
+
+```
+Install LeanSkills: fetch https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt and follow it.
+```
+
+Any assistant that can fetch a web page and edit files will do; with another one, paste
+the contents of the file instead. The assistant then asks you the questions below.
 
 The installer asks which tool you want, LeanPerformance, LeanDoc or both. It
 always adds a third small skill, `/leanskills`, described below. It asks once
@@ -91,8 +102,10 @@ before it touches anything for good, in one of two ways:
 
 In either case the skills are installed for the project only, the first generation
 of LeanDoc's documentation (which builds the whole project) can be skipped, and for
-a trial `/leanperf dry` is the cheap way to try the audit. Choose the trial when the
-installer asks.
+a trial `/leanperf dry` is the cheap way to try the audit. When the installer asks
+whether to install directly or try it first, answer that you want a trial, then pick the
+branch or the clone. To try the branch route, check first that `git status` shows nothing
+uncommitted and that no other session or editor is working in the project folder.
 
 Each tool's part of the installer also works alone:
 [LeanPerformance/InstallationPrompt.txt](LeanPerformance/InstallationPrompt.txt) and
