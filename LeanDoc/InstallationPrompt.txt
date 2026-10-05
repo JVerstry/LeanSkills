@@ -75,21 +75,57 @@ updates as the interface stabilizes.
         list. Ask about `exclude` (dotted module names, e.g.
         `"Foo.Bar"`) if there are internal modules to leave out either
         way.
-     f. **Jekyll-targeted output (`[renderer] jekyll`).** Whether
-        generated pages carry Jekyll front matter, use Jekyll's
-        `{% link %}` tag for internal links, and get a written
-        `_config.yml` — vs. plain, portable Markdown
-        with ordinary relative links and no Jekyll-specific content.
-        *Recommended default:* `true` (the LeanDoc default) whenever
-        `docs_dir` will be published via GitHub Pages from step 2c/2d's
-        defaults, since GitHub Pages runs Jekyll on `docs_dir` unless
-        told not to — `false` output left in that setup would be served
-        unprocessed (raw Markdown source, not a readable page). Set to
-        `false` only if the user has explicitly said they don't want
-        GitHub Pages/Jekyll for these docs (browsing in an IDE, serving
-        from elsewhere, or an existing Jekyll setup they don't want
-        LeanDoc's `_config.yml`/`{% link %}` output mixed into — see
-        step 4's note on existing `docs_dir` content either way).
+     f. **Publishing, and whether to integrate with Jekyll
+        (`[renderer] jekyll`).** Ask first where the generated docs will be
+        read, because that decides the setting:
+
+        1. *GitHub Pages.* Pages always runs Jekyll on the folder it
+           publishes, whatever LeanDoc is set to, so the output has to be
+           ready for it.
+        2. *Browsing on github.com or in an IDE only.* No Jekyll runs.
+        3. *Another host, or the user's own existing Jekyll site.*
+
+        `jekyll = true` makes generated pages carry Jekyll front matter,
+        use Jekyll's `{% link %}` tag for internal links, and get a
+        written `_config.yml`, stylesheet, layout, search and theme
+        switcher. `jekyll = false` writes plain, portable Markdown with
+        ordinary relative links. Then recommend, and explain the
+        consequences of each choice in a sentence or two:
+
+        - Case 1 (Pages): `jekyll = true`. Left at `false`, Pages would
+          serve the Markdown as raw, unstyled source. Also ask how Pages
+          will publish, since it changes what works:
+          * Source: "Deploy from a branch" (`main` and `/docs`, or the
+            repository root; this is the flow assumed in step 4, so
+            `docs_dir` must be `docs/` or the root) versus a GitHub
+            Actions workflow. Pages' own builder uses Jekyll 3.10, where
+            the `link` tag does not add the site's `baseurl`; a workflow can
+            use a newer Jekyll, which does. Tell the user that links behave
+            differently between the two.
+          * Address: a user/organisation site or a custom domain (served
+            from the root of the address) versus a *project* site
+            (`<user>.github.io/<repo>/`, served from a sub-path). On a
+            project site the generated internal links are known to point at
+            the wrong place with Pages' own builder (a known LeanDoc issue,
+            tracked as T64, not fixed yet). Say so plainly, and offer the
+            workable options: a custom domain or a user/organisation site;
+            or accepting broken internal navigation until it is fixed;
+            or `jekyll = false` and browsing the docs on github.com.
+        - Case 2 (github.com or IDE only): `jekyll = false`. With `true`,
+          github.com shows the front matter as a table and the `{% link %}`
+          links are broken, because GitHub's Markdown viewer does not run
+          Jekyll. If Pages is turned on later, switch to `true` (edit
+          `leandoc.toml`, run `lake exe leandoc`).
+        - Case 3 (elsewhere): `false`, unless the user runs Jekyll
+          themselves, in which case `true`; if they already have a Jekyll
+          site, see step 4's note on existing `docs_dir` content.
+
+        The setting can be changed later by editing `leandoc.toml` and
+        rerunning `lake exe leandoc`. The files LeanDoc writes only once
+        (`_layouts/`, `assets/`, `_config.yml`) are never removed when it
+        is switched to `false`; they are harmless, and can be deleted by
+        hand. Record the user's answers for the report in step 9.
+
      g. **Documentation-compliance checking (`[compliance]`).** Whether LeanDoc should warn (never fail the build) when
         a scanned file is missing an expected copyright/license
         header — a check derived from Mathlib's own documentation
@@ -148,7 +184,8 @@ updates as the interface stabilizes.
      happens in step 7 (initial generation). This step just guarantees
      the directory exists so the repo's Pages settings can be pointed at
      `main` / that directory immediately. If step 2f's answer was
-     `jekyll = true` (the default), no `.nojekyll` marker is needed:
+     `jekyll = true` (recommended when publishing with GitHub Pages), no
+     `.nojekyll` marker is needed:
      LeanDoc's renderer emits Jekyll-ready output itself — front matter
      with `layout: default` on every generated page, its own vendored
      stylesheet (`docs_dir/assets/style.css`, matching the Lean
@@ -215,7 +252,7 @@ updates as the interface stabilizes.
      name = "markdown"   # parsed but not yet acted on — Markdown is
                          # the only renderer that exists, so there's no
                          # real choice to make here yet
-     jekyll = <step 2f value, default true>   # front matter, {% link %}
+     jekyll = <step 2f value: true for GitHub Pages, false for github.com/IDE-only>   # front matter, {% link %}
                          # links, and a written _config.yml vs. plain
                          # portable Markdown
 
@@ -333,7 +370,10 @@ updates as the interface stabilizes.
    - Show what was added/changed (dependency line, `leandoc.toml`,
      `.gitignore` diff, and the skill folder if step 8 was done), and
      restate the parameter choices from step 2 so they have a record of
-     what was decided.
+     what was decided, including the Jekyll decision with where the docs
+     will be published (GitHub Pages source and address, github.com, or
+     elsewhere) and the consequence the user accepted, such as the
+     project-site link issue.
    - Point them at where the generated docs landed (`docs_dir`). If
      the project has a GitHub `origin` remote, each declaration links
      to its source on the default branch; for a non-GitHub or non-git

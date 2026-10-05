@@ -309,6 +309,35 @@ to `false` only if you don't want GitHub Pages/Jekyll for these docs at
 all (browsing in an IDE, serving from elsewhere, or an existing Jekyll
 setup you don't want LeanDoc's output mixed into).
 
+#### Choosing, and what GitHub's Jekyll does to each choice
+
+GitHub Pages builds the folder it publishes with its own Jekyll, whatever
+`jekyll` says, so the right setting depends on where the docs are read.
+The installer (`InstallationPrompt.txt`, step 2f) asks this first and
+recommends from the answer:
+
+| Where the docs are read | Set `jekyll` | What happens |
+|---|---|---|
+| GitHub Pages, deployed from a branch folder | `true` | Pages' builder (Jekyll 3.10) turns the pages into a styled, searchable site. With `false` it would serve the raw Markdown source. |
+| GitHub Pages, deployed by a GitHub Actions workflow | `true` | Same output, but a workflow can use a newer Jekyll, where the `{% raw %}{% link %}{% endraw %}` tag also adds the site's `baseurl`. Check the links after the first deploy. |
+| github.com or an IDE only | `false` | With `true`, github.com shows the front matter as a table and the `{% raw %}{% link %}{% endraw %}` links are broken, because its Markdown viewer does not run Jekyll. |
+| Another host, or your own Jekyll site | `false`, unless you run Jekyll yourself | `true` writes `_config.yml`, a layout and a stylesheet that may clash with an existing site. |
+
+**Known limitation, project sites.** A project site is served from a
+sub-path (`<user>.github.io/<repo>/`). Jekyll's documentation says the
+`{% raw %}{% link %}{% endraw %}` tag adds the site's `baseurl` only
+from Jekyll 4.0, so with Pages' own builder (3.10) the generated internal
+links point at the wrong place on a project site. A user or organisation
+site, or a custom domain, is served from the root and is not affected.
+This comes from Jekyll's documentation and has not been confirmed on a
+real deploy; a fix is planned (task T64). Until then, prefer a root-served
+site, or `jekyll = false` and browse the docs on github.com.
+
+Changing the setting later is safe: edit `leandoc.toml`, run
+`lake exe leandoc`. The files written only once (`_layouts/`, `assets/`,
+`_config.yml`) are kept when you switch to `false`; they are harmless
+and can be deleted by hand.
+
 Jekyll processes Liquid template syntax on every page, so text copied
 from your Lean source (docstrings, names, types) is escaped: a
 docstring that mentions {% raw %}`{{ … }}` or `{% … %}`{% endraw %} is shown as
