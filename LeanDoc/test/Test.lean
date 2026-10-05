@@ -1069,7 +1069,12 @@ def hygieneChecks (s0 : TestState) : IO TestState := do
   -- that exists, or the whole site build fails. LeanDoc's own
   -- `Core.lean` docstrings mention `{% link %}` (describing its Jekyll
   -- output), so this catches a regression in escapeLiquid for real.
-  for docsRoot in #[("docs" : System.FilePath), "demo" / "docs"] do
+  -- LeanDoc's own generated docs (the smoke-test self-run) are not
+  -- committed: they live in the gitignored `.leandoc/site/` and are only
+  -- there after `lake exe leandoc` has run, so scan them when present.
+  let selfSite : System.FilePath := ".leandoc" / "site"
+  let selfRoots := if (← (selfSite / "toc.md").pathExists) then #[selfSite] else #[]
+  for docsRoot in (#[("demo" : System.FilePath) / "docs"] ++ selfRoots) do
     let generated := #[docsRoot / "toc.md"] ++
       ((← (docsRoot / "reference").walkDir).filter (·.extension == some "md"))
     let mut bad : Array String := #[]

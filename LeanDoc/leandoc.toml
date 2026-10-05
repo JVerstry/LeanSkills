@@ -1,10 +1,12 @@
 
-# LeanDoc documenting itself (dogfooding). See demo/leandoc.toml for the
-# schema reference, and InstallationPrompt.txt for the rationale.
+# LeanDoc documenting itself (dogfooding), as a smoke test on a larger input
+# than demo/. The output goes to the gitignored .leandoc/site/ and is not
+# committed; docs/ holds only hand-written pages. See demo/leandoc.toml for
+# the schema reference, and InstallationPrompt.txt for the rationale.
 
 [output]
 json_dir = ".leandoc/"
-docs_dir = "docs/"
+docs_dir = ".leandoc/site/"
 
 [modules]
 # include = [...]   # left empty to test T21's lean_exe discovery path

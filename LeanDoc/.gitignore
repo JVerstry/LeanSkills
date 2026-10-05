@@ -2,7 +2,8 @@
 .lake/
 
 # LeanDoc's intermediate metadata JSON (regenerated on every run;
-# rendered output in docs/ is committed, this build artifact is not)
+# rendered output in docs/ is committed for adopting projects, this build
+# artifact is not; LeanDoc's own self-run writes to .leandoc/site/, also ignored)
 .leandoc/
 
 # Working-notes task tracker — local scratch, never meant to be

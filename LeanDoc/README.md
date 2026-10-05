@@ -36,15 +36,17 @@ will suggest ways to address it.
   See [`docs/index.md`](docs/index.md) for the full pipeline write-up.
 - **Toolchain:** managed by `elan` (`lean`, `lake` on `PATH`), pinned via
   `lean-toolchain`. `lake build` builds; `lake exe leandoc [path]` runs
-  the real extractor + Markdown renderer (default path `.` — LeanDoc
-  documents itself; see [`docs/reference/`](docs/reference/modules.md) —
-  task T25 named it `reference/`, not `api/`: it's a flat dump of every
-  included declaration, not a curated public API surface — and
-  [`docs/toc.md`](docs/toc.md), task T18's project-wide table of
-  contents grouped by declaration kind).
+  the real extractor + Markdown renderer (default path `.` — run in
+  this folder it documents LeanDoc itself, as a smoke test, into the
+  gitignored `.leandoc/site/`; `reference/` is a flat dump of every
+  included declaration, not a curated public API surface, and `toc.md`
+  is the project-wide table of contents grouped by declaration kind. The
+  committed example of generated output is `demo/docs/`).
 - **Where things live:** intermediate metadata JSON in `.leandoc/`
   (gitignored, regenerated every run); final rendered docs in `docs/`
-  (committed to git); configuration in `leandoc.toml`.
+  (committed to git; for LeanDoc itself `docs/` holds only the
+  hand-written pages and the generated docs go to `.leandoc/site/`);
+  configuration in `leandoc.toml`.
 - **What gets left out, and why:** LeanDoc filters out Lean's own
   compiler-generated scaffolding — recursors, `noConfusion`, equation
   lemmas, `_sizeOf_*`, and similar (`isNoise`, using the same predicate
