@@ -40,12 +40,29 @@ address:
 https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt
 ```
 
-The installer asks which tool you want, LeanPerformance, LeanDoc or both. It asks once
+The installer asks which tool you want, LeanPerformance, LeanDoc or both. It
+always adds a third small skill, `/leanskills`, described below. It asks once
 for what the two skills share: whether to install them for all your projects or only
 the current one, and whether they run from local copies of the audit texts or fetch
 the latest on every run. Then it carries out each tool's own steps. LeanDoc's steps
 include reviewing its configuration with you. The details of each are in the tool's
 manual, in its installation section.
+
+### The `/leanskills` skill
+
+`/leanskills` is the entry point once things are installed. On its own it detects
+what you have and explains how to use `/leanperf` and `/leandoc`. Its commands:
+
+| Command | What it does |
+|---|---|
+| `/leanskills status` | What is installed, where, which versions, and whether newer ones are published |
+| `/leanskills update` | Updates both tools and itself after one confirmation |
+| `/leanskills install [tool]` | Runs the installer, including the throwaway-clone trial |
+| `/leanskills doctor` | Read-only health check: files, versions, Lake project, toolchain compatibility, reachability |
+| `/leanskills tour` | A guided first run on your project, one confirmed step at a time |
+| `/leanskills mode`, `papercuts` | One local/remote setting and one papercuts log for both skills |
+| `/leanskills report` | Prepares the text of a GitHub issue; it never posts it |
+| `/leanskills uninstall [tool]` | Removes the skills after one confirmation; your project is left alone |
 
 ### Try it on a throwaway clone first
 
