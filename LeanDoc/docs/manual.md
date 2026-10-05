@@ -23,7 +23,9 @@ LeanSkills installer: hand
 [`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/InstallationPrompt.txt)
 at the root of the LeanSkills repository (raw file:
 `https://raw.githubusercontent.com/JVerstry/LeanSkills/main/InstallationPrompt.txt`)
-to your own AI coding assistant. It asks which tool you want, LeanDoc,
+to your own AI coding assistant. Because LeanDoc's install edits your lakefile and
+manifest, the installer can first rehearse it on a throwaway clone of your project
+(see the LeanSkills README). It asks which tool you want, LeanDoc,
 LeanPerformance or both, asks once about the skills' scope and audit source,
 then follows LeanDoc's own installer part
 ([`InstallationPrompt.txt`](https://github.com/JVerstry/LeanSkills/blob/main/LeanDoc/InstallationPrompt.txt)

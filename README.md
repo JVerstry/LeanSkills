@@ -47,6 +47,20 @@ the latest on every run. Then it carries out each tool's own steps. LeanDoc's st
 include reviewing its configuration with you. The details of each are in the tool's
 manual, in its installation section.
 
+### Try it on a throwaway clone first
+
+The installation edits your project's files. LeanDoc, for example, adds a
+dependency to your `lakefile.toml`, updates `lake-manifest.json`, and writes
+`leandoc.toml` and `.gitignore` lines. The installer therefore offers to
+rehearse on a copy before it touches anything: it clones your project, in its
+committed state and including unpushed commits, to a temporary folder outside it, runs the whole
+installation there with project-level skills, and shows you what changed. Your
+real project is untouched until you choose to apply the same installation to it.
+You can also keep the clone to inspect it, or have it deleted. The first
+generation of LeanDoc's documentation builds the whole project, so for a large
+project (for example one that depends on Mathlib) the installer recommends
+skipping it in the trial. Choose "Try it first on a throwaway clone" when it asks.
+
 Each tool's part of the installer also works alone:
 [LeanPerformance/InstallationPrompt.txt](LeanPerformance/InstallationPrompt.txt) and
 [LeanDoc/InstallationPrompt.txt](LeanDoc/InstallationPrompt.txt).

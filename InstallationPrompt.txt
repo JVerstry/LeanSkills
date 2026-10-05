@@ -42,7 +42,45 @@ If the user picks LeanDoc and step 1 found no Lake project, stop that part and
 tell them, as LeanDoc's own installer would.
 
 ======================================================================
-3. Ask the shared questions once
+3. Offer a trial run on a throwaway clone
+======================================================================
+
+The install edits the user's files (for LeanDoc: lakefile, lake-manifest.json,
+leandoc.toml, .gitignore), so offer to rehearse it first. Ask, and wait for the
+answer:
+
+- Install directly in this project.
+- Try it first on a throwaway clone (recommended for a large or important
+  project): the same install runs on a copy, and the real project is not touched.
+
+If the user wants the trial:
+
+- The project must be a git repository; if it is not, say so and offer a plain
+  copy of its source files (without .lake) instead.
+- Clone it to a temporary folder outside the project, for example
+  `<temp>/<project>-leanskills-trial`, with `git clone <project path> <folder>`.
+  This copies the committed state only, including local commits that were never
+  pushed, but not uncommitted changes and not .lake (so a build in the clone
+  starts from scratch; for a project that depends on Mathlib it needs
+  `lake exe cache get` first).
+- Run every remaining step inside the clone, as if it were the project, with
+  these differences:
+  * Skills are installed project-level, in the clone, whatever the user would
+    choose for the real install. User-level skills would be written to the
+    user's own skills folder and survive the trial, so do not use them in a
+    trial. Tell the user that to try a skill in the clone, they open a new
+    session with the clone as the working directory.
+  * LeanDoc's step 7 (the first generation) builds the whole project. Ask whether
+    to run it in the clone or skip it, and recommend skipping it for a large
+    project, since a build can take very long and take a lot of disk space.
+  * Do not commit or push anything in the clone either, unless the user asks.
+- At the end (step 6), show what the install changed in the clone (`git status`
+  and `git diff` there), then ask what to do next: apply the same install to the
+  real project, keep the clone for inspection, or delete it. Never delete the
+  clone, and never touch the real project, without that answer.
+
+======================================================================
+4. Ask the shared questions once
 ======================================================================
 
 Both tools install a skill the same way, so ask these once, and wait for each
@@ -72,11 +110,11 @@ c. Audit source, which the skills use when they run:
    The user can switch later with /leanperf mode and /leandoc mode.
 
 ======================================================================
-4. Install each chosen tool
+5. Install each chosen tool
 ======================================================================
 
 Fetch the installer part of each chosen tool and follow its steps, treating the
-answers of steps 2 and 3 as already given (each part says which of its own
+answers of steps 2 to 4 as already given (each part says which of its own
 questions to skip). Do LeanPerformance first, since it changes nothing in the
 project, then LeanDoc.
 
@@ -97,10 +135,12 @@ installing.
 Do not commit anything on the user's behalf without asking first.
 
 ======================================================================
-5. Report back to the user
+6. Report back to the user
 ======================================================================
 
-Give one combined report:
+Give one combined report. If this was a trial run, say so at the top, give the
+clone's folder, show the changes there, and ask the question from step 3 about
+what to do next:
 
 - for each tool: installed, skipped or failed, with the reason when it did not
   work;
