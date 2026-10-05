@@ -332,7 +332,8 @@ updates as the interface stabilizes.
      audit source they chose; to type `/leandoc` in their project (some
      assistants need a restart or a new session before a new skill shows
      up); that `/leandoc dry` runs a fast read-only audit that builds
-     and regenerates nothing, and `/leandoc schedule` sets up a
+     and regenerates nothing, `/leandoc fix` offers to fix findings one
+     approved change at a time (never committing), and `/leandoc schedule` sets up a
      recurring check (weekly and dry by default) if their assistant
      supports scheduling; that `/leandoc papercuts <path>` lets the
      skill offer to log its verified, general findings to a papercuts

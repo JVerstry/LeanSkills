@@ -1,9 +1,9 @@
 ---
 name: leandoc
-description: Audit the documentation LeanDoc generated for a Lean project and report prioritized findings. Use when the user types /leandoc (or /leandoc dry, /leandoc schedule, /leandoc papercuts, /leandoc update, /leandoc mode, /leandoc uninstall) or asks to audit, check or sanity-check the generated LeanDoc documentation.
+description: Audit the documentation LeanDoc generated for a Lean project and report prioritized findings, and optionally fix them one approved change at a time. Use when the user types /leandoc (or /leandoc dry, /leandoc fix, /leandoc schedule, /leandoc papercuts, /leandoc update, /leandoc mode, /leandoc uninstall) or asks to audit, check or sanity-check the generated LeanDoc documentation.
 ---
 
-LeanDoc skill version: 1
+LeanDoc skill version: 2
 
 # /leandoc — audit the documentation LeanDoc generated
 
@@ -57,6 +57,26 @@ Same as `/leandoc`, but tell the audit that this is a DRY RUN, so it follows the
 "dry run" rules: it reads files only, runs no build, compile or `lake exe leandoc`
 command, skips the freshness check, and marks every finding unverified. It is fast and
 cheap, and its findings are leads to confirm with a full `/leandoc`, not conclusions.
+
+## `/leandoc fix` — fix findings, one approved change at a time
+
+The audit reports; this goes one step further and changes files, so it is the
+most carefully fenced command here.
+
+1. Run the audit exactly as `/leandoc` does (a full run, never a dry run) and give
+   the report first.
+2. Then tell the audit this is a FIX RUN, and follow the audit's fix-run rules
+   exactly. In short: propose one fix at a time, show the precise edit, and apply it
+   only after the user approves *that one* (no "apply all", even if asked: confirm
+   them one by one); never edit generated output (fix the Lean source,
+   `leandoc.toml`, or a file the project owns); offer a fix only where the audit
+   lists one; regenerating the docs is a separate step the user agrees to; never
+   stage, commit or push.
+3. End with what was applied and what was skipped, by finding key.
+
+A scheduled or otherwise non-interactive run is never a fix run, and neither is
+`/leandoc dry`. If the audit text in use predates fix runs (its first line says
+audit version 1), say so and tell the user to run `/leandoc update`.
 
 ## `/leandoc schedule` — run a dry audit on a schedule
 

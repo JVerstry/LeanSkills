@@ -1020,8 +1020,8 @@ def hygieneChecks (s0 : TestState) : IO TestState := do
        (skillLines.getD 2 "").startsWith "description: " && skillLines.getD 3 "" == "---")
     s ← s.check "skill/SKILL.md states its version"
       ((skill.splitOn "LeanDoc skill version: ").length > 1)
-    for sub in #["/leandoc dry", "/leandoc schedule", "/leandoc papercuts", "/leandoc update",
-                 "/leandoc mode", "/leandoc uninstall"] do
+    for sub in #["/leandoc dry", "/leandoc fix", "/leandoc schedule", "/leandoc papercuts",
+                 "/leandoc update", "/leandoc mode", "/leandoc uninstall"] do
       s ← s.check s!"skill/SKILL.md documents {sub}" ((skill.splitOn sub).length > 1)
     s ← s.check "skill/SKILL.md saves scheduled reports under .leandoc-audit/"
       ((skill.splitOn ".leandoc-audit/").length > 1)
@@ -1035,6 +1035,15 @@ def hygieneChecks (s0 : TestState) : IO TestState := do
      ((auditFirst.drop "LeanDoc audit version: ".length).toString.toNat?).isSome)
   s ← s.check "QualityAuditPrompt.txt defines dry-run rules and finding keys"
     ((audit.splitOn "dry run").length > 1 && (audit.splitOn "FINDING KEYS").length > 1)
+  -- T44: the fix run's safety rules must stay in the audit (the skill
+  -- only tells the assistant to follow them), and the skill must carry
+  -- a version that knows about them.
+  s ← s.check "QualityAuditPrompt.txt defines the fix run: per-finding approval, no generated output, no commits"
+    ((audit.splitOn "fix run").length > 1 && (audit.splitOn "Approval per finding").length > 1 &&
+     (audit.splitOn "Never edit generated output").length > 1 &&
+     (audit.splitOn "Never commit, stage or push").length > 1)
+  s ← s.check "QualityAuditPrompt.txt is at least audit version 2 (fix runs)"
+    (((auditFirst.drop "LeanDoc audit version: ".length).toString.toNat?).getD 0 >= 2)
   let installPrompt ← IO.FS.readFile "InstallationPrompt.txt"
   s ← s.check "InstallationPrompt.txt copies the skill and the audit from the dependency"
     ((installPrompt.splitOn "skill/SKILL.md").length > 1 &&

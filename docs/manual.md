@@ -85,6 +85,12 @@ too). Nothing in your Lean project changes.
 - `/leandoc dry` is the light version: it only reads files, builds and
   regenerates nothing, and marks every finding unverified. Treat its
   findings as leads to confirm with a full run.
+- `/leandoc fix` runs the full audit, then offers to fix findings one at a
+  time: it shows the exact edit and applies it only after you approve
+  that one (no "apply all"). It never edits generated output (it fixes
+  the Lean source, `leandoc.toml` or a file you own), never stages,
+  commits or pushes, and regenerating the docs is a step you agree to
+  separately. Naming findings are reported, never fixed.
 - `/leandoc schedule` sets up a recurring dry check (weekly by default)
   using your assistant's own scheduler, saving reports in a
   `.leandoc-audit/` folder, which it adds to your `.gitignore` after you
