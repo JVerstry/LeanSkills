@@ -133,6 +133,12 @@ def moduleTreeChecks (s0 : TestState) : IO TestState := do
      (treeHtml.splitOn "{% link reference/Quux.md %}").length > 1)
   s ← s.check "renderModuleTree never emits a backslash"
     (!(treeHtml.any (· == '\\')))
+  -- The tree is raw block HTML, which kramdown (GitHub Pages) leaves
+  -- unparsed: a Markdown link inside it would render as literal text, so
+  -- every link must be a real <a> element.
+  s ← s.check "renderModuleTree links with <a> elements, not Markdown links"
+    ((treeHtml.splitOn "](").length == 1 &&
+     (treeHtml.splitOn "<a href=\"{% link reference/Foo/Bar.md %}\">Bar</a>").length > 1)
 
   pure s
 

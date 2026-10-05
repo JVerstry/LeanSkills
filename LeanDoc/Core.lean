@@ -774,7 +774,13 @@ alphabetically by segment at each level. A leaf module's segment is a
 link (Jekyll `{% link %}` or a plain relative link, same `jekyll`
 branching every other renderer here already uses); a pure namespace
 prefix with no module of its own (e.g. `Demo` when only
-`Demo.MyLeanFile` is documented) renders as plain, unlinked text. -/
+`Demo.MyLeanFile` is documented) renders as plain, unlinked text.
+
+In Jekyll mode the link is a real HTML `<a>` element, not a Markdown
+link: this whole tree is raw block HTML, and kramdown (the Markdown
+converter GitHub Pages runs) leaves the content of a block-level HTML
+element unparsed by default, so a Markdown link inside it would show up
+as literal `[Core](/reference/...)` text on the published site. -/
 partial def renderModuleTreeNode (label : String) (tree : ModuleTree) (jekyll : Bool) : String :=
   match tree with
   | .node children full =>
@@ -782,7 +788,7 @@ partial def renderModuleTreeNode (label : String) (tree : ModuleTree) (jekyll : 
     let selfText := match full with
       | some m =>
         if jekyll then
-          "[" ++ shown ++ "](" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ ")"
+          "<a href=\"" ++ "{% link reference/" ++ linkPath m ++ ".md %}" ++ "\">" ++ shown ++ "</a>"
         else
           s!"[{label}]({linkPath m}.md)"
       | none => shown

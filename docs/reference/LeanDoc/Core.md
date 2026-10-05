@@ -1200,9 +1200,15 @@ alphabetically by segment at each level. A leaf module's segment is a
 link (Jekyll `{{ "{%" }} link %}` or a plain relative link, same `jekyll`
 branching every other renderer here already uses); a pure namespace
 prefix with no module of its own (e.g. `Demo` when only
-`Demo.MyLeanFile` is documented) renders as plain, unlinked text. 
+`Demo.MyLeanFile` is documented) renders as plain, unlinked text.
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L770-L795)
+In Jekyll mode the link is a real HTML `<a>` element, not a Markdown
+link: this whole tree is raw block HTML, and kramdown (the Markdown
+converter GitHub Pages runs) leaves the content of a block-level HTML
+element unparsed by default, so a Markdown link inside it would show up
+as literal `[Core](/reference/...)` text on the published site. 
+
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L770-L801)
 
 ### `renderModuleTree`
 
@@ -1226,7 +1232,7 @@ every other page — LeanDoc typically documents one project, not an
 entire ecosystem, so there is no "current page's own entry" to expand
 to on this page in the first place. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L797-L817)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L803-L823)
 
 ### `renderModulesPage`
 
@@ -1265,7 +1271,7 @@ Jekyll *does* process the page (never mix the two within one
 `docs_dir`), and raw `<details>` HTML has no obvious "plain Markdown"
 equivalent worth inventing here. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L819-L854)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L825-L860)
 
 ### `kindBucket`
 
@@ -1281,7 +1287,7 @@ exactly one bucket — `"quotient"`/`"recursor"` are rare enough to share
 "Other" rather than each getting a barely-populated section of their
 own. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L856-L866)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L862-L872)
 
 ### `renderToc`
 
@@ -1310,7 +1316,7 @@ real, not before.
 A bucket with zero declarations is omitted entirely, not rendered as an
 empty heading. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L868-L907)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L874-L913)
 
 ### `SearchEntry`
 
@@ -1329,7 +1335,7 @@ module ++ ".html"`, matching Jekyll's default converted-file naming
 (`.md` sources become same-path `.html` outputs) the same way
 `renderModulesPage`'s `{{ "{%" }} link %}` tags already rely on. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L909-L922)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L915-L928)
 
 ### `SearchEntry.mk`
 
@@ -1341,7 +1347,7 @@ SearchEntry.mk : String → String → String → String → SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L917-L917)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L923-L923)
 
 ### `SearchEntry.name`
 
@@ -1353,7 +1359,7 @@ SearchEntry.name : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L918-L918)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L924-L924)
 
 ### `SearchEntry.kind`
 
@@ -1365,7 +1371,7 @@ SearchEntry.kind : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L919-L919)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L925-L925)
 
 ### `SearchEntry.module`
 
@@ -1377,7 +1383,7 @@ SearchEntry.module : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L920-L920)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L926-L926)
 
 ### `SearchEntry.link`
 
@@ -1389,7 +1395,7 @@ SearchEntry.link : SearchEntry → String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L921-L921)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L927-L927)
 
 ### `instToJsonSearchEntry.toJson`
 
@@ -1401,7 +1407,7 @@ instToJsonSearchEntry.toJson : SearchEntry → Lean.Json
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L922-L922)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L928-L928)
 
 ### `instToJsonSearchEntry`
 
@@ -1413,7 +1419,7 @@ instToJsonSearchEntry : Lean.ToJson SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L922-L922)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L928-L928)
 
 ### `instFromJsonSearchEntry.fromJson`
 
@@ -1425,7 +1431,7 @@ instFromJsonSearchEntry.fromJson : Lean.Json → Except String SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L922-L922)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L928-L928)
 
 ### `instFromJsonSearchEntry`
 
@@ -1437,7 +1443,7 @@ instFromJsonSearchEntry : Lean.FromJson SearchEntry
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L922-L922)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L928-L928)
 
 ### `renderSearchIndex`
 
@@ -1460,7 +1466,7 @@ flagged index size as a real scale concern (Mathlib's equivalent is
 67.6MB) — no reason to spend extra bytes on human-readable whitespace
 nobody reads. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L924-L940)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L930-L946)
 
 ### `ensureSearchScript`
 
@@ -1475,7 +1481,7 @@ search script (task T47 — see `assets/search.js`,
 `LeanDoc.Assets.searchJs`) if it's missing. Never overwrites an
 existing file, same write-once treatment as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L942-L951)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L948-L957)
 
 ### `ensureMathjaxConfig`
 
@@ -1494,7 +1500,7 @@ directly from its CDN in the layout, not vendored — unlike the other
 assets here, it's a large, versioned third-party library, not
 something a project would ever want to hand-edit after the fact. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L953-L966)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L959-L972)
 
 ### `ensureFindPage`
 
@@ -1514,7 +1520,7 @@ same write-once treatment as `ensureStyleAsset`. Depends on
 `assets/search-index.json` existing to look anything up in, so only
 meaningful for Jekyll output — same as `ensureSearchScript`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L968-L981)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L974-L987)
 
 ### `ensureNotFoundPage`
 
@@ -1535,7 +1541,7 @@ itself made. Never overwrites an existing file, same write-once
 treatment as `ensureStyleAsset`. Only meaningful for Jekyll output,
 same as `ensureFindPage`/`ensureSearchScript`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L983-L997)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L989-L1003)
 
 ### `navMarkerStart`
 
@@ -1552,7 +1558,7 @@ never touch again" file, like `_config.yml`, would go stale the moment
 a new generated page type ships, even for a user who never customized
 anything) without disturbing any hand-written content around it. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L999-L1005)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1005-L1011)
 
 ### `navMarkerEnd`
 
@@ -1564,7 +1570,7 @@ navMarkerEnd : String
 
 *(not documented)*
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1006-L1006)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1012-L1012)
 
 ### `renderNavBlock`
 
@@ -1576,7 +1582,7 @@ renderNavBlock : Bool → String
 
 Renders the nav block's current contents, markers included. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1008-L1012)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1014-L1018)
 
 ### `ensureRootIndex`
 
@@ -1598,7 +1604,7 @@ and links to the generated `reference/`/`toc.md` pages. Three cases:
   link — the fix there is adding the markers once, by hand, not having
   LeanDoc decide where to put them. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1014-L1039)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1020-L1045)
 
 ### `groupInstancesByClass`
 
@@ -1613,7 +1619,7 @@ Groups instance declarations by the class they're an instance of
 section. Project-wide, not per-module: an instance can (and often
 does) live in a different module than the class it's an instance of. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1041-L1051)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1047-L1057)
 
 ### `groupDeclsByModule`
 
@@ -1626,7 +1632,7 @@ groupDeclsByModule : Array DeclMeta → Array (String × Array DeclMeta)
 Groups declarations by module, preserving first-seen module order
 (there's no `Array.groupByKey` in the stdlib to reach for here). 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1053-L1063)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1059-L1069)
 
 ### `defaultJekyllConfig`
 
@@ -1645,7 +1651,7 @@ the file doesn't already exist — like `InstallationPrompt.txt`'s other
 one-time setup steps, this must not clobber a customization on a later
 `lake exe leandoc` run. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1065-L1074)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1071-L1080)
 
 ### `ensureJekyllConfig`
 
@@ -1659,7 +1665,7 @@ Ensures `docsDir/_config.yml` exists, writing the default (see
 `defaultJekyllConfig`) if it's missing. Never overwrites an existing
 file. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1076-L1082)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1082-L1088)
 
 ### `ensureStyleAsset`
 
@@ -1675,7 +1681,7 @@ vendored stylesheet (task T29 — see `assets/style.css`,
 existing file, so a project is free to edit it after that first write
 — LeanDoc never touches it again. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1084-L1094)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1090-L1100)
 
 ### `ensureDefaultLayout`
 
@@ -1690,7 +1696,7 @@ minimal layout (task T29 — see `assets/layouts/default.html`,
 `LeanDoc.Assets.defaultLayoutHtml`) if it's missing. Never overwrites
 an existing file, same write-once treatment as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1096-L1105)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1102-L1111)
 
 ### `ensureColorSchemeScript`
 
@@ -1706,7 +1712,7 @@ light/dark/system theme switcher script (task T45 — see
 missing. Never overwrites an existing file, same write-once treatment
 as `ensureStyleAsset`. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1107-L1117)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1113-L1123)
 
 ### `render`
 
@@ -1756,4 +1762,4 @@ For Jekyll output, also writes `docs_dir/assets/search-index.json`
 "only meaningful for Jekyll" writes together keeps them visually
 separate from the always-on Markdown writes above. 
 
-[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1119-L1198)
+[source](https://github.com/JVerstry/LeanDoc/blob/HEAD/LeanDoc/Core.lean#L1125-L1204)
